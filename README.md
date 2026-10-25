@@ -1,4 +1,4 @@
-# 🎡 Pick One
+# 👑 Pick One
 
 A tiny web app that picks one thing at random from a list, with a slot-machine spin, confetti and sound effects.
 
@@ -24,8 +24,8 @@ Anything where you need a fair, random pick:
 
 ## How it works
 
-1. **Choose a list:** tap the 📋 button under the Pick! area to see all your lists (*Game night*, *Who makes dinner*, *Where to eat*, …) and tap one to switch. Make your own with **+ New list**, and use ✎ to rename or delete one. Each list keeps its own options, so the names in one list never show up in another.
-2. **Add options** using the field under the list.
+1. **Choose a list:** tap the list button under the Pick! area to see all your lists (*🎲 Game night*, *🍳 Who makes dinner*, *🍕 Where to eat*, …) and tap one to switch. Each list keeps its own options, so the names in one list never show up in another.
+2. **Add options** using the field under the list. Add several at once by separating them with commas (`Anna, Erik, Sara`), or paste a list with one option per line.
 3. **Tap an option** to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
 4. **Tap Pick!** and watch it spin. The picked option lights up in gold, with a 👑 and confetti.
 5. Remove an option for good with **✕**.
@@ -34,7 +34,25 @@ Every pick is completely random. Each option in the draw has the same chance eve
 
 **Pick each only once:** switch this on for a list when you want to go round instead, like taking turns on chores. Whatever gets picked sits out automatically, and when everything has been picked, the button turns into **↺ Start over** to put everything back. The setting is saved per list, so *Game night* can allow repeats while *Who makes dinner* takes turns.
 
-Use 🔊 in the top corner to turn the sounds on or off.
+**Recent picks:** under the options, *🕘 Recent picks* shows the last 10 picks for the list, handy for "who did the dishes last time?".
+
+## Managing lists
+
+In the list panel:
+
+- **+ New list** makes a new list.
+- **✎** renames a list, gives it an emoji, shares it or deletes it.
+- **Drag ⠿** to put your lists in the order you like.
+
+### Sharing a list
+
+Tap ✎ on a list, then **⤴ Share this list**. You get a link to send to anyone. When they open it, Pick One asks whether to add the list, with all its options, to their own lists. The list travels inside the link itself, so nothing is uploaded anywhere.
+
+## Settings ⚙️
+
+- **Shake to pick:** shake your phone instead of tapping Pick! On iPhone, you'll be asked to allow motion access the first time.
+- **Sound effects:** on or off (the 🔊 button at the top does the same).
+- **Backup:** *Save backup* downloads a file with all your lists. *Restore* loads such a file and replaces your lists with it. Use it to keep your lists safe, or to move them to a new phone.
 
 ## Install on your phone
 
@@ -54,14 +72,15 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 | `sw.js` | Service worker that caches the files for offline use |
 | `icon-192.png`, `icon-512.png` | App icons |
 
-- The list is stored in the browser's `localStorage` on your device. Nothing is sent anywhere.
+- Your lists are stored in the browser's `localStorage` on your device. Nothing is sent anywhere.
+- Shared lists are encoded in the link after `#list=`, which never reaches the server.
 - The sounds are generated with the Web Audio API, so there are no audio files.
 - The random pick uses `crypto.getRandomValues`.
 
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v13` → `whostarts-v14`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v15` → `whostarts-v16`), otherwise installed copies keep showing the old version.
 
 ## Support
 

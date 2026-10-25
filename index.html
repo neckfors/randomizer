@@ -48,9 +48,9 @@
   }
   header { display: flex; align-items: center; justify-content: space-between; padding: 16px 0 8px; }
   h1 { font-size: 1.5rem; margin: 0; }
-  .right { display: flex; align-items: center; gap: 6px; }
-  #count { color: var(--muted); font-size: .95rem; }
-  #mute { background: none; border: 0; font-size: 1.3rem; width: 40px; height: 40px; border-radius: 50%; }
+  .right { display: flex; align-items: center; gap: 2px; }
+  #count { color: var(--muted); font-size: .95rem; margin-right: 4px; }
+  .icon-btn { background: none; border: 0; font-size: 1.3rem; width: 40px; height: 40px; border-radius: 50%; color: var(--text); }
 
   .starter {
     position: relative;
@@ -77,13 +77,13 @@
   @keyframes rays { to { transform: rotate(360deg); } }
 
   .stage { position: relative; min-height: 3.2rem; display: grid; place-items: center; }
-  #result.long { font-size: 1.5rem; }
   #result {
     font-size: 2rem;
     font-weight: 800;
     overflow-wrap: anywhere;
     line-height: 1.1;
   }
+  #result.long { font-size: 1.5rem; }
   #result.hint { font-size: 1rem; font-weight: 400; color: var(--muted); }
   #result.flip { animation: flip .09s ease-out; color: var(--muted); }
   #result.won {
@@ -94,8 +94,9 @@
     box-shadow: 0 0 0 4px rgba(224, 164, 0, .3), 0 0 28px rgba(224, 164, 0, .6);
     animation: pop .7s cubic-bezier(.2, 1.6, .4, 1);
   }
-  #crown { position: relative; height: 2.2rem; font-size: 2rem; line-height: 1; opacity: 0; }
-  #crown.show { opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
+  /* takes no room until a pick lands, so the card has no empty gap at the top */
+  #crown { position: relative; height: 0; font-size: 2rem; line-height: 1; opacity: 0; }
+  #crown.show { height: 2.2rem; opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
   @keyframes flip { from { transform: translateY(-60%) scaleY(.6); opacity: .2; filter: blur(2px); } to { transform: none; opacity: 1; filter: none; } }
   @keyframes pop { 0% { transform: scale(.3) rotate(-8deg); } 60% { transform: scale(1.25) rotate(3deg); } 100% { transform: none; } }
   @keyframes drop { from { opacity: 0; transform: translateY(-40px) rotate(-25deg) scale(.4); } to { opacity: 1; transform: none; } }
@@ -118,7 +119,7 @@
   #pick:disabled { opacity: .45; }
 
   #add { display: flex; gap: 8px; margin-bottom: 16px; }
-  #name {
+  #name, .field {
     flex: 1;
     min-width: 0;
     font: inherit;
@@ -138,6 +139,11 @@
     transition: transform .1s;
   }
   .btn:active { transform: scale(.96); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+  .btn.danger { color: var(--danger); }
+  .btn.wide { width: 100%; }
+  .btn:disabled { opacity: .4; }
+  .btn[hidden] { display: none; }
 
   ul { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
   li { display: flex; align-items: center; border-top: 1px solid var(--line); transition: background .08s; }
@@ -164,6 +170,19 @@
   .del { width: 48px; height: 52px; color: var(--muted); font-size: 1.2rem; }
   .empty { color: var(--muted); text-align: center; padding: 24px 8px; }
   .tip { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 20px; }
+
+  .history { margin-top: 16px; }
+  .history[hidden] { display: none; }
+  .history summary { cursor: pointer; color: var(--muted); font-size: .95rem; padding: 6px 4px; list-style: none; }
+  .history summary::-webkit-details-marker { display: none; }
+  .history summary::before { content: "▸ "; display: inline-block; transition: transform .15s; }
+  .history[open] summary::before { transform: rotate(90deg); }
+  #historyList li { justify-content: space-between; padding: 10px 14px; gap: 12px; }
+  #historyList .h-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #historyList .h-time { flex: none; color: var(--muted); font-size: .85rem; }
+  #historyList li:first-child .h-name::before { content: "👑 "; }
+  #clearHistory { margin-top: 8px; font-size: .85rem; padding: 6px 12px; }
+
   .support {
     display: block;
     width: fit-content;
@@ -207,8 +226,10 @@
   #setLabel { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .set-btn .caret { color: var(--muted); }
 
-  .once { display: flex; align-items: center; gap: 12px; padding: 10px 14px 12px; border-top: 1px solid var(--line); cursor: pointer; }
-  .once input { position: absolute; opacity: 0; pointer-events: none; }
+  .once, .switch-row { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .once { padding: 10px 14px 12px; border-top: 1px solid var(--line); }
+  .switch-row { padding: 10px 0; }
+  .once input, .switch-row input { position: absolute; opacity: 0; pointer-events: none; }
   .switch {
     flex: none;
     position: relative;
@@ -228,26 +249,15 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
     transition: transform .2s cubic-bezier(.2, 1.4, .4, 1);
   }
-  .once input:checked + .switch { background: var(--accent); }
-  .once input:checked + .switch::after { transform: translateX(18px); }
-  .once input:focus-visible + .switch { outline: 2px solid var(--accent); outline-offset: 2px; }
+  input:checked + .switch { background: var(--accent); }
+  input:checked + .switch::after { transform: translateX(18px); }
+  input:focus-visible + .switch { outline: 2px solid var(--accent); outline-offset: 2px; }
   .once-text { display: flex; flex-direction: column; min-width: 0; font-size: .95rem; }
-  .once-text small { overflow-wrap: anywhere; line-height: 1.3; margin-top: 1px; }
-  .once-text small { color: var(--muted); font-size: .8rem; }
-
-  .sheet h2 { margin-bottom: 8px; }
-  #setList { max-height: 55vh; overflow-y: auto; }
-  #setList li.current { background: var(--glow); }
-  .set-pick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 14px 4px 14px 12px; text-align: left; }
-  .set-pick .check { width: 1em; color: var(--accent); font-weight: 700; }
-  li.current .set-pick .check { color: var(--text); }
-  .set-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  li.current .set-name { font-weight: 700; }
-  .set-count { color: var(--muted); font-size: .85rem; }
-  .set-edit { width: 48px; height: 50px; color: var(--muted); font-size: 1.1rem; }
+  .once-text small { color: var(--muted); font-size: .8rem; overflow-wrap: anywhere; line-height: 1.3; margin-top: 1px; }
 
   dialog {
     width: min(92vw, 400px);
+    max-height: 90vh;
     border: 0;
     border-radius: 16px;
     padding: 20px;
@@ -257,21 +267,58 @@
   dialog[open] { animation: slidein .25s cubic-bezier(.2, 1.4, .4, 1); }
   dialog::backdrop { background: rgba(0, 0, 0, .45); }
   dialog h2 { margin: 0 0 12px; font-size: 1.15rem; }
-  #setName {
-    width: 100%;
-    font: inherit;
-    padding: 12px 14px;
-    border-radius: 12px;
-    border: 1px solid var(--line);
-    background: var(--bg);
-    color: var(--text);
-  }
+  dialog h3 { margin: 18px 0 6px; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  dialog .field { width: 100%; background: var(--bg); }
+  dialog p { margin: 0 0 8px; }
   .dialog-row { display: flex; gap: 8px; margin-top: 16px; }
   .dialog-row .spacer { flex: 1; }
-  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
-  .btn.danger { color: var(--danger); }
-  .btn:disabled { opacity: .4; }
-  .btn[hidden] { display: none; }
+  .hint-text { color: var(--muted); font-size: .85rem; margin: 6px 0 0; }
+
+  #setList { max-height: 55vh; overflow-y: auto; }
+  #setList li.current { background: var(--glow); }
+  #setList li.dragging { position: relative; z-index: 1; background: var(--card); box-shadow: 0 6px 18px rgba(0, 0, 0, .25); transition: none; }
+  .drag { flex: none; align-self: stretch; display: grid; place-items: center; width: 36px; color: var(--muted); font-size: 1.1rem; touch-action: none; cursor: grab; user-select: none; }
+  .set-pick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 14px 4px 14px 0; text-align: left; }
+  .set-emoji { width: 1.4em; text-align: center; }
+  .set-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  li.current .set-name { font-weight: 700; }
+  li.current .set-name::after { content: " ✓"; color: var(--accent); }
+  .set-count { color: var(--muted); font-size: .85rem; }
+  .set-edit { width: 48px; height: 50px; color: var(--muted); font-size: 1.1rem; }
+
+  .emojis { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .emojis button {
+    width: 40px; height: 40px;
+    font-size: 1.3rem;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+  }
+  .emojis button.on { border: 2px solid var(--accent); background: var(--glow); }
+
+  .seg { display: flex; gap: 8px; }
+  .seg button { flex: 1; }
+  .seg button.on { border: 2px solid var(--accent); background: var(--glow); font-weight: 600; }
+
+  #importList { max-height: 30vh; overflow-y: auto; margin: 8px 0 0; }
+  #importList li { padding: 8px 14px; }
+
+  #toast {
+    position: fixed;
+    left: 50%; bottom: calc(24px + env(safe-area-inset-bottom));
+    z-index: 20;
+    transform: translate(-50%, 20px);
+    max-width: 90vw;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: var(--text);
+    color: var(--bg);
+    font-size: .95rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s, transform .2s;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
   #confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
 
@@ -285,7 +332,8 @@
     <h1>Pick One</h1>
     <div class="right">
       <span id="count"></span>
-      <button id="mute" type="button"></button>
+      <button class="icon-btn" id="mute" type="button"></button>
+      <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings">⚙️</button>
     </div>
   </header>
 
@@ -297,7 +345,7 @@
 
   <div class="list-card">
     <button class="set-btn" id="setBtn" type="button" aria-haspopup="dialog">
-      <span class="set-icon" aria-hidden="true">📋</span>
+      <span class="set-emoji" id="setEmoji" aria-hidden="true"></span>
       <span id="setLabel"></span>
       <span class="caret" aria-hidden="true">▾</span>
     </button>
@@ -310,19 +358,26 @@
   </div>
 
   <form id="add">
-    <input id="name" placeholder="Add an option" autocomplete="off" enterkeyhint="done" maxlength="40">
+    <input id="name" placeholder="Add options, e.g. Anna, Erik" autocomplete="off" enterkeyhint="done" maxlength="600">
     <button class="btn" type="submit">Add</button>
   </form>
 
   <div id="lists"></div>
 
-  <p class="tip">Tap an option to leave it out for now.</p>
+  <details class="history" id="history" hidden>
+    <summary>🕘 Recent picks</summary>
+    <ul id="historyList"></ul>
+    <button type="button" class="btn" id="clearHistory">Clear history</button>
+  </details>
+
+  <p class="tip">Tap an option to leave it out for now. Add several at once with commas.</p>
 
   <a class="support" id="support" href="https://paypal.me/neckfors" target="_blank" rel="noopener"><span class="heart">♥</span> Support the app</a>
 
-  <dialog id="listsDialog" class="sheet">
+  <dialog id="listsDialog">
     <h2>Your lists</h2>
     <ul id="setList"></ul>
+    <p class="hint-text">Drag ⠿ to reorder.</p>
     <div class="dialog-row">
       <button type="button" class="btn" id="newList">+ New list</button>
       <span class="spacer"></span>
@@ -333,7 +388,9 @@
   <dialog id="setDialog">
     <form id="setForm">
       <h2 id="setTitle">New list</h2>
-      <input id="setName" placeholder="e.g. Movie night" autocomplete="off" enterkeyhint="done" maxlength="30">
+      <input class="field" id="setName" placeholder="e.g. Movie night" autocomplete="off" enterkeyhint="done" maxlength="30">
+      <div class="emojis" id="emojiPicker" role="radiogroup" aria-label="List icon"></div>
+      <button type="button" class="btn wide" id="setShare" style="margin-top: 16px">⤴ Share this list</button>
       <div class="dialog-row">
         <button type="button" class="btn danger" id="setDelete">Delete</button>
         <span class="spacer"></span>
@@ -343,20 +400,92 @@
     </form>
   </dialog>
 
+  <dialog id="settingsDialog">
+    <h2>Settings</h2>
+
+    <h3>Fun</h3>
+    <label class="switch-row">
+      <input type="checkbox" id="shakeToggle">
+      <span class="switch" aria-hidden="true"></span>
+      <span class="once-text">Shake to pick<small id="shakeHint">Shake your phone instead of tapping Pick!</small></span>
+    </label>
+    <label class="switch-row">
+      <input type="checkbox" id="soundToggle">
+      <span class="switch" aria-hidden="true"></span>
+      <span class="once-text">Sound effects<small>On iPhone, the silent switch also mutes them</small></span>
+    </label>
+
+    <h3>Backup</h3>
+    <div class="seg">
+      <button type="button" class="btn" id="exportBtn">⬇ Save backup</button>
+      <button type="button" class="btn" id="importBtn">⬆ Restore</button>
+    </div>
+    <p class="hint-text">Your lists are only stored on this device. Save a backup file to keep them safe or move them to another phone. Restoring replaces all your lists.</p>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+
+    <div class="dialog-row">
+      <span class="spacer"></span>
+      <button type="button" class="btn primary" id="settingsClose">Done</button>
+    </div>
+  </dialog>
+
+  <dialog id="importDialog">
+    <h2>Add a shared list?</h2>
+    <p id="importText"></p>
+    <ul id="importList"></ul>
+    <div class="dialog-row">
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="importCancel">Cancel</button>
+      <button type="button" class="btn primary" id="importAdd">Add list</button>
+    </div>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite"></div>
   <canvas id="confetti"></canvas>
 
 <script>
 const KEY = 'whostarts.v1';
 const MUTE_KEY = 'whostarts.muted';
+const SHAKE_KEY = 'whostarts.shake';
 
-const STARTER_LISTS = ['Game night', 'Who makes dinner', 'Where to eat'];
+const STARTER_LISTS = [['Game night', '🎲'], ['Who makes dinner', '🍳'], ['Where to eat', '🍕']];
+const EMOJIS = ['📋', '🎲', '🎮', '🃏', '🍕', '🍔', '🍳', '🍽️', '🍻', '☕', '🎬', '📺', '📚', '🎵', '🧹', '🚗', '✈️', '🏃', '🐶', '🎁', '💡', '❤️'];
+const MAX_HISTORY = 20;
+
+function randomInt(n) {
+  const a = new Uint32Array(1);
+  crypto.getRandomValues(a);
+  return a[0] % n;
+}
 
 function newId() {
   return Date.now().toString(36) + randomInt(1e6).toString(36);
 }
 
+function defaultEmoji(name) {
+  const starter = STARTER_LISTS.find(([n]) => n === name);
+  return starter ? starter[1] : '📋';
+}
+
+// Fills in anything older saves, backups or shared links are missing.
+function normalizeSet(s) {
+  const name = String(s.name || 'List').trim().slice(0, 30) || 'List';
+  return {
+    id: s.id || newId(),
+    name,
+    emoji: s.emoji || defaultEmoji(name),
+    once: !!s.once,
+    items: (Array.isArray(s.items) ? s.items : [])
+      .filter(i => i && i.name)
+      .map(i => ({ id: i.id || newId(), name: String(i.name).slice(0, 40), playing: i.playing !== false })),
+    history: (Array.isArray(s.history) ? s.history : [])
+      .filter(h => h && h.name)
+      .slice(0, MAX_HISTORY),
+  };
+}
+
 function starterState(firstItems = []) {
-  const sets = STARTER_LISTS.map((name, i) => ({ id: newId() + i, name, items: i === 0 ? firstItems : [] }));
+  const sets = STARTER_LISTS.map(([name, emoji], i) => normalizeSet({ id: newId() + i, name, emoji, items: i === 0 ? firstItems : [] }));
   return { sets, current: sets[0].id };
 }
 
@@ -365,7 +494,7 @@ function starterState(firstItems = []) {
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
-    if (s && Array.isArray(s.sets) && s.sets.length) return s;
+    if (s && Array.isArray(s.sets) && s.sets.length) return { sets: s.sets.map(normalizeSet), current: s.current };
     if (s && Array.isArray(s.players)) return starterState(s.players);
   } catch (e) {}
   return starterState();
@@ -373,18 +502,18 @@ function load() {
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
 }
-
-function randomInt(n) {
-  const a = new Uint32Array(1);
-  crypto.getRandomValues(a);
-  return a[0] % n;
+function pref(key, fallback) {
+  try { const v = localStorage.getItem(key); return v === null ? fallback : v; } catch (e) { return fallback; }
+}
+function setPref(key, value) {
+  try { localStorage.setItem(key, value); } catch (e) {}
 }
 
 let state = load();
 let rolling = false;
-let winnerId = null;   // crowned row, until the next pick
-let freshId = null;    // row that just got added
-let bounceId = null;   // row that was just toggled
+let winnerId = null;     // crowned row, until the next pick
+let freshIds = new Set();// rows that just got added
+let bounceId = null;     // row that was just toggled
 
 const $ = (id) => document.getElementById(id);
 const result = $('result');
@@ -398,9 +527,22 @@ function byName(a, b) {
   return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
 }
 
+let toastTimer;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// Closes a dialog when its dimmed backdrop is tapped.
+function closeOnBackdrop(d) {
+  d.addEventListener('click', (e) => { if (e.target === d) d.close(); });
+}
+
 // ---------- Sound (synthesized with Web Audio, no files needed) ----------
-let muted = false;
-try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch (e) {}
+let muted = pref(MUTE_KEY, '0') === '1';
 let actx = null;
 
 function audio() {
@@ -431,13 +573,20 @@ function tone(freq, { at = 0, dur = 0.1, type = 'triangle', vol = 0.15, slide = 
   o.stop(t + dur + 0.05);
 }
 
+let lastTick = 0;
 const sfx = {
   add()    { tone(520, { dur: 0.09, slide: 880 }); tone(1046, { at: 0.08, dur: 0.1, vol: 0.1 }); },
+  addMany(n) { for (let i = 0; i < Math.min(n, 6); i++) tone(520 + i * 90, { at: i * 0.05, dur: 0.08, vol: 0.1 }); },
   in()     { tone(440, { dur: 0.1, slide: 700 }); },
   out()    { tone(440, { dur: 0.13, slide: 240 }); },
   del()    { tone(380, { dur: 0.3, slide: 70, type: 'sawtooth', vol: 0.07 }); },
   start()  { tone(200, { dur: 0.25, slide: 600, type: 'sawtooth', vol: 0.05 }); },
-  tick(p)  { tone(900 + randomInt(300) - p * 400, { dur: 0.035, type: 'square', vol: 0.04 }); },
+  tick(p) {
+    const now = performance.now();
+    if (now - lastTick < 28) return;
+    lastTick = now;
+    tone(900 + randomInt(300) - p * 400, { dur: 0.035, type: 'square', vol: 0.04 });
+  },
   win() {
     [523, 659, 784].forEach((f, i) => tone(f, { at: i * 0.1, dur: 0.14, vol: 0.14 }));
     [1046, 1318, 1568].forEach(f => tone(f, { at: 0.32, dur: 0.8, vol: 0.07 }));
@@ -445,18 +594,22 @@ const sfx = {
   },
   toggleSound() { tone(660, { dur: 0.08 }); tone(990, { at: 0.07, dur: 0.1 }); },
   swap()   { tone(500, { dur: 0.12, slide: 1000, type: 'sine', vol: 0.08 }); tone(1000, { at: 0.06, dur: 0.06, vol: 0.06 }); },
+  click()  { tone(1400, { dur: 0.02, type: 'square', vol: 0.03 }); },
 };
 
 function renderMute() {
   $('mute').textContent = muted ? '🔇' : '🔊';
   $('mute').setAttribute('aria-label', muted ? 'Turn sound on' : 'Turn sound off');
+  $('soundToggle').checked = !muted;
 }
-$('mute').onclick = () => {
-  muted = !muted;
-  try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch (e) {}
+function setMuted(value) {
+  muted = value;
+  setPref(MUTE_KEY, muted ? '1' : '0');
   renderMute();
   sfx.toggleSound();
-};
+}
+$('mute').onclick = () => setMuted(!muted);
+$('soundToggle').onchange = (e) => setMuted(!e.target.checked);
 
 // ---------- Confetti ----------
 const canvas = $('confetti');
@@ -516,10 +669,12 @@ function drawConfetti() {
 // so any number of lists stays one tap away.
 const sheet = $('listsDialog');
 const dialog = $('setDialog');
-let editId = null;     // list being renamed in the edit dialog, or null for a new one
+let editId = null;       // list being edited in the list dialog, or null for a new one
+let chosenEmoji = '📋';
 
 function renderSets() {
   $('setLabel').textContent = cur().name;
+  $('setEmoji').textContent = cur().emoji;
   if (sheet.open) renderSheet();
 }
 
@@ -528,14 +683,21 @@ function renderSheet() {
   ul.innerHTML = '';
   for (const s of state.sets) {
     const li = document.createElement('li');
+    li.dataset.id = s.id;
     const on = s.id === cur().id;
     if (on) li.className = 'current';
+
+    const handle = document.createElement('span');
+    handle.className = 'drag';
+    handle.textContent = '⠿';
+    handle.setAttribute('aria-hidden', 'true');
+    makeDraggable(handle, li);
 
     const pick = document.createElement('button');
     pick.type = 'button';
     pick.className = 'set-pick';
-    pick.innerHTML = '<span class="check"></span><span class="set-name"></span><span class="set-count"></span>';
-    pick.querySelector('.check').textContent = on ? '✓' : '';
+    pick.innerHTML = '<span class="set-emoji"></span><span class="set-name"></span><span class="set-count"></span>';
+    pick.querySelector('.set-emoji').textContent = s.emoji;
     pick.querySelector('.set-name').textContent = s.name;
     pick.querySelector('.set-count').textContent = s.items.length;
     pick.onclick = () => {
@@ -547,12 +709,56 @@ function renderSheet() {
     edit.type = 'button';
     edit.className = 'set-edit';
     edit.textContent = '✎';
-    edit.setAttribute('aria-label', `Rename or delete ${s.name}`);
+    edit.setAttribute('aria-label', `Edit, share or delete ${s.name}`);
     edit.onclick = () => openSetDialog(s.id);
 
-    li.append(pick, edit);
+    li.append(handle, pick, edit);
     ul.append(li);
   }
+}
+
+// Drag a row by its ⠿ handle; it swaps places with a neighbour once it has
+// moved past half of that neighbour's height.
+function makeDraggable(handle, li) {
+  let startY = 0;
+  let dragging = false;
+  handle.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    dragging = true;
+    startY = e.clientY;
+    handle.setPointerCapture(e.pointerId);
+    li.classList.add('dragging');
+  });
+  handle.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    let dy = e.clientY - startY;
+    const next = li.nextElementSibling;
+    const prev = li.previousElementSibling;
+    if (next && dy > next.offsetHeight / 2) {
+      next.after(li);
+      startY += next.offsetHeight;
+      dy -= next.offsetHeight;
+      sfx.click();
+    } else if (prev && dy < -prev.offsetHeight / 2) {
+      prev.before(li);
+      startY -= prev.offsetHeight;
+      dy += prev.offsetHeight;
+      sfx.click();
+    }
+    li.style.transform = `translateY(${dy}px)`;
+  });
+  const end = () => {
+    if (!dragging) return;
+    dragging = false;
+    li.style.transform = '';
+    li.classList.remove('dragging');
+    const order = [...$('setList').children].map(row => row.dataset.id);
+    state.sets.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+    save();
+    renderSets();
+  };
+  handle.addEventListener('pointerup', end);
+  handle.addEventListener('pointercancel', end);
 }
 
 $('setBtn').onclick = () => {
@@ -564,8 +770,8 @@ $('setBtn').onclick = () => {
 };
 $('sheetClose').onclick = () => sheet.close();
 $('newList').onclick = () => openSetDialog(null);
-// tapping the dimmed backdrop closes the panel
-sheet.onclick = (e) => { if (e.target === sheet) sheet.close(); };
+closeOnBackdrop(sheet);
+closeOnBackdrop(dialog);
 
 function resetCard() {
   winnerId = null;
@@ -583,6 +789,21 @@ function switchTo(id) {
   save(); render();
 }
 
+function renderEmojiPicker() {
+  const box = $('emojiPicker');
+  box.innerHTML = '';
+  for (const e of EMOJIS) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = e;
+    b.className = e === chosenEmoji ? 'on' : '';
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', e === chosenEmoji);
+    b.onclick = () => { chosenEmoji = e; sfx.click(); renderEmojiPicker(); };
+    box.append(b);
+  }
+}
+
 function openSetDialog(id) {
   editId = id;
   const set = state.sets.find(s => s.id === id);
@@ -590,9 +811,12 @@ function openSetDialog(id) {
   $('setName').value = set ? set.name : '';
   $('setSave').textContent = set ? 'Save' : 'Create';
   $('setDelete').hidden = !set;
+  $('setShare').hidden = !set;
   $('setDelete').disabled = state.sets.length < 2;
+  chosenEmoji = set ? set.emoji : '📋';
+  renderEmojiPicker();
   dialog.showModal();
-  $('setName').focus();
+  if (!set) $('setName').focus();
 }
 
 $('setForm').onsubmit = (e) => {
@@ -602,9 +826,10 @@ $('setForm').onsubmit = (e) => {
   const set = state.sets.find(s => s.id === editId);
   if (set) {
     set.name = name;
+    set.emoji = chosenEmoji;
     sfx.in();
   } else {
-    const fresh = { id: newId(), name, items: [] };
+    const fresh = normalizeSet({ name, emoji: chosenEmoji });
     state.sets.push(fresh);
     state.current = fresh.id;
     resetCard();
@@ -630,6 +855,228 @@ $('setDelete').onclick = () => {
   dialog.close();
   save(); render();
 };
+
+// ---------- Sharing a list by link ----------
+// The list travels inside the link itself (after #list=), so nothing is uploaded.
+function encodeShare(obj) {
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  let bin = '';
+  bytes.forEach(b => { bin += String.fromCharCode(b); });
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function decodeShare(code) {
+  const bin = atob(code.replace(/-/g, '+').replace(/_/g, '/'));
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+$('setShare').onclick = async () => {
+  const set = state.sets.find(s => s.id === editId);
+  if (!set) return;
+  const code = encodeShare({ n: set.name, e: set.emoji, o: set.once ? 1 : 0, i: set.items.map(p => p.name) });
+  const url = `${location.origin}${location.pathname}#list=${code}`;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: `Pick One: ${set.name}`, text: `${set.emoji} ${set.name} for Pick One`, url });
+      return;
+    }
+    await navigator.clipboard.writeText(url);
+    sfx.add();
+    toast('Link copied. Send it to anyone!');
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+    prompt('Copy this link to share the list:', url);
+  }
+};
+
+let pendingImport = null;
+const importDialog = $('importDialog');
+closeOnBackdrop(importDialog);
+
+function checkSharedLink() {
+  const m = location.hash.match(/^#list=([A-Za-z0-9_-]+)$/);
+  if (!m) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  try {
+    const d = decodeShare(m[1]);
+    if (!d || typeof d.n !== 'string' || !Array.isArray(d.i)) throw new Error('bad link');
+    pendingImport = normalizeSet({ name: d.n, emoji: d.e, once: !!d.o, items: d.i.map(name => ({ name })) });
+  } catch (e) {
+    toast('That share link looks broken.');
+    return;
+  }
+  $('importText').textContent = `${pendingImport.emoji} ${pendingImport.name}, with ${pendingImport.items.length} option${pendingImport.items.length === 1 ? '' : 's'}:`;
+  const ul = $('importList');
+  ul.innerHTML = '';
+  for (const p of pendingImport.items) {
+    const li = document.createElement('li');
+    li.textContent = p.name;
+    ul.append(li);
+  }
+  ul.hidden = !pendingImport.items.length;
+  importDialog.showModal();
+}
+
+function uniqueName(name) {
+  const taken = new Set(state.sets.map(s => s.name.toLowerCase()));
+  if (!taken.has(name.toLowerCase())) return name;
+  for (let i = 2; ; i++) {
+    const candidate = `${name} (${i})`;
+    if (!taken.has(candidate.toLowerCase())) return candidate;
+  }
+}
+
+$('importAdd').onclick = () => {
+  if (!pendingImport) return;
+  pendingImport.name = uniqueName(pendingImport.name);
+  state.sets.push(pendingImport);
+  state.current = pendingImport.id;
+  pendingImport = null;
+  importDialog.close();
+  resetCard();
+  sfx.add();
+  save(); render();
+  toast('List added!');
+};
+$('importCancel').onclick = () => { pendingImport = null; importDialog.close(); };
+addEventListener('hashchange', checkSharedLink);
+
+// ---------- Settings, backup and restore ----------
+const settings = $('settingsDialog');
+closeOnBackdrop(settings);
+
+function renderSettings() {
+  $('shakeToggle').checked = shakeOn;
+  renderMute();
+}
+
+$('settingsBtn').onclick = () => {
+  if (rolling) return;
+  renderSettings();
+  settings.showModal();
+};
+$('settingsClose').onclick = () => settings.close();
+
+$('exportBtn').onclick = () => {
+  const data = { app: 'pick-one', version: 1, exported: new Date().toISOString(), current: state.current, sets: state.sets };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `pick-one-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  sfx.add();
+  toast('Backup saved');
+};
+
+$('importBtn').onclick = () => $('importFile').click();
+$('importFile').onchange = async (e) => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (!data || !Array.isArray(data.sets) || !data.sets.length) throw new Error('not a backup');
+    const sets = data.sets.map(normalizeSet);
+    const lists = `${sets.length} list${sets.length === 1 ? '' : 's'}`;
+    if (!confirm(`Replace all your lists with the ${lists} from this backup?`)) return;
+    state = { sets, current: sets.some(s => s.id === data.current) ? data.current : sets[0].id };
+    resetCard();
+    save(); render();
+    sfx.addMany(4);
+    settings.close();
+    toast(`Restored ${lists}`);
+  } catch (err) {
+    sfx.out();
+    toast('That file is not a Pick One backup.');
+  }
+};
+
+// ---------- Shake to pick ----------
+let shakeOn = pref(SHAKE_KEY, '0') === '1';
+let listening = false;
+let lastMotion = null;
+let shakeHits = [];
+let lastShakePick = 0;
+const needsMotionPermission = typeof DeviceMotionEvent !== 'undefined'
+  && typeof DeviceMotionEvent.requestPermission === 'function';
+
+if (typeof DeviceMotionEvent === 'undefined') {
+  $('shakeToggle').disabled = true;
+  $('shakeHint').textContent = 'Not available on this device';
+}
+
+function onMotion(e) {
+  const a = e.accelerationIncludingGravity;
+  if (!a || a.x === null) return;
+  if (lastMotion) {
+    const jolt = Math.abs(a.x - lastMotion.x) + Math.abs(a.y - lastMotion.y) + Math.abs(a.z - lastMotion.z);
+    const now = Date.now();
+    if (jolt > 24) {
+      shakeHits = shakeHits.filter(t => now - t < 700);
+      shakeHits.push(now);
+      // two hard jolts close together count as a shake
+      if (shakeHits.length >= 2 && now - lastShakePick > 1500) {
+        shakeHits = [];
+        lastShakePick = now;
+        shakePick();
+      }
+    }
+  }
+  lastMotion = { x: a.x, y: a.y, z: a.z };
+}
+
+function shakePick() {
+  if (rolling || document.querySelector('dialog[open]')) return;
+  const pick = $('pick');
+  if (pick.disabled || pick.dataset.mode === 'reset') return;
+  pick.click();
+}
+
+function listenForShakes() {
+  if (listening) return;
+  listening = true;
+  addEventListener('devicemotion', onMotion);
+}
+
+// iPhone only lets a page read motion after the person taps something, so the
+// permission request has to come from a tap.
+async function enableShake() {
+  if (!needsMotionPermission) { listenForShakes(); return true; }
+  try {
+    const answer = await DeviceMotionEvent.requestPermission();
+    if (answer === 'granted') { listenForShakes(); return true; }
+  } catch (e) {}
+  return false;
+}
+
+$('shakeToggle').onchange = async (e) => {
+  if (e.target.checked) {
+    const ok = await enableShake();
+    if (!ok) {
+      e.target.checked = false;
+      toast('Motion access was not allowed');
+      return;
+    }
+    shakeOn = true;
+    sfx.in();
+    toast('Shake your phone to pick!');
+  } else {
+    shakeOn = false;
+    sfx.out();
+  }
+  setPref(SHAKE_KEY, shakeOn ? '1' : '0');
+};
+
+if (shakeOn) {
+  if (needsMotionPermission) {
+    document.addEventListener('click', () => { if (shakeOn) enableShake(); }, { once: true });
+  } else {
+    listenForShakes();
+  }
+}
 
 // ---------- Options in the current list ----------
 function render() {
@@ -657,6 +1104,7 @@ function render() {
     result.textContent = items.length ? 'Tap Pick! to choose one' : 'Add some options, then tap Pick!';
   }
   renderSets();
+  renderHistory();
 
   const lists = $('lists');
   lists.innerHTML = '';
@@ -666,7 +1114,12 @@ function render() {
     return;
   }
   lists.append(list([...items].sort(byName)));
-  freshId = bounceId = null;
+  freshIds = new Set();
+  bounceId = null;
+}
+
+function changed() {
+  save(); render();
 }
 
 function list(players) {
@@ -676,7 +1129,7 @@ function list(players) {
     li.dataset.id = p.id;
     li.className = (p.playing ? 'in' : 'out')
       + (p.id === winnerId ? ' crowned' : '')
-      + (p.id === freshId ? ' fresh' : '')
+      + (freshIds.has(p.id) ? ' fresh' : '')
       + (p.id === bounceId ? ' bounce' : '');
 
     const toggle = document.createElement('button');
@@ -689,7 +1142,7 @@ function list(players) {
       p.playing = !p.playing;
       p.playing ? sfx.in() : sfx.out();
       bounceId = p.id;
-      save(); render();
+      changed();
     };
 
     const del = document.createElement('button');
@@ -704,7 +1157,7 @@ function list(players) {
       setTimeout(() => {
         cur().items = cur().items.filter(x => x.id !== p.id);
         if (winnerId === p.id) winnerId = null;
-        save(); render();
+        changed();
       }, reducedMotion ? 0 : 250);
     };
 
@@ -714,26 +1167,77 @@ function list(players) {
   return ul;
 }
 
+// Several options can be added at once, separated by commas, semicolons or new lines.
 $('add').onsubmit = (e) => {
   e.preventDefault();
   const input = $('name');
-  const name = input.value.trim().replace(/\s+/g, ' ');
-  if (!name) return;
+  const names = input.value.split(/[,;\n]+/)
+    .map(n => n.trim().replace(/\s+/g, ' ').slice(0, 40))
+    .filter(Boolean);
+  if (!names.length) return;
   const items = cur().items;
-  const existing = items.find(p => p.name.toLowerCase() === name.toLowerCase());
-  if (existing) {
-    existing.playing = true;
-    bounceId = existing.id;
-    sfx.in();
-  } else {
-    const id = newId();
-    items.push({ id, name, playing: true });
-    freshId = id;
-    sfx.add();
+  let added = 0;
+  for (const name of names) {
+    const existing = items.find(p => p.name.toLowerCase() === name.toLowerCase());
+    if (existing) {
+      existing.playing = true;
+      bounceId = existing.id;
+    } else {
+      const id = newId();
+      items.push({ id, name, playing: true });
+      freshIds.add(id);
+      added++;
+    }
   }
+  if (added > 1) sfx.addMany(added);
+  else if (added === 1) sfx.add();
+  else sfx.in();
+  if (added > 1) toast(`Added ${added} options`);
   input.value = '';
+  changed();
+};
+
+// A pasted list with one option per line becomes "a, b, c" in the one-line field.
+$('name').addEventListener('paste', (e) => {
+  const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+  if (!/\n/.test(text)) return;
+  e.preventDefault();
+  const input = e.target;
+  const joined = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean).join(', ');
+  input.setRangeText(joined, input.selectionStart, input.selectionEnd, 'end');
+});
+
+// ---------- Recent picks ----------
+const rtf = typeof Intl !== 'undefined' && Intl.RelativeTimeFormat ? new Intl.RelativeTimeFormat('en', { numeric: 'auto' }) : null;
+function ago(ts) {
+  const s = (Date.now() - ts) / 1000;
+  if (s < 45 || !rtf) return 'just now';
+  if (s < 3600) return rtf.format(-Math.round(s / 60), 'minute');
+  if (s < 86400) return rtf.format(-Math.round(s / 3600), 'hour');
+  return rtf.format(-Math.round(s / 86400), 'day');
+}
+
+function renderHistory() {
+  const h = cur().history;
+  $('history').hidden = !h.length;
+  const ul = $('historyList');
+  ul.innerHTML = '';
+  for (const entry of h.slice(0, 10)) {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="h-name"></span><span class="h-time"></span>';
+    li.querySelector('.h-name').textContent = entry.name;
+    li.querySelector('.h-time').textContent = ago(entry.at);
+    ul.append(li);
+  }
+}
+
+$('clearHistory').onclick = () => {
+  if (!confirm(`Clear the recent picks for "${cur().name}"?`)) return;
+  cur().history = [];
+  sfx.del();
   save(); render();
 };
+$('history').addEventListener('toggle', () => { if ($('history').open) renderHistory(); });
 
 // ---------- Picking ----------
 function showName(name) {
@@ -744,13 +1248,11 @@ function showName(name) {
 }
 
 function highlightRow(id) {
-  document.querySelectorAll('li.hot').forEach(li => li.classList.remove('hot'));
-  const li = document.querySelector(`li[data-id="${id}"]`);
+  document.querySelectorAll('#lists li.hot').forEach(li => li.classList.remove('hot'));
+  const li = document.querySelector(`#lists li[data-id="${id}"]`);
   if (li) li.classList.add('hot');
 }
 
-// Picks one option uniformly at random from those in the draw, then plays the
-// slot-machine spin that lands on it.
 $('onceToggle').onchange = (e) => {
   if (rolling) { e.target.checked = !!cur().once; return; }
   cur().once = e.target.checked;
@@ -762,9 +1264,11 @@ function startOver() {
   cur().items.forEach(p => p.playing = true);
   resetCard();
   sfx.swap();
-  save(); render();
+  changed();
 }
 
+// Picks one option uniformly at random from those in the draw, then plays the
+// slot-machine spin that lands on it.
 $('pick').onclick = () => {
   if ($('pick').dataset.mode === 'reset') { startOver(); return; }
   const playing = cur().items.filter(p => p.playing);
@@ -778,7 +1282,10 @@ $('pick').onclick = () => {
   $('crown').className = '';
   $('pick').textContent = 'Picking…';
   sfx.start();
+  spinSlots(playing, winner);
+};
 
+function spinSlots(playing, winner) {
   const total = playing.length > 1 && !reducedMotion ? 26 : 1;
   let tick = 0;
   let current = null;
@@ -800,15 +1307,15 @@ $('pick').onclick = () => {
     }
     land(winner);
   })();
-};
+}
 
 function land(winner) {
   rolling = false;
   winnerId = winner.id;
-  if (cur().once) {
-    winner.playing = false;
-    save();
-  }
+  cur().history.unshift({ name: winner.name, at: Date.now() });
+  cur().history.length = Math.min(cur().history.length, MAX_HISTORY);
+  if (cur().once) winner.playing = false;
+  save();
   result.className = '';
   void result.offsetWidth;
   result.className = 'won' + (winner.name.length > 14 ? ' long' : '');
@@ -827,6 +1334,7 @@ $('support').onclick = () => sfx.add();
 
 renderMute();
 render();
+checkSharedLink();
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});
