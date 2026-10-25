@@ -883,8 +883,28 @@ function confirmDelete(del, remove) {
     sfx.click();
   };
 }
+// Cancel, or a tap anywhere else, only puts ✕ back: the click that follows is
+// swallowed, so it doesn't also tap the row (or whatever slid under the finger).
+// The click comes right after the finger lifts (or not at all, when the tapped
+// Cancel is already gone), so only that moment counts.
+let swallowTap = false;
+let swallowClickUntil = 0;
 document.addEventListener('pointerdown', (e) => {
-  if (armedDel && e.target !== armedDel.btn) disarmDelete();
+  if (!armedDel || e.target === armedDel.btn) return;
+  disarmDelete();
+  swallowTap = true;
+}, true);
+document.addEventListener('pointerup', () => {
+  if (!swallowTap) return;
+  swallowTap = false;
+  swallowClickUntil = performance.now() + 100;
+}, true);
+document.addEventListener('pointercancel', () => { swallowTap = false; }, true);
+document.addEventListener('click', (e) => {
+  if (performance.now() > swallowClickUntil) return;
+  swallowClickUntil = 0;
+  e.stopPropagation();
+  e.preventDefault();
 }, true);
 
 // Closes a dialog when its dimmed backdrop is tapped.
