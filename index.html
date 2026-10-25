@@ -176,7 +176,7 @@
   #rangeList .label small { margin-left: 8px; color: var(--muted); font-size: .85rem; }
   #rangeList .label b { font-weight: 700; }
   #rangeList li:not(.current-range) .dot { border-color: var(--muted); }
-  /* ✎ on each row; tapping it opens that row for editing with a ✓ to save */
+  /* ✎ on each row; tapping it opens that row for editing with a Save button */
   .row-edit { flex: none; width: 40px; height: 52px; color: var(--muted); font-size: 1.05rem; }
   li.editing { padding: 6px 0 6px 12px; gap: 6px; background: var(--glow); }
   .row-field {
@@ -194,7 +194,13 @@
   .row-field.num::-webkit-outer-spin-button,
   .row-field.num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .range-dash { flex: none; color: var(--muted); }
-  .row-ok { flex: none; width: 48px; height: 44px; color: var(--accent); font-size: 1.3rem; font-weight: 700; }
+  /* Save on a row being edited: a solid button, the same shape as the red Delete */
+  .row-ok {
+    flex: none; height: 40px; padding: 0 14px; margin: 0 6px; align-self: center;
+    background: var(--accent); color: var(--accent-text); border-radius: 10px;
+    font-size: .95rem; font-weight: 700;
+    box-shadow: 0 2px 8px var(--glow);
+  }
   @keyframes flip { from { transform: translateY(-60%) scaleY(.6); opacity: .2; filter: blur(2px); } to { transform: none; opacity: 1; filter: none; } }
   @keyframes pop { 0% { transform: scale(.3) rotate(-8deg); } 60% { transform: scale(1.25) rotate(3deg); } 100% { transform: none; } }
   @keyframes drop { from { opacity: 0; transform: translateY(-40px) rotate(-25deg) scale(.4); } to { opacity: 1; transform: none; } }
@@ -1303,8 +1309,8 @@ function selectRange(r) {
 }
 
 // ---------- Editing a row ----------
-// Each row has a ✎. Tapping it opens just that row: its fields and a ✓.
-// Enter or ✓ saves, Esc cancels, and tapping somewhere else saves too (or
+// Each row has a ✎. Tapping it opens just that row: its fields and a Save button.
+// Enter or Save saves, Esc cancels, and tapping somewhere else saves too (or
 // drops changes that can't be saved, with a message).
 let editingOption = null;   // id of the option being renamed
 let editingRange = null;    // the range being changed
@@ -1340,8 +1346,7 @@ function makeEditRow(li, nodes, fields, saveRow, cancel) {
   li.classList.add('editing');
   const ok = document.createElement('button');
   ok.className = 'row-ok';
-  ok.textContent = '✓';
-  ok.setAttribute('aria-label', 'Save');
+  ok.textContent = 'Save';
   ok.addEventListener('pointerdown', (e) => e.preventDefault());
   ok.onclick = () => saveRow(true);
   for (const f of fields) {
@@ -1369,7 +1374,7 @@ function renderRanges() {
     const li = document.createElement('li');
     li.className = (r === selected ? 'in current-range' : '') + (r === freshRange ? ' fresh' : '');
 
-    // The range being changed: From, To and name fields and ✓.
+    // The range being changed: From, To and name fields and Save.
     if (r === editingRange) {
       const numberField = (value, label) => {
         const input = document.createElement('input');
@@ -2093,7 +2098,7 @@ function list(players) {
       + (freshIds.has(p.id) ? ' fresh' : '')
       + (p.id === bounceId ? ' bounce' : '');
 
-    // The option being renamed: a field and ✓ instead of the usual row.
+    // The option being renamed: a field and Save instead of the usual row.
     if (p.id === editingOption) {
       const field = document.createElement('input');
       field.className = 'row-field';
