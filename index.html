@@ -155,7 +155,23 @@
   .num-dash { color: var(--muted); }
   #rangeList li.current-range { background: var(--glow); }
   #rangeList li:not(.current-range) .dot { border-color: var(--muted); }
-  #rangeList .label small { margin-left: 8px; color: var(--muted); font-size: .85rem; }
+  #rangeList .toggle { flex: 0 0 auto; padding-right: 10px; }
+  .range-num { font-weight: 600; white-space: nowrap; }
+  .range-name {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 4px;
+    border: 0;
+    border-bottom: 1.5px dashed var(--muted);
+    border-radius: 0;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+  }
+  .range-name::placeholder { color: var(--muted); font-weight: 400; font-style: italic; }
+  .range-name:hover { border-bottom-color: var(--text); }
+  .range-name:focus { outline: none; border-bottom: 1.5px solid var(--accent); }
   @keyframes flip { from { transform: translateY(-60%) scaleY(.6); opacity: .2; filter: blur(2px); } to { transform: none; opacity: 1; filter: none; } }
   @keyframes pop { 0% { transform: scale(.3) rotate(-8deg); } 60% { transform: scale(1.25) rotate(3deg); } 100% { transform: none; } }
   @keyframes drop { from { opacity: 0; transform: translateY(-40px) rotate(-25deg) scale(.4); } to { opacity: 1; transform: none; } }
@@ -459,7 +475,7 @@
 
   <div id="rangeList" class="number-only"></div>
 
-  <p class="tip number-only">Tap a range to roll it. ✎ gives it a name, ✕ removes it.</p>
+  <p class="tip number-only">Tap a range to roll it. Tap its name to name or rename it. ✕ removes it.</p>
 
   <div class="list-card">
     <button class="set-btn" id="setBtn" type="button" aria-haspopup="dialog">
@@ -559,19 +575,6 @@
       <span class="spacer"></span>
       <button type="button" class="btn primary" id="settingsClose">Done</button>
     </div>
-  </dialog>
-
-  <dialog id="rangeDialog">
-    <form id="rangeForm">
-      <h2 id="rangeTitle">Save range</h2>
-      <input class="field" id="rangeName" placeholder="Name (optional), e.g. d6" autocomplete="off" enterkeyhint="done" maxlength="20">
-      <p class="hint-text">Leave the name empty to show just the numbers.</p>
-      <div class="dialog-row">
-        <span class="spacer"></span>
-        <button type="button" class="btn" id="rangeCancel">Cancel</button>
-        <button type="submit" class="btn primary" id="rangeSave">Save</button>
-      </div>
-    </form>
   </dialog>
 
   <dialog id="importDialog">
@@ -1120,17 +1123,9 @@ function renderRanges() {
     const choose = document.createElement('button');
     choose.className = 'toggle';
     choose.setAttribute('aria-pressed', r === selected);
-    choose.innerHTML = '<span class="dot"></span><span class="label"></span>';
-    const label = choose.querySelector('.label');
-    if (r.name) {
-      const b = document.createElement('b');
-      b.textContent = r.name;
-      const small = document.createElement('small');
-      small.textContent = rangeText(r);
-      label.append(b, small);
-    } else {
-      label.textContent = rangeText(r);
-    }
+    choose.innerHTML = '<span class="dot"></span><span class="range-num"></span>';
+    choose.querySelector('.range-num').textContent = rangeText(r);
+    choose.setAttribute('aria-label', `Roll ${r.name || rangeText(r)}`);
     choose.onclick = () => {
       if (rolling || r === selected) return;
       selectRange(r);
@@ -1139,11 +1134,31 @@ function renderRanges() {
       render();
     };
 
-    const edit = document.createElement('button');
-    edit.className = 'set-edit';
-    edit.textContent = '✎';
-    edit.setAttribute('aria-label', `Name ${rangeText(r)}`);
-    edit.onclick = () => openRangeDialog(r);
+    // The name is edited right in the row: tap, type, done. It saves when the
+    // field loses focus or Enter is pressed.
+    const name = document.createElement('input');
+    name.className = 'range-name';
+    name.value = r.name;
+    name.placeholder = '✎ Add a name';
+    name.maxLength = 20;
+    name.enterKeyHint = 'done';
+    name.autocomplete = 'off';
+    name.setAttribute('aria-label', `Name for ${rangeText(r)}`);
+    name.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); name.blur(); }
+      if (e.key === 'Escape') { name.value = r.name; name.blur(); }
+    });
+    name.addEventListener('change', () => {
+      const next = name.value.trim().replace(/\s+/g, ' ').slice(0, 20);
+      name.value = next;
+      if (next === r.name) return;
+      r.name = next;
+      saveRanges();
+      sfx.in();
+      // no full redraw, so tapping straight into another name field keeps focus
+      choose.setAttribute('aria-label', `Roll ${r.name || rangeText(r)}`);
+      if (result.classList.contains('hint')) result.textContent = hintText();
+    });
 
     const del = document.createElement('button');
     del.className = 'del';
@@ -1162,7 +1177,7 @@ function renderRanges() {
       }, reducedMotion ? 0 : 250);
     };
 
-    li.append(choose, edit, del);
+    li.append(choose, name, del);
     ul.append(li);
   }
   box.append(ul);
@@ -1205,31 +1220,6 @@ $('addRange').onsubmit = (e) => {
 $('numFrom').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); $('numTo').focus(); }
 });
-
-const rangeDialog = $('rangeDialog');
-closeOnBackdrop(rangeDialog);
-let renaming = null;
-
-function openRangeDialog(r) {
-  if (rolling) return;
-  renaming = r;
-  $('rangeTitle').textContent = `Name ${rangeText(r)}`;
-  $('rangeName').value = r.name;
-  rangeDialog.showModal();
-  $('rangeName').focus();
-}
-
-$('rangeForm').onsubmit = (e) => {
-  e.preventDefault();
-  if (renaming) {
-    renaming.name = $('rangeName').value.trim().replace(/\s+/g, ' ').slice(0, 20);
-    saveRanges();
-    sfx.in();
-  }
-  rangeDialog.close();
-  render();
-};
-$('rangeCancel').onclick = () => rangeDialog.close();
 
 function switchTo(id) {
   state.current = id;

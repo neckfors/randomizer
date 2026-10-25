@@ -44,7 +44,7 @@ Switch to **🎲 Number** at the top to roll a random number instead of picking 
 1. **Add a range** with the From – To fields and **Add**. Any whole numbers work, even 1 to 1,000,000. You start with 1–6, 1–10 and 1–100.
 2. **Tap a row** to choose the range to roll. It gets a ✓.
 3. **Tap Roll!** (or shake your phone). A die tumbles while numbers race past, and it lands on a number from the range, both ends included.
-4. **✎** gives a range a name, like *d6*, *d20* or *Raffle*. Ranges have no name until you give them one. **✕** removes a range.
+4. **Name a range right in its row:** tap the name field next to the numbers (it says *✎ Add a name* until you give it one), type a name like *d6*, *d20* or *Raffle*, and press Enter or tap elsewhere. Tap it again any time to rename it, or clear it to remove the name. **✕** removes a range.
 
 Your ranges are remembered and included in backups. `https://neckfors.github.io/pick-one/#number` opens straight in Number mode.
 
@@ -97,7 +97,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v35` → `whostarts-v36`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v36` → `whostarts-v37`), otherwise installed copies keep showing the old version.
 
 ## Support
 
