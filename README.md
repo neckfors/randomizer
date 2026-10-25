@@ -32,6 +32,8 @@ Anything where you need a fair, random pick:
 
 Every pick is completely random. Each option in the draw has the same chance every time, even if it was picked last time.
 
+**Pick each only once:** switch this on for a list when you want to go round instead, like taking turns on chores. Whatever gets picked sits out automatically, and when everything has been picked, the button turns into **↺ Start over** to put everything back. The setting is saved per list, so *Game night* can allow repeats while *Who makes dinner* takes turns.
+
 Use 🔊 in the top corner to turn the sounds on or off.
 
 ## Install on your phone
@@ -59,7 +61,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v10` → `whostarts-v11`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v11` → `whostarts-v12`), otherwise installed copies keep showing the old version.
 
 ## Support
 
