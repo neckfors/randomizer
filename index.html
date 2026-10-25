@@ -114,14 +114,20 @@
   .die-cube { position: relative; transform: rotateX(-35.264deg) rotateZ(45deg); } /* corner up, corner down */
   .die-side {
     position: absolute; inset: 0;
-    display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 5px;
     background: linear-gradient(135deg, #ffffff, #e4e6e3);
     border: 1px solid rgba(0, 0, 0, .14); border-radius: 7px;
   }
   /* each pair of opposite sides has its own shade, so the edges read as 3D */
   .die-side.shade-2 { background: linear-gradient(135deg, #f1f2f0, #d6d9d5); }
   .die-side.shade-3 { background: linear-gradient(135deg, #e3e5e2, #c4c8c3); }
-  .die-side i { width: 7px; height: 7px; margin: auto; border-radius: 50%; background: #1d2321; }
+  /* every side has six pips that slide between layouts as the number on it changes;
+     pips a side doesn't need shrink into its middle */
+  .die-side i {
+    position: absolute; left: var(--x); top: var(--y);
+    width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: #1d2321;
+    transition: left var(--pip-time, .2s) ease, top var(--pip-time, .2s) ease, transform var(--pip-time, .2s) ease;
+  }
+  .die-side i.off { transform: scale(0); }
   @keyframes spin-upright { to { transform: rotateY(360deg); } }
 
   .mode-tabs {
@@ -2403,28 +2409,50 @@ function startOverRange() {
 }
 
 // ---------- The 3D die ----------
-// Six sides with pips at [row, column] in a 3×3 grid; opposite sides add up
-// to 7 like a real die.
-const DIE_PIPS = {
-  1: [[2, 2]],
-  2: [[1, 1], [3, 3]],
-  3: [[1, 1], [2, 2], [3, 3]],
-  4: [[1, 1], [1, 3], [3, 1], [3, 3]],
-  5: [[1, 1], [1, 3], [2, 2], [3, 1], [3, 3]],
-  6: [[1, 1], [1, 3], [2, 1], [2, 3], [3, 1], [3, 3]],
+// Each side has six pips. A number lays out the first pips on spots of a 3×3
+// grid (one more pip keeps the spots of the one before, so they slide only a
+// little); the rest shrink into the middle. Opposite sides add up to 7.
+const PIP_SPOTS = { tl: [24, 24], tr: [76, 24], ml: [24, 50], c: [50, 50], mr: [76, 50], bl: [24, 76], br: [76, 76] };
+const PIP_LAYOUTS = {
+  1: ['c'],
+  2: ['tl', 'br'],
+  3: ['tl', 'br', 'c'],
+  4: ['tl', 'br', 'tr', 'bl'],
+  5: ['tl', 'br', 'tr', 'bl', 'c'],
+  6: ['tl', 'br', 'tr', 'bl', 'ml', 'mr'],
 };
-[[1, 'rotateY(0deg)'], [6, 'rotateY(180deg)'], [2, 'rotateY(90deg)'],
- [5, 'rotateY(-90deg)'], [3, 'rotateX(90deg)'], [4, 'rotateX(-90deg)']].forEach(([n, turn]) => {
-  const side = document.createElement('div');
-  side.className = 'die-side shade-' + (n === 1 || n === 6 ? 1 : n === 2 || n === 5 ? 2 : 3);
-  side.style.transform = `${turn} translateZ(21px)`;
-  for (const [row, col] of DIE_PIPS[n]) {
-    const pip = document.createElement('i');
-    pip.style.gridArea = `${row} / ${col}`;
-    side.append(pip);
+// pairs of opposite sides, with the numbers they show at rest
+const DIE_SIDES = [[1, 'rotateY(0deg)', 6, 'rotateY(180deg)'],
+  [2, 'rotateY(90deg)', 5, 'rotateY(-90deg)'], [3, 'rotateX(90deg)', 4, 'rotateX(-90deg)']]
+  .map(([a, turnA, b, turnB], shade) => [[a, turnA], [b, turnB]].map(([n, turn]) => {
+    const side = document.createElement('div');
+    side.className = 'die-side shade-' + (shade + 1);
+    side.style.transform = `${turn} translateZ(21px)`;
+    for (let i = 0; i < 6; i++) side.append(document.createElement('i'));
+    $('dieCube').append(side);
+    showPips(side, n);
+    return side;
+  }));
+
+function showPips(side, n) {
+  [...side.children].forEach((pip, i) => {
+    const [x, y] = PIP_SPOTS[PIP_LAYOUTS[n][i] || 'c'];
+    pip.style.setProperty('--x', `${x}%`);
+    pip.style.setProperty('--y', `${y}%`);
+    pip.classList.toggle('off', i >= n);
+  });
+}
+
+// Every tick of a roll, each pair of sides shows new numbers; the pips take
+// most of the time until the next tick to slide there.
+function shufflePips(ms) {
+  $('die').style.setProperty('--pip-time', `${Math.round(Math.min(260, Math.max(90, ms * 0.9)))}ms`);
+  for (const [a, b] of DIE_SIDES) {
+    const n = 1 + randomInt(6);
+    showPips(a, n);
+    showPips(b, 7 - n);
   }
-  $('dieCube').append(side);
-});
+}
 
 // The die slows down along with the numbers: full speed at first, about a
 // quarter by the end. Then it shrinks away as the number lands.
@@ -2480,6 +2508,7 @@ function rollNumber() {
       const delay = spinDelay(progress);
       sfx.tick(progress);
       dieSpin()?.updatePlaybackRate(dieSpeed(progress));
+      shufflePips(delay);
       if (navigator.vibrate) navigator.vibrate(5);
       setTimeout(spin, delay);
       return;
