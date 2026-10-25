@@ -181,28 +181,33 @@
   .support .heart { color: #e2735f; display: inline-block; animation: beat 2.4s ease-in-out infinite; }
   @keyframes beat { 0%, 30%, 100% { transform: none; } 10% { transform: scale(1.3); } 20% { transform: scale(1.1); } }
 
+  .list-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
   .set-btn {
     display: flex;
     align-items: center;
     gap: 10px;
     width: 100%;
-    margin: 0 0 4px;
     padding: 12px 14px;
     font: inherit;
     font-size: 1.05rem;
     font-weight: 600;
     text-align: left;
     color: var(--text);
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 14px;
+    background: none;
+    border: 0;
     transition: transform .1s;
   }
   .set-btn:active { transform: scale(.98); }
   #setLabel { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .set-btn .caret { color: var(--muted); }
 
-  .once { display: flex; align-items: center; gap: 12px; padding: 10px 4px 2px; cursor: pointer; }
+  .once { display: flex; align-items: center; gap: 12px; padding: 10px 14px 12px; border-top: 1px solid var(--line); cursor: pointer; }
   .once input { position: absolute; opacity: 0; pointer-events: none; }
   .switch {
     flex: none;
@@ -226,7 +231,8 @@
   .once input:checked + .switch { background: var(--accent); }
   .once input:checked + .switch::after { transform: translateX(18px); }
   .once input:focus-visible + .switch { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .once-text { display: flex; flex-direction: column; font-size: .95rem; }
+  .once-text { display: flex; flex-direction: column; min-width: 0; font-size: .95rem; }
+  .once-text small { overflow-wrap: anywhere; line-height: 1.3; margin-top: 1px; }
   .once-text small { color: var(--muted); font-size: .8rem; }
 
   .sheet h2 { margin-bottom: 8px; }
@@ -283,17 +289,19 @@
     </div>
   </header>
 
-  <button class="set-btn" id="setBtn" type="button" aria-haspopup="dialog">
-    <span class="set-icon" aria-hidden="true">📋</span>
-    <span id="setLabel"></span>
-    <span class="caret" aria-hidden="true">▾</span>
-  </button>
+  <div class="list-card">
+    <button class="set-btn" id="setBtn" type="button" aria-haspopup="dialog">
+      <span class="set-icon" aria-hidden="true">📋</span>
+      <span id="setLabel"></span>
+      <span class="caret" aria-hidden="true">▾</span>
+    </button>
 
-  <label class="once">
-    <input type="checkbox" id="onceToggle">
-    <span class="switch" aria-hidden="true"></span>
-    <span class="once-text">Pick each only once<small>Picked options sit out until you start over</small></span>
-  </label>
+    <label class="once">
+      <input type="checkbox" id="onceToggle">
+      <span class="switch" aria-hidden="true"></span>
+      <span class="once-text">Pick each only once<small id="onceHint"></small></span>
+    </label>
+  </div>
 
   <section class="starter" id="card">
     <div id="crown" aria-hidden="true">👑</div>
@@ -629,6 +637,9 @@ function render() {
   const playing = items.filter(p => p.playing).length;
   $('count').textContent = items.length ? `${playing} of ${items.length} in the draw` : '';
   $('onceToggle').checked = !!cur().once;
+  $('onceHint').textContent = cur().once
+    ? `Only in “${cur().name}”: picked options sit out until you start over`
+    : `Only affects “${cur().name}”, not your other lists`;
 
   // With "pick each only once", the button turns into Start over once
   // everything has been picked (or left out).
