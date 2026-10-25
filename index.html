@@ -1075,7 +1075,14 @@ $('modeNumber').onclick = () => setMode('number');
 // Number mode works like a list: one row per range, tap a row to roll it,
 // ✎ gives it an optional name such as "d6", ✕ removes it.
 const RANGES_KEY = 'whostarts.ranges';
-const DEFAULT_RANGES = [{ from: 1, to: 6, name: '' }, { from: 1, to: 10, name: '' }, { from: 1, to: 100, name: '' }];
+// Common dice to start with; 2d6 (two dice added up) shows that a range can start above 1.
+const DEFAULT_RANGES = [
+  { from: 1, to: 4, name: 'd4' },
+  { from: 1, to: 6, name: 'd6' },
+  { from: 1, to: 12, name: 'd12' },
+  { from: 1, to: 20, name: 'd20' },
+  { from: 2, to: 12, name: '2d6' },
+];
 
 function normalizeRanges(list) {
   if (!Array.isArray(list)) return null;

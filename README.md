@@ -41,7 +41,7 @@ Every pick is completely random. Each option in the draw has the same chance eve
 
 Switch to **🎲 Number** at the top to roll a random number instead of picking from a list. It works just like a list, except each row is a range of numbers:
 
-1. **Add a range** with the From – To fields and **Add**. Any whole numbers work, even 1 to 1,000,000. You start with 1–6, 1–10 and 1–100.
+1. **Add a range** with the From – To fields and **Add**. Any whole numbers work, even 1 to 1,000,000. You start with the dice *d4* (1–4), *d6* (1–6), *d12* (1–12), *d20* (1–20) and *2d6* (2–12, two dice added up), which you can rename, change or remove.
 2. **Tap the circle** at the start of a row to choose the range to roll. It gets a ✓.
 3. **Tap Roll!** (or shake your phone). A die tumbles while numbers race past, and it lands on a number from the range, both ends included.
 4. **Change a range right in its row:** tap the numbers to change From or To, and press Enter or tap elsewhere to save. They are put in order if you swap them, and a range you already have is not added twice. **Name a range** the same way: tap the name field next to the numbers (it says *✎ Add a name* until you give it one), type a name like *d6*, *d20* or *Raffle*, and press Enter or tap elsewhere. Tap it again any time to rename it, or clear it to remove the name. **✕** removes a range.
@@ -97,7 +97,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v37` → `whostarts-v38`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v38` → `whostarts-v39`), otherwise installed copies keep showing the old version.
 
 ## Support
 
