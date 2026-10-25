@@ -89,10 +89,15 @@
   #result.won {
     background: var(--gold);
     color: #1d2321;
-    padding: .12em .6em;
+    /* the font leaves more room above letters than below, so the top gets less padding */
+    padding: .04em .6em .2em;
     border-radius: 14px;
     box-shadow: 0 0 0 4px rgba(224, 164, 0, .3), 0 0 28px rgba(224, 164, 0, .6);
     animation: pop .7s cubic-bezier(.2, 1.6, .4, 1);
+  }
+  /* where supported, trim the font's extra room exactly, then pad evenly */
+  @supports (text-box: trim-both cap alphabetic) {
+    #result.won { text-box: trim-both cap alphabetic; padding: .32em .6em; }
   }
   /* takes no room until a pick lands, so the card has no empty gap at the top */
   #crown { position: relative; height: 0; font-size: 2rem; line-height: 1; opacity: 0; }
