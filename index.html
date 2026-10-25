@@ -97,9 +97,9 @@
   /* takes no room until a pick lands, so the card has no empty gap at the top */
   #crown { position: relative; height: 0; font-size: 2rem; line-height: 1; opacity: 0; }
   #crown.show { height: 2.2rem; opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
-  /* the 🎲 hops around the card while a number rolls (moved from JS) */
+  /* the 🎲 rolls in while a number rolls (moved from JS) */
   #die { position: relative; height: 0; opacity: 0; transition: height .3s ease; }
-  #die.rolling, #die.thud { height: 5.4rem; opacity: 1; }
+  #die.rolling, #die.thud { height: 4.6rem; opacity: 1; }
   #dieFace {
     position: absolute; left: 50%; bottom: 10px;
     width: 1.2em; margin-left: -.6em;
@@ -111,12 +111,13 @@
     width: 52px; height: 10px; margin-left: -26px;
     border-radius: 50%; background: rgba(0, 0, 0, .3); filter: blur(3px);
   }
-  #die.thud #dieFace { animation: thud .45s ease-out forwards; }
-  #die.thud #dieShadow { animation: fade .3s forwards; }
+  #die.thud #dieFace { animation: thud .7s ease-out forwards; }
+  #die.thud #dieShadow { animation: fade .7s ease-in forwards; }
   @keyframes thud {
-    0% { transform: scale(1.3, .7); }
-    35% { transform: scale(1.25) translateY(-6px); opacity: 1; }
-    100% { transform: scale(1.8) translateY(-14px); opacity: 0; }
+    0% { transform: scale(1.08, .92); }
+    25% { transform: none; opacity: 1; }
+    60% { transform: none; opacity: 1; }
+    100% { transform: scale(.85) translateY(6px); opacity: 0; }
   }
   @keyframes fade { to { opacity: 0; } }
 
@@ -958,15 +959,12 @@ const sfx = {
     lastTick = now;
     tone(900 + randomInt(300) - p * 400, { dur: 0.035, type: 'square', vol: 0.04 });
   },
-  // the die knocking on the table: a low knock plus a short click
-  clack(p) {
-    const now = performance.now();
-    if (now - lastTick < 28) return;
-    lastTick = now;
-    tone(170 + randomInt(90), { dur: 0.05, type: 'square', vol: 0.05 + p * 0.03 });
-    tone(1900 + randomInt(900), { dur: 0.02, vol: 0.05 });
+  // the die touching down on a wooden table: a soft, low knock (later ones quieter)
+  knock(at, strength) {
+    tone(210 + randomInt(40), { at, dur: 0.07, type: 'sine', vol: 0.12 * strength, slide: 150 });
+    tone(900 + randomInt(200), { at, dur: 0.025, vol: 0.025 * strength });
   },
-  thud()   { tone(150, { dur: 0.22, slide: 55, type: 'sine', vol: 0.3 }); tone(320, { dur: 0.05, type: 'square', vol: 0.05 }); },
+  thud()   { tone(190, { dur: 0.3, slide: 110, type: 'sine', vol: 0.16 }); },
   win() {
     [523, 659, 784].forEach((f, i) => tone(f, { at: i * 0.1, dur: 0.14, vol: 0.14 }));
     [1046, 1318, 1568].forEach(f => tone(f, { at: 0.32, dur: 0.8, vol: 0.07 }));
@@ -2402,12 +2400,10 @@ function startOverRange() {
   render();
 }
 
-// ---------- The tumbling die ----------
-// Every tick of a roll the 🎲 hops to a new spot and turns as it goes. The
-// ticks slow down, so it rattles at first and bounces in big arcs at the end,
-// then lands upright in the middle and thuds as the number shows.
-var dieAt = { x: 0, r: 0 }; // var: resetCard can run before this line
-
+// ---------- The rolling die ----------
+// The 🎲 rolls in from the side in one smooth, slowing tumble, with a few
+// small bounces that die down, settles upright in the middle and lands with a
+// soft knock as the number shows.
 function stopDieMoves() {
   [$('dieFace'), $('dieShadow')].forEach(el => el.getAnimations().forEach(a => a.cancel()));
 }
@@ -2415,42 +2411,44 @@ function stopDieMoves() {
 function resetDie() {
   clearTimeout(resetDie.timer);
   stopDieMoves();
-  dieAt = { x: 0, r: 0 };
   $('die').className = '';
 }
 
-function dieHop(ms, last) {
-  const reach = Math.max(0, Math.min(110, $('card').clientWidth / 2 - 50));
-  const to = last
-    ? { x: 0, r: Math.ceil((dieAt.r + 120) / 360) * 360 }
-    : { x: (Math.random() * 2 - 1) * reach, r: dieAt.r + 90 + randomInt(180) };
-  const mid = { x: (dieAt.x + to.x) / 2, r: (dieAt.r + to.r) / 2 };
-  const t = ms / 1000;
-  const h = Math.max(6, Math.min(44, 900 * t * t)); // longer hops fly higher
-  const pose = (p, y) => `translate(${p.x}px, ${y}px) rotate(${p.r}deg)`;
+// [when (0–1), how far along (0–1), height in px, turn in degrees]
+const DIE_PATH = [
+  [0,    0,    0,  0],
+  [0.18, 0.38, 18, 260],
+  [0.38, 0.68, 0,  470],
+  [0.52, 0.82, 8,  580],
+  [0.66, 0.93, 0,  650],
+  [0.76, 0.97, 3,  690],
+  [0.86, 1,    0,  716],
+  [1,    1,    0,  720],
+];
+const DIE_KNOCKS = [0.38, 0.66, 0.86]; // when it touches down again
+
+function dieRoll(ms) {
+  const from = -Math.max(0, Math.min(100, $('card').clientWidth / 2 - 50)) * (Math.random() < 0.5 ? 1 : -1);
+  const turn = from < 0 ? 1 : -1; // rolls the way it travels
+  const frames = (make) => DIE_PATH.map(([offset, along, h, r], i) => ({
+    offset,
+    // up goes slow at the top, down speeds up into the table
+    easing: DIE_PATH[i + 1] && DIE_PATH[i + 1][2] > h ? 'ease-out' : 'ease-in',
+    ...make(from * (1 - along), h, r * turn),
+  }));
   stopDieMoves();
-  $('dieFace').animate([
-    { transform: pose(dieAt, 0), easing: 'ease-out' },
-    { transform: pose(mid, -h), easing: 'ease-in' },
-    { transform: pose(to, 0) },
-  ], { duration: ms, fill: 'forwards' });
-  $('dieShadow').animate([
-    { transform: `translateX(${dieAt.x}px)`, opacity: 1 },
-    { transform: `translateX(${mid.x}px) scale(${1 - h / 70})`, opacity: 0.4 },
-    { transform: `translateX(${to.x}px)`, opacity: 1 },
-  ], { duration: ms, fill: 'forwards' });
-  dieAt = to;
+  $('dieFace').animate(frames((x, h, r) => ({ transform: `translate(${x}px, ${-h}px) rotate(${r}deg)` })),
+    { duration: ms, fill: 'forwards' });
+  $('dieShadow').animate(frames((x, h) => ({ transform: `translateX(${x}px) scale(${1 - h / 50})`, opacity: 1 - h / 40 })),
+    { duration: ms, fill: 'forwards' });
+  DIE_KNOCKS.forEach((at, i) => sfx.knock(at * ms / 1000, 1 - i * 0.3));
 }
 
-function dieThud() {
+function dieLand() {
   stopDieMoves();
   $('die').className = 'thud';
   sfx.thud();
-  $('card').animate([
-    { transform: 'translateY(0)' }, { transform: 'translateY(4px)' },
-    { transform: 'translateY(-2px)' }, { transform: 'translateY(0)' },
-  ], { duration: 260, easing: 'ease-out' });
-  resetDie.timer = setTimeout(() => { $('die').className = ''; }, 450);
+  resetDie.timer = setTimeout(() => { $('die').className = ''; }, 700);
 }
 
 // ---------- Rolling a number ----------
@@ -2484,7 +2482,13 @@ function rollNumber() {
   rolling = true;
   $('card').className = 'starter rolling';
   $('crown').className = '';
-  if (total > 1) { resetDie(); $('die').className = 'rolling'; }
+  if (total > 1) {
+    resetDie();
+    $('die').className = 'rolling';
+    let rollMs = 0;
+    for (let t = 1; t < total; t++) rollMs += spinDelay(t / total);
+    dieRoll(rollMs);
+  }
   $('pick').textContent = 'Rolling…';
   $('pick').disabled = true;
   sfx.start();
@@ -2496,8 +2500,7 @@ function rollNumber() {
       showName(roll().toLocaleString());
       const progress = tick / total;
       const delay = spinDelay(progress);
-      sfx.clack(progress);
-      dieHop(delay, tick === total - 1);
+      sfx.tick(progress);
       if (navigator.vibrate) navigator.vibrate(5);
       setTimeout(spin, delay);
       return;
@@ -2508,7 +2511,7 @@ function rollNumber() {
       saveRanges();
     }
     const shown = number.toLocaleString();
-    if (total > 1) dieThud();
+    if (total > 1) dieLand();
     result.className = '';
     void result.offsetWidth;
     result.className = 'won' + (shown.length > 14 ? ' long' : '');
