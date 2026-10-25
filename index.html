@@ -103,19 +103,22 @@
   #crown { position: relative; height: 0; font-size: 2rem; line-height: 1; opacity: 0; transition: height .3s ease, margin-top .3s ease; }
   /* pulled up into the card's top padding, so the space above it matches the space under the badge */
   #crown.show { height: 2.2rem; margin-top: -12px; opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
-  /* a 3D die balanced on one corner (long diagonal straight up), spinning
-     around that upright axis while a number rolls */
-  #die { position: relative; display: grid; place-items: center; width: 86px; height: 0; margin: 0 auto; opacity: 0; pointer-events: none; perspective: 320px; }
+  /* 3D dice (1–4) balanced on one corner (long diagonal straight up), spinning
+     around that upright axis while a number rolls. --s is the size of a side
+     (set from JS: three or four dice get smaller so they fit side by side). */
+  #die { --s: 42px; position: relative; display: flex; justify-content: center; gap: 4px; height: 0; opacity: 0; pointer-events: none; }
   #die.rolling { height: 86px; opacity: 1; }
-  .die-spin, .die-cube { width: 42px; height: 42px; transform-style: preserve-3d; }
+  .die-box { display: grid; place-items: center; width: calc(var(--s) * 2.05); height: 86px; flex: none; perspective: 320px; }
+  .die-box[hidden] { display: none; }
+  .die-spin, .die-cube { width: var(--s); height: var(--s); transform-style: preserve-3d; }
   #die.rolling .die-spin, #die.landing .die-spin { animation: spin-upright .6s linear infinite; }
-  /* when the number lands: the slowed die shrinks away while the crown takes its place */
+  /* when the number lands: the slowed dice shrink away while the crown takes their place */
   #die.landing { height: 0; opacity: 0; transform: scale(.4); transition: height .3s ease, opacity .3s ease, transform .3s ease-in; }
   .die-cube { position: relative; transform: rotateX(-35.264deg) rotateZ(45deg); } /* corner up, corner down */
   .die-side {
     position: absolute; inset: 0;
     background: linear-gradient(135deg, #ffffff, #e4e6e3);
-    border: 1px solid rgba(0, 0, 0, .14); border-radius: 7px;
+    border: 1px solid rgba(0, 0, 0, .14); border-radius: calc(var(--s) / 6);
   }
   /* each pair of opposite sides has its own shade, so the edges read as 3D */
   .die-side.shade-2 { background: linear-gradient(135deg, #f1f2f0, #d6d9d5); }
@@ -124,11 +127,47 @@
      pips a side doesn't need shrink into its middle */
   .die-side i {
     position: absolute; left: var(--x); top: var(--y);
-    width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: #1d2321;
+    width: calc(var(--s) / 6); height: calc(var(--s) / 6); margin: calc(var(--s) / -12) 0 0 calc(var(--s) / -12);
+    border-radius: 50%; background: #1d2321;
     transition: left var(--pip-time, .2s) ease, top var(--pip-time, .2s) ease, transform var(--pip-time, .2s) ease;
   }
   .die-side i.off { transform: scale(0); }
   @keyframes spin-upright { to { transform: rotateY(360deg); } }
+  /* with several dice, the dice that were rolled show under the total */
+  #resultParts { color: var(--muted); font-size: .95rem; margin-top: 8px; font-variant-numeric: tabular-nums; }
+  #resultParts[hidden] { display: none; }
+
+  /* the coin: gold, heads (H) on one side and tails (T) on the other, a few
+     layers thick. A flip tosses it toward you (it grows) while it
+     turns end over end; its shadow shrinks as it rises. It lands with a small
+     wobble and a glint. */
+  .coin-box { position: relative; display: grid; place-items: center; height: 104px; margin: -8px 0 4px; perspective: 500px; }
+  .coin-shadow { position: absolute; left: 50%; bottom: 6px; width: 64px; height: 10px; margin-left: -32px; border-radius: 50%; background: rgba(0, 0, 0, .35); filter: blur(3px); }
+  .coin-toss, .coin { width: 76px; height: 76px; transform-style: preserve-3d; }
+  .coin { position: relative; }
+  .coin-face, .coin-edge { position: absolute; inset: 0; border-radius: 50%; }
+  .coin-edge { background: #b07c00; }
+  .coin-face {
+    display: grid; place-items: center; overflow: hidden;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    background: radial-gradient(circle at 35% 30%, #fff1a8, #f2c230 45%, #c98f00);
+    box-shadow: inset 0 0 0 4px rgba(150, 100, 0, .45), inset 0 0 0 7px rgba(255, 240, 180, .5);
+    color: #8a5d00; font-size: 2.1rem; font-weight: 900;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, .6);
+    transform: translateZ(3px);
+  }
+  .coin-face.tails { transform: rotateX(180deg) translateZ(3px); }
+  /* a band of light that sweeps across the coin when it lands */
+  .coin-face::after {
+    content: ""; position: absolute; inset: -20%;
+    background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, .85) 50%, transparent 65%);
+    transform: translateX(-120%);
+  }
+  .coin.glint .coin-face::after { animation: glint .7s .1s ease-out; }
+  @keyframes glint { to { transform: translateX(120%); } }
+  .coin-tally { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+  .coin-tally .spacer { flex: 1; }
+  .coin-tally b { font-variant-numeric: tabular-nums; }
 
   .mode-tabs {
     display: flex;
@@ -152,12 +191,30 @@
   }
   .mode-tabs button.on { background: var(--accent); color: var(--accent-text); }
 
-  /* Number mode shows ranges in place of the list */
+  /* Dice mode (called "number" in the code) shows ranges in place of the list */
   .number-only { display: none !important; }
   body.number-mode .number-only { display: block !important; }
   body.number-mode .number-only[hidden] { display: none !important; }
   .range-once-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-bottom: 12px; }
-  .range-once-card .once { border-top: 0; }
+  .range-once-card .once { border-top: 1px solid var(--line); }
+  /* how many dice a range rolls (1–4), added up */
+  .dice-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px 12px; }
+  .dice-row .once-text { flex: 1; }
+  .dice-pick { display: flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; }
+  .dice-pick button { width: 34px; height: 30px; border: 0; border-radius: 7px; background: none; color: var(--muted); font: inherit; font-weight: 700; }
+  .dice-pick button.on { background: var(--accent); color: var(--accent-text); }
+  .once input:disabled ~ * { opacity: .5; }
+  /* Coin mode shows only the coin, its tally and the card */
+  .coin-only { display: none !important; }
+  body.coin-mode .coin-only { display: block !important; }
+  body.coin-mode .coin-tally.coin-only { display: flex !important; }
+  body.coin-mode .coin-box.coin-only { display: grid !important; }
+  body.coin-mode .list-card,
+  body.coin-mode #add,
+  body.coin-mode #lists,
+  body.coin-mode #history,
+  body.coin-mode .list-tip,
+  body.coin-mode #crown { display: none !important; }
   body.number-mode .list-card,
   body.number-mode #add,
   body.number-mode #lists,
@@ -554,13 +611,15 @@
 
   <div class="mode-tabs" role="tablist" aria-label="What to pick">
     <button type="button" role="tab" id="modeLists">📋 Lists</button>
-    <button type="button" role="tab" id="modeNumber">🎲 Number</button>
+    <button type="button" role="tab" id="modeNumber">🎲 Dice</button>
+    <button type="button" role="tab" id="modeCoin">🪙 Coin</button>
   </div>
 
   <section class="starter" id="card">
     <div id="crown" aria-hidden="true">👑</div>
-    <div id="die" aria-hidden="true"><div class="die-spin"><div class="die-cube" id="dieCube"></div></div></div>
-    <div class="stage"><div id="result" class="hint">Add some options, then tap Pick!</div></div>
+    <div id="die" aria-hidden="true"></div>
+    <div class="coin-box coin-only" aria-hidden="true"><div class="coin-shadow" id="coinShadow"></div><div class="coin-toss" id="coinToss"><div class="coin" id="coin"><div class="coin-face heads">H</div><div class="coin-face tails">T</div></div></div></div>
+    <div class="stage"><div id="result" class="hint">Add some options, then tap Pick!</div><div id="resultParts" hidden></div></div>
     <button id="pick" type="button">Pick!</button>
     <div class="shake-ask" id="shakeAsk" hidden>
       <button type="button" class="shake-tip" id="shakeTip">📳 Tap to turn on shake to pick</button>
@@ -569,12 +628,17 @@
   </section>
 
   <div class="range-once-card number-only" id="rangeOnceCard">
+    <div class="dice-row">
+      <span class="once-text">Dice<small id="diceHint"></small></span>
+      <div class="dice-pick" id="dicePick" role="group" aria-label="Number of dice"><button type="button" data-n="1">1</button><button type="button" data-n="2">2</button><button type="button" data-n="3">3</button><button type="button" data-n="4">4</button></div>
+    </div>
     <label class="once">
       <input type="checkbox" id="rangeOnceToggle">
       <span class="switch" aria-hidden="true"></span>
       <span class="once-text">Roll each number only once<small id="rangeOnceHint"></small></span>
     </label>
   </div>
+  <div class="coin-tally coin-only" id="coinTally"><span>Heads <b id="headsCount">0</b></span><span>Tails <b id="tailsCount">0</b></span><span class="spacer"></span><button type="button" class="link-btn" id="coinReset">Reset</button></div>
 
   <form id="addRange" class="add-range number-only">
     <input id="numFrom" type="number" inputmode="numeric" step="1" placeholder="From" enterkeyhint="next" aria-label="From">
@@ -800,8 +864,8 @@ function slugify(name) {
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'list';
 }
 
-// "#number" is the address of Number mode, so no list may use it
-const RESERVED_SLUGS = ['number'];
+// "#dice" (and the older "#number") and "#coin" are the addresses of Dice and Coin mode, so no list may use them
+const RESERVED_SLUGS = ['dice', 'number', 'coin'];
 
 function slugTaken(slug, except) {
   return RESERVED_SLUGS.includes(slug) || state.sets.some(s => s !== except && (s.slug === slug || s.aliases.includes(slug)));
@@ -830,7 +894,17 @@ let state = load();
 ensureSlugs();
 let rolling = false;
 // "lists" picks an option from the current list; "number" rolls a number From–To
-let mode = pref(MODE_KEY, 'lists') === 'number' ? 'number' : 'lists';
+// (with up to 4 dice added up); "coin" flips a coin
+let mode = ['number', 'coin'].includes(pref(MODE_KEY, 'lists')) ? pref(MODE_KEY, 'lists') : 'lists';
+// how many heads and tails have come up, until Reset
+const COIN_KEY = 'whostarts.coin';
+let coinTally = (() => {
+  try {
+    const t = JSON.parse(pref(COIN_KEY, 'null'));
+    if (t && Number.isInteger(t.heads) && Number.isInteger(t.tails)) return t;
+  } catch (e) {}
+  return { heads: 0, tails: 0 };
+})();
 let numbers = (() => {
   try {
     const n = JSON.parse(pref(NUM_KEY, 'null'));
@@ -973,6 +1047,12 @@ const sfx = {
     if (now - lastTick < 28) return;
     lastTick = now;
     tone(900 + randomInt(300) - p * 400, { dur: 0.035, type: 'square', vol: 0.04 });
+  },
+  // a coin landing on the table: two bright metal rings
+  clink(at = 0) {
+    tone(2500, { at, dur: 0.12, type: 'sine', vol: 0.08 });
+    tone(3400, { at: at + 0.015, dur: 0.18, type: 'sine', vol: 0.05 });
+    tone(1250, { at, dur: 0.05, type: 'triangle', vol: 0.05 });
   },
   win() {
     [523, 659, 784].forEach((f, i) => tone(f, { at: i * 0.1, dur: 0.14, vol: 0.14 }));
@@ -1228,11 +1308,15 @@ function resetCard() {
   $('crown').className = '';
   $('die').className = '';
   $('card').className = 'starter';
-  $('pick').textContent = mode === 'number' ? 'Roll!' : 'Pick!';
+  $('pick').textContent = idleLabel();
+  $('resultParts').hidden = true;
   delete $('pick').dataset.mode;
 }
 
-// ---------- Lists / Number mode ----------
+// ---------- Lists / Dice / Coin mode ----------
+function idleLabel() {
+  return mode === 'number' ? 'Roll!' : mode === 'coin' ? 'Flip!' : 'Pick!';
+}
 function setMode(next) {
   if (rolling || next === mode) return;
   stopEditing();
@@ -1244,34 +1328,41 @@ function setMode(next) {
 }
 $('modeLists').onclick = () => setMode('lists');
 $('modeNumber').onclick = () => setMode('number');
+$('modeCoin').onclick = () => setMode('coin');
 
-// ---------- Ranges (Number mode) ----------
-// Number mode works like a list: one row per range, tap a row to roll it,
+// ---------- Ranges (Dice mode) ----------
+// Dice mode works like a list: one row per range, tap a row to roll it,
 // ✎ gives it an optional name such as "d6", ✕ removes it.
 const RANGES_KEY = 'whostarts.ranges';
-// Common dice to start with; 2d6 (two dice added up) shows that a range can start above 1.
+// Common dice to start with. A range can roll up to 4 dice and add them up,
+// like 2d6: two dice of 1–6 (so 7 comes up far more often than 2 or 12).
 const DEFAULT_RANGES = [
   { from: 1, to: 4, name: 'd4' },
   { from: 1, to: 6, name: 'd6' },
   { from: 1, to: 12, name: 'd12' },
   { from: 1, to: 20, name: 'd20' },
-  { from: 2, to: 12, name: '2d6' },
+  { from: 1, to: 6, name: '2d6', dice: 2 },
 ];
+const MAX_DICE = 4;
 
 function normalizeRanges(list) {
   if (!Array.isArray(list)) return null;
   return list
     .filter(r => r && Number.isInteger(r.from) && Number.isInteger(r.to))
     .map(r => {
+      // the first 2d6 was a plain 2–12 range, where every total was equally likely
+      if (r.name === '2d6' && r.from === 2 && r.to === 12 && !r.dice) r = { ...r, from: 1, to: 6, dice: 2, used: [] };
       const from = Math.min(r.from, r.to);
       const to = Math.max(r.from, r.to);
+      const dice = Number.isInteger(r.dice) ? Math.min(MAX_DICE, Math.max(1, r.dice)) : 1;
       return {
         from,
         to,
         name: typeof r.name === 'string' ? r.name.trim().slice(0, 20) : '',
-        // "roll each number only once": the numbers rolled so far sit out
-        once: !!r.once,
-        used: [...new Set(Array.isArray(r.used) ? r.used : [])].filter(n => Number.isInteger(n) && n >= from && n <= to),
+        dice,
+        // "roll each number only once" (one die only): the numbers rolled so far sit out
+        once: dice === 1 && !!r.once,
+        used: dice > 1 ? [] : [...new Set(Array.isArray(r.used) ? r.used : [])].filter(n => Number.isInteger(n) && n >= from && n <= to),
       };
     });
 }
@@ -1294,11 +1385,14 @@ function saveRanges() {
 }
 
 function sameRange(a, b) {
-  return Math.min(a.from, a.to) === Math.min(b.from, b.to) && Math.max(a.from, a.to) === Math.max(b.from, b.to);
+  return Math.min(a.from, a.to) === Math.min(b.from, b.to) && Math.max(a.from, a.to) === Math.max(b.from, b.to)
+    && (a.dice || 1) === (b.dice || 1);
 }
 
+// "1–6", or "2 × 1–6" for two dice
 function rangeText(r) {
-  return `${Math.min(r.from, r.to).toLocaleString()}–${Math.max(r.from, r.to).toLocaleString()}`;
+  const span = `${Math.min(r.from, r.to).toLocaleString()}–${Math.max(r.from, r.to).toLocaleString()}`;
+  return (r.dice || 1) > 1 ? `${r.dice} × ${span}` : span;
 }
 
 // The range Roll! uses; falls back to the first row if the chosen one is gone.
@@ -1307,7 +1401,7 @@ function currentRange() {
 }
 
 function selectRange(r) {
-  numbers = { from: r.from, to: r.to };
+  numbers = { from: r.from, to: r.to, dice: r.dice };
   setPref(NUM_KEY, JSON.stringify(numbers));
 }
 
@@ -1410,7 +1504,7 @@ function renderRanges() {
         const a = Number(fromField.value);
         const b = Number(toField.value);
         const whole = fromField.value !== '' && toField.value !== '' && Number.isInteger(a) && Number.isInteger(b);
-        const next = { from: Math.min(a, b), to: Math.max(a, b) };
+        const next = { from: Math.min(a, b), to: Math.max(a, b), dice: r.dice };
         const problem = !whole ? 'Enter whole numbers'
           : next.to - next.from >= 2 ** 32 ? 'That range is too big'
           : ranges.some(x => x !== r && sameRange(x, next)) ? `You already have ${rangeText(next)}` : '';
@@ -1531,7 +1625,7 @@ $('addRange').onsubmit = (e) => {
   if (!n) return;
   // randomInt works with 32-bit numbers, which covers any range people type
   if (n.to - n.from >= 2 ** 32) { sfx.out(); toast('That range is too big'); return; }
-  const r = { ...n, name: $('numName').value.trim().replace(/\s+/g, ' ').slice(0, 20), once: false, used: [] };
+  const r = { ...n, name: $('numName').value.trim().replace(/\s+/g, ' ').slice(0, 20), dice: 1, once: false, used: [] };
   const existing = ranges.find(x => sameRange(x, r));
   if (existing) {
     selectRange(existing);
@@ -1746,9 +1840,10 @@ $('importCancel').onclick = () => { pendingImport = null; importDialog.close(); 
 
 // Opens the list named in the address (#game-night). Returns true when it switched.
 function openFromAddress() {
-  if (location.hash === '#number') {
-    if (mode === 'number') return false;
-    mode = 'number';
+  if (['#dice', '#number', '#coin'].includes(location.hash)) {
+    const next = location.hash === '#coin' ? 'coin' : 'number';
+    if (mode === next) return false;
+    mode = next;
     setPref(MODE_KEY, mode);
     resetCard();
     return true;
@@ -1760,7 +1855,7 @@ function openFromAddress() {
     toast('That list isn’t on this phone');
     return false;
   }
-  // a list's address always shows the list, even if Number was open
+  // a list's address always shows the list, even if Dice or Coin was open
   if (mode !== 'lists') { mode = 'lists'; setPref(MODE_KEY, mode); resetCard(); }
   if (set.id === state.current) return false;
   state.current = set.id;
@@ -1772,7 +1867,7 @@ function openFromAddress() {
 // Keeps the address bar on the current list, so it can be copied or bookmarked.
 function syncAddress() {
   if (location.hash.startsWith('#list=')) return;
-  const want = mode === 'number' ? '#number' : '#' + cur().slug;
+  const want = mode === 'lists' ? '#' + cur().slug : mode === 'number' ? '#dice' : '#coin';
   if (location.hash !== want) history.replaceState(null, '', location.pathname + location.search + want);
 }
 
@@ -1939,12 +2034,14 @@ function motionAllowedBefore() {
 // The text in the card before a pick; it mentions shaking once that works.
 function hintText() {
   const shaking = shakeOn && (listening || motionAllowedBefore());
+  if (mode === 'coin') return shaking ? 'Tap Flip! or shake your phone' : 'Tap Flip! to toss the coin';
   if (mode === 'number') {
     const r = currentRange();
     if (!r) return 'Add a range, then tap Roll!';
     const lo = r.from.toLocaleString();
     const hi = r.to.toLocaleString();
-    if (r.name) return shaking ? `Roll or shake to roll ${r.name} (${lo}–${hi})` : `Tap Roll! to roll ${r.name} (${lo}–${hi})`;
+    if (r.name) return shaking ? `Roll or shake to roll ${r.name} (${rangeText(r)})` : `Tap Roll! to roll ${r.name} (${rangeText(r)})`;
+    if (r.dice > 1) return shaking ? `Roll or shake to roll ${r.dice} dice of ${lo}–${hi}` : `Tap Roll! to roll ${r.dice} dice of ${lo}–${hi}`;
     return shaking ? `Roll or shake for a number from ${lo} to ${hi}` : `Tap Roll! for a number from ${lo} to ${hi}`;
   }
   if (!cur().items.length) return 'Add some options, then tap Pick!';
@@ -2014,10 +2111,21 @@ renderShakeTip();
 // ---------- Options in the current list ----------
 function render() {
   document.body.classList.toggle('number-mode', mode === 'number');
-  $('modeLists').classList.toggle('on', mode === 'lists');
-  $('modeNumber').classList.toggle('on', mode === 'number');
-  $('modeLists').setAttribute('aria-selected', mode === 'lists');
-  $('modeNumber').setAttribute('aria-selected', mode === 'number');
+  document.body.classList.toggle('coin-mode', mode === 'coin');
+  for (const [id, m] of [['modeLists', 'lists'], ['modeNumber', 'number'], ['modeCoin', 'coin']]) {
+    $(id).classList.toggle('on', mode === m);
+    $(id).setAttribute('aria-selected', mode === m);
+  }
+  if (mode === 'coin') {
+    $('count').textContent = '';
+    $('headsCount').textContent = coinTally.heads.toLocaleString();
+    $('tailsCount').textContent = coinTally.tails.toLocaleString();
+    $('coinReset').hidden = !coinTally.heads && !coinTally.tails;
+    $('pick').disabled = rolling;
+    if (result.classList.contains('hint')) result.textContent = hintText();
+    syncAddress();
+    return;
+  }
   if (mode === 'number') {
     const r = currentRange();
     $('rangeOnceCard').hidden = !r;
@@ -2025,10 +2133,18 @@ function render() {
     if (r) {
       const label = r.name ? `“${r.name}”` : rangeText(r);
       const used = (r.used || []).length;
+      [...$('dicePick').children].forEach(b => {
+        b.classList.toggle('on', Number(b.dataset.n) === r.dice);
+        b.setAttribute('aria-pressed', Number(b.dataset.n) === r.dice);
+      });
+      $('diceHint').textContent = r.dice > 1 ? `Rolls ${r.dice} dice and adds them up` : 'Roll several and add them up';
       $('rangeOnceToggle').checked = !!r.once;
-      $('rangeOnceHint').textContent = r.once
-        ? `Only for ${label}: ${used.toLocaleString()} of ${rangeSize(r).toLocaleString()} rolled. They sit out until you start over`
-        : `Only affects ${label}, not your other ranges`;
+      $('rangeOnceToggle').disabled = r.dice > 1;
+      $('rangeOnceHint').textContent = r.dice > 1
+        ? 'Works with one die'
+        : r.once
+          ? `Only for ${label}: ${used.toLocaleString()} of ${rangeSize(r).toLocaleString()} rolled. They sit out until you start over`
+          : `Only affects ${label}, not your other ranges`;
     }
     $('count').textContent = r && r.once ? `${numbersLeft(r).toLocaleString()} of ${rangeSize(r).toLocaleString()} left` : '';
     // with "roll each number only once", the button turns into Start over
@@ -2321,6 +2437,7 @@ function startOver() {
 // Picks one option uniformly at random from those in the draw, then plays the
 // slot-machine spin that lands on it.
 $('pick').onclick = () => {
+  if (mode === 'coin') { flipCoin(); return; }
   if (mode === 'number') {
     if ($('pick').dataset.mode === 'reset') { startOverRange(); return; }
     rollNumber();
@@ -2408,7 +2525,7 @@ function startOverRange() {
   render();
 }
 
-// ---------- The 3D die ----------
+// ---------- The 3D dice ----------
 // Each side has six pips. A number lays out the first pips on spots of a 3×3
 // grid (one more pip keeps the spots of the one before, so they slide only a
 // little); the rest shrink into the middle. Opposite sides add up to 7.
@@ -2422,17 +2539,29 @@ const PIP_LAYOUTS = {
   6: ['tl', 'br', 'tr', 'bl', 'ml', 'mr'],
 };
 // pairs of opposite sides, with the numbers they show at rest
-const DIE_SIDES = [[1, 'rotateY(0deg)', 6, 'rotateY(180deg)'],
-  [2, 'rotateY(90deg)', 5, 'rotateY(-90deg)'], [3, 'rotateX(90deg)', 4, 'rotateX(-90deg)']]
-  .map(([a, turnA, b, turnB], shade) => [[a, turnA], [b, turnB]].map(([n, turn]) => {
+const SIDE_PAIRS = [[1, 'rotateY(0deg)', 6, 'rotateY(180deg)'],
+  [2, 'rotateY(90deg)', 5, 'rotateY(-90deg)'], [3, 'rotateX(90deg)', 4, 'rotateX(-90deg)']];
+
+// Up to MAX_DICE dice; a roll shows as many as the range has. Each one starts
+// its turn at a different point, so they don't spin in step.
+const dice = Array.from({ length: MAX_DICE }, (_, d) => {
+  const box = document.createElement('div');
+  box.className = 'die-box';
+  box.innerHTML = '<div class="die-spin"><div class="die-cube"></div></div>';
+  box.firstChild.style.animationDelay = `${-0.17 * d}s`;
+  const cube = box.querySelector('.die-cube');
+  const pairs = SIDE_PAIRS.map(([a, turnA, b, turnB], shade) => [[a, turnA], [b, turnB]].map(([n, turn]) => {
     const side = document.createElement('div');
     side.className = 'die-side shade-' + (shade + 1);
-    side.style.transform = `${turn} translateZ(21px)`;
+    side.style.transform = `${turn} translateZ(calc(var(--s) / 2))`;
     for (let i = 0; i < 6; i++) side.append(document.createElement('i'));
-    $('dieCube').append(side);
+    cube.append(side);
     showPips(side, n);
     return side;
   }));
+  $('die').append(box);
+  return { box, pairs };
+});
 
 function showPips(side, n) {
   [...side.children].forEach((pip, i) => {
@@ -2443,28 +2572,57 @@ function showPips(side, n) {
   });
 }
 
+function showDice(count) {
+  dice.forEach((d, i) => { d.box.hidden = i >= count; });
+  $('die').style.setProperty('--s', count > 2 ? '34px' : '42px'); // three or four get smaller to fit
+}
+
 // Every tick of a roll, each pair of sides shows new numbers; the pips take
 // most of the time until the next tick to slide there.
 function shufflePips(ms) {
   $('die').style.setProperty('--pip-time', `${Math.round(Math.min(260, Math.max(90, ms * 0.9)))}ms`);
-  for (const [a, b] of DIE_SIDES) {
-    const n = 1 + randomInt(6);
-    showPips(a, n);
-    showPips(b, 7 - n);
+  for (const d of dice) {
+    if (d.box.hidden) continue;
+    for (const [a, b] of d.pairs) {
+      const n = 1 + randomInt(6);
+      showPips(a, n);
+      showPips(b, 7 - n);
+    }
   }
 }
 
-// The die slows down along with the numbers: full speed at first, about a
-// quarter by the end. Then it shrinks away as the number lands.
+// The dice slow down along with the numbers: full speed at first, about a
+// quarter by the end. Then they shrink away as the number lands.
 let dieTimer;
-const dieSpin = () => document.querySelector('.die-spin').getAnimations()[0];
+const dieSpins = () => [...document.querySelectorAll('.die-box:not([hidden]) .die-spin')].map(el => el.getAnimations()[0]).filter(Boolean);
 const dieSpeed = (progress) => (spinPause(0) / spinPause(progress)) ** 0.7;
 
+// Picks how many dice the chosen range rolls. More than one die can't use
+// "roll each number only once", so that switches off.
+$('dicePick').onclick = (e) => {
+  const n = Number(e.target.dataset.n);
+  const r = currentRange();
+  if (!n || !r || rolling || n === r.dice) return;
+  if (ranges.some(x => x !== r && sameRange(x, { ...r, dice: n }))) {
+    sfx.out();
+    toast(`You already have ${rangeText({ ...r, dice: n })}`);
+    return;
+  }
+  r.dice = n;
+  if (n > 1) { r.once = false; r.used = []; }
+  saveRanges();
+  selectRange(r);
+  sfx.in();
+  resetCard();
+  render();
+};
+
 // ---------- Rolling a number ----------
-// Numbers from the range race past while a die spins, then it lands on a
-// number picked uniformly at random from the chosen range (both ends included).
-// With "roll each number only once", it picks uniformly among the numbers not
-// rolled yet: the k-th free number is found by stepping past the used ones.
+// Numbers race past while the dice spin, then it lands on a number picked
+// uniformly at random from the chosen range (both ends included). With several
+// dice, each die is rolled on its own and they're added up, like real dice.
+// With "roll each number only once" (one die), it picks uniformly among the
+// numbers not rolled yet: the k-th free number is found by stepping past the used ones.
 function rollNumber() {
   if (rolling) return;
   const range = currentRange();
@@ -2473,6 +2631,9 @@ function rollNumber() {
   const min = range.from;
   const max = range.to;
   const roll = () => min + randomInt(max - min + 1);
+  const rollAll = () => Array.from({ length: range.dice }, roll);
+  const sum = (parts) => parts.reduce((a, b) => a + b, 0);
+  let parts = [];
   let number;
   if (range.once) {
     const left = numbersLeft(range);
@@ -2483,7 +2644,8 @@ function rollNumber() {
       else break;
     }
   } else {
-    number = roll();
+    parts = rollAll();
+    number = sum(parts);
   }
 
   document.activeElement?.blur?.(); // closes the keyboard
@@ -2491,7 +2653,9 @@ function rollNumber() {
   rolling = true;
   $('card').className = 'starter rolling';
   $('crown').className = '';
+  $('resultParts').hidden = true;
   clearTimeout(dieTimer);
+  showDice(range.dice);
   $('die').className = '';
   void $('die').offsetWidth; // restarts the spin at full speed
   $('die').className = 'rolling';
@@ -2503,11 +2667,11 @@ function rollNumber() {
   (function spin() {
     tick++;
     if (tick < total) {
-      showName(roll().toLocaleString());
+      showName(sum(rollAll()).toLocaleString());
       const progress = tick / total;
       const delay = spinDelay(progress);
       sfx.tick(progress);
-      dieSpin()?.updatePlaybackRate(dieSpeed(progress));
+      for (const a of dieSpins()) a.updatePlaybackRate(dieSpeed(progress));
       shufflePips(delay);
       if (navigator.vibrate) navigator.vibrate(5);
       setTimeout(spin, delay);
@@ -2525,6 +2689,10 @@ function rollNumber() {
     void result.offsetWidth;
     result.className = 'won' + (shown.length > 14 ? ' long' : '');
     result.textContent = shown;
+    if (parts.length > 1) {
+      $('resultParts').textContent = parts.map(p => p.toLocaleString()).join(' + ');
+      $('resultParts').hidden = false;
+    }
     $('crown').className = 'show';
     $('card').className = 'starter winner';
     $('pick').textContent = 'Roll again';
@@ -2535,6 +2703,112 @@ function rollNumber() {
     burst(r.left + r.width / 2, r.top + r.height / 2);
   })();
 }
+
+// ---------- Flipping a coin ----------
+// The coin is tossed toward you, turning end over end, comes back down,
+// wobbles as it settles with heads (H) or tails (T) up, and catches the light.
+// Each side comes up half the time.
+let coinAngle = 0; // 0 shows heads, 180 shows tails (plus whole turns)
+// thin gold layers between the two faces give the coin its edge
+for (let z = -2; z <= 2; z++) {
+  const layer = document.createElement('div');
+  layer.className = 'coin-edge';
+  layer.style.transform = `translateZ(${z}px)`;
+  $('coin').prepend(layer);
+}
+
+const LAND = 0.82; // how far into the flip the coin is back on the table
+
+function tossCoin(ms, next) {
+  const coin = $('coin');
+  const turn = (deg) => ({ transform: `rotateX(${deg}deg)` });
+  coin.animate([
+    { ...turn(coinAngle), easing: 'cubic-bezier(.3, .5, .5, 1)' },
+    { ...turn(next - 14), offset: LAND, easing: 'ease-out' },
+    { ...turn(next + 9), offset: 0.9, easing: 'ease-in-out' },
+    { ...turn(next - 3), offset: 0.96, easing: 'ease-in-out' },
+    turn(next),
+  ], { duration: ms });
+  $('coinToss').animate([
+    { transform: 'translateY(0) scale(1)', easing: 'cubic-bezier(.2, .8, .4, 1)' },
+    { transform: 'translateY(4px) scale(1.5)', offset: 0.42, easing: 'cubic-bezier(.6, 0, .8, .4)' },
+    { transform: 'translateY(0) scale(1)', offset: LAND, easing: 'ease-out' },
+    { transform: 'translateY(0) scale(1.06)', offset: 0.89, easing: 'ease-in' },
+    { transform: 'translateY(0) scale(1)' },
+  ], { duration: ms });
+  $('coinShadow').animate([
+    { transform: 'scale(1)', opacity: 1, easing: 'cubic-bezier(.2, .8, .4, 1)' },
+    { transform: 'scale(.45)', opacity: 0.35, offset: 0.42, easing: 'cubic-bezier(.6, 0, .8, .4)' },
+    { transform: 'scale(1)', opacity: 1, offset: LAND },
+    { transform: 'scale(1)', opacity: 1 },
+  ], { duration: ms });
+  sfx.clink(ms * LAND / 1000);
+}
+
+function flipCoin() {
+  if (rolling) return;
+  const heads = randomInt(2) === 0;
+  const total = spinTicks(true);
+  let flipMs = 0;
+  for (let t = 1; t < total; t++) flipMs += spinDelay(t / total);
+  const turns = Math.max(2, Math.round(flipMs / 380));
+  const next = Math.ceil((coinAngle + turns * 360) / 360) * 360 + (heads ? 0 : 180);
+  const coin = $('coin');
+  coin.classList.remove('glint');
+  if (flipMs > 0) tossCoin(flipMs, next);
+  coin.style.transform = `rotateX(${next}deg)`;
+  coinAngle = next;
+
+  rolling = true;
+  $('card').className = 'starter rolling';
+  result.className = 'hint';
+  result.textContent = '';
+  $('pick').textContent = 'Flipping…';
+  $('pick').disabled = true;
+  sfx.start();
+
+  let tick = 0;
+  let elapsed = 0;
+  (function spin() {
+    tick++;
+    if (tick < total) {
+      const progress = tick / total;
+      // ticks while it's in the air; once it's down, only the clink
+      if (elapsed < flipMs * LAND) {
+        sfx.tick(progress);
+        if (navigator.vibrate) navigator.vibrate(5);
+      }
+      const delay = spinDelay(progress);
+      elapsed += delay;
+      setTimeout(spin, delay);
+      return;
+    }
+    rolling = false;
+    coin.classList.add('glint');
+    coinTally[heads ? 'heads' : 'tails']++;
+    setPref(COIN_KEY, JSON.stringify(coinTally));
+    result.className = '';
+    void result.offsetWidth;
+    result.className = 'won';
+    result.textContent = heads ? 'Heads' : 'Tails';
+    $('card').className = 'starter winner';
+    $('pick').textContent = 'Flip again';
+    render();
+    sfx.win();
+    if (navigator.vibrate) navigator.vibrate([40, 60, 40, 60, 120]);
+    const r = result.getBoundingClientRect();
+    burst(r.left + r.width / 2, r.top + r.height / 2);
+  })();
+}
+
+$('coinReset').onclick = () => {
+  if (rolling) return;
+  coinTally = { heads: 0, tails: 0 };
+  setPref(COIN_KEY, JSON.stringify(coinTally));
+  sfx.swap();
+  resetCard();
+  render();
+};
 
 $('support').onclick = () => sfx.add();
 

@@ -1,15 +1,16 @@
 # 👑 Pick One
 
-A tiny web app that picks one thing at random from a list, with a slot-machine spin, confetti and sound effects.
+A tiny web app that picks one thing at random from a list, rolls up to four 3D dice or flips a coin, with a slot-machine spin, confetti and sound effects.
 
 **Try it:** https://neckfors.github.io/pick-one/
 
 It installs on your phone like a normal app, works offline, and remembers your lists.
 
 <p align="center">
-  <img src="screenshots/lists.png" alt="A list of options: Alex, Ben, Mia, Noah (left out) and Sam" width="250">
-  <img src="screenshots/picked.png" alt="Sam has been picked, shown in a gold badge with a crown" width="250">
-  <img src="screenshots/number.png" alt="Number mode with the dice d4, d6, d12, d20 and 2d6" width="250">
+  <img src="screenshots/lists.png" alt="A list of options: Ben, Sam, Alex, Mia and Noah (left out)" width="200">
+  <img src="screenshots/picked.png" alt="One option has been picked, shown in a gold badge with a crown" width="200">
+  <img src="screenshots/dice.png" alt="Dice mode after rolling 2d6: the total in a gold badge with the two dice under it" width="200">
+  <img src="screenshots/coin.png" alt="Coin mode after a flip, with the result in a gold badge and the heads and tails tally" width="200">
 </p>
 
 ## What can it be used for?
@@ -27,7 +28,8 @@ Anything where you need a fair, random pick:
 - 📚 **What to read or play next** from your backlog
 - 🏃 **Which workout today:** run, gym, yoga, rest day…
 - 🤔 **Any tough decision:** when you just can't choose, let it choose
-- 🔢 **A random number:** roll a die, pick a raffle ticket, or any number between two values
+- 🔢 **A random number:** roll up to 4 dice for a board game, pick a raffle ticket, or any number between two values
+- 🪙 **Heads or tails:** flip a coin to settle it
 
 ## How it works
 
@@ -44,18 +46,23 @@ Every pick is completely random. Each option in the draw has the same chance eve
 
 **Recent picks:** under the options, *🕘 Recent picks* keeps the last 100 picks for each list, handy for "who did the dishes last time?". It shows the newest 10; tap *Show all* to see the rest.
 
-## Rolling a number 🎲
+## Rolling dice 🎲
 
-Switch to **🎲 Number** at the top to roll a random number instead of picking from a list. It works just like a list, except each row is a range of numbers:
+Switch to **🎲 Dice** at the top to roll dice, or any random number, instead of picking from a list. It works just like a list, except each row is a range of numbers:
 
-1. **Add a range** with the **From**, **To** and **Name (optional)** fields and **Add**. The Add button stays greyed out until From and To are whole numbers. Any whole numbers work, even 1 to 1,000,000. You start with the dice *d4* (1–4), *d6* (1–6), *d12* (1–12), *d20* (1–20) and *2d6* (2–12, two dice added up), which you can rename, change or remove.
+1. **Add a range** with the **From**, **To** and **Name (optional)** fields and **Add**. The Add button stays greyed out until From and To are whole numbers. Any whole numbers work, even 1 to 1,000,000. You start with the dice *d4* (1–4), *d6* (1–6), *d12* (1–12), *d20* (1–20) and *2d6* (two dice of 1–6, added up), which you can rename, change or remove.
 2. **Tap a range** to choose it. It gets a ✓.
-3. **Tap Roll!** (or shake your phone). A 3D die, standing on one corner, spins while numbers race past (its dots slide around into new numbers), slows down with them and shrinks away as it lands on a number from the range, both ends included.
-4. **Change a range** with its **✎**: the row turns into From, To and Name fields with a green **Save** button. Change what you like and tap Save or press Enter (Esc cancels). Numbers are put in order if you swap them, and a range you already have is not added twice. **✕** removes a range (tap the red **Delete** to confirm, or **Cancel**).
+3. **Choose how many dice** it rolls with **Dice 1 2 3 4** above the ranges. With several dice, each die is rolled on its own and they're added up, just like real dice: with 2d6 a 7 comes up six times as often as a 2 or a 12. The row shows it as *2 × 1–6*.
+4. **Tap Roll!** (or shake your phone). 3D dice, standing on one corner, spin while numbers race past (their dots slide around into new numbers), slow down with them and shrink away as it lands on a number from the range, both ends included. With several dice, the total shows in the gold badge with the dice under it, like *4 + 5*.
+5. **Change a range** with its **✎**: the row turns into From, To and Name fields with a green **Save** button. Change what you like and tap Save or press Enter (Esc cancels). Numbers are put in order if you swap them, and a range you already have is not added twice. **✕** removes a range (tap the red **Delete** to confirm, or **Cancel**).
 
-**Roll each number only once:** switch this on for a range when the same number must not come up twice, like drawing raffle tickets. Numbers already rolled sit out, the top shows how many are left, and when every number has been rolled the button turns into **↺ Start over**. The setting is saved per range.
+**Roll each number only once:** switch this on for a range when the same number must not come up twice, like drawing raffle tickets. Numbers already rolled sit out, the top shows how many are left, and when every number has been rolled the button turns into **↺ Start over**. The setting is saved per range, and works with one die.
 
-Your ranges are remembered and included in backups. `https://neckfors.github.io/pick-one/#number` opens straight in Number mode.
+Your ranges are remembered and included in backups. `https://neckfors.github.io/pick-one/#dice` opens straight in Dice mode (older `#number` links still work).
+
+## Flipping a coin 🪙
+
+Switch to **🪙 Coin** at the top and tap **Flip!** (or shake your phone). The gold coin is tossed toward you, flipping end over end, then drops back down, wobbles to a stop with a clink and a glint, and lands on **H** or **T**. The result shows as *Heads* or *Tails*. Each side comes up half the time. Under the card, a tally counts how many heads and tails you've flipped; **Reset** starts it over. `https://neckfors.github.io/pick-one/#coin` opens straight in Coin mode.
 
 ## Managing lists
 
@@ -76,9 +83,9 @@ Tap ✎ on a list, then **⤴ Share this list**. You get a link to send to anyon
 
 ## Settings ⚙️
 
-- **Shake to pick** (on by default on phones): give your phone two quick shakes instead of tapping Pick! The hint in the Pick! card then reads *Tap Pick! or shake your phone*. On iPhone, a *📳 Tap to turn on shake to pick* button shows first, because Safari asks for motion access once. Tap *No thanks* next to it if you don't want shaking. You can switch it on or off here any time.
+- **Shake to pick** (on by default on phones): give your phone two quick shakes instead of tapping Pick!, Roll! or Flip! The hint in the Pick! card then reads *Tap Pick! or shake your phone*. On iPhone, a *📳 Tap to turn on shake to pick* button shows first, because Safari asks for motion access once. Tap *No thanks* next to it if you don't want shaking. You can switch it on or off here any time.
 - **Sound effects:** on or off (the 🔊 button at the top does the same).
-- **Spin time:** how long a pick or roll spins before it lands, from *Instant* to 3 seconds (the default).
+- **Spin time:** how long a pick, roll or flip spins before it lands, from *Instant* to 3 seconds (the default).
 - **Backup:** *Save backup* downloads a file with all your lists. *Restore* loads such a file and replaces your lists with it. Use it to keep your lists safe, or to move them to a new phone.
 
 ## Install on your phone
@@ -112,7 +119,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v59` → `whostarts-v60`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v61` → `whostarts-v62`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
