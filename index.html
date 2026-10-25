@@ -153,8 +153,30 @@
     text-align: center;
   }
   .num-dash { padding-bottom: 12px; font-size: 1.3rem; color: var(--muted); }
-  .presets { display: flex; gap: 8px; margin-top: 12px; }
-  .presets .btn { flex: 1; padding: 8px; font-size: .9rem; }
+  .ranges-head { display: flex; justify-content: space-between; align-items: baseline; margin: 14px 2px 6px; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .ranges-head .link-btn { text-transform: none; letter-spacing: 0; font-size: .9rem; }
+  .ranges-head .link-btn[hidden] { display: none; }
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; }
+  .range-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    font-size: .95rem;
+    transition: transform .1s;
+  }
+  .range-chip:active { transform: scale(.96); }
+  .range-chip b { font-weight: 700; }
+  .range-chip small { color: var(--muted); font-size: .8rem; }
+  .range-chip.on { border: 2px solid var(--accent); background: var(--glow); }
+  .range-chip.save { border-style: dashed; color: var(--accent); font-weight: 600; background: transparent; }
+  .range-chip.deleting { border-color: var(--danger); }
+  .range-chip.deleting::after { content: "✕"; color: var(--danger); font-weight: 700; }
   @keyframes flip { from { transform: translateY(-60%) scaleY(.6); opacity: .2; filter: blur(2px); } to { transform: none; opacity: 1; filter: none; } }
   @keyframes pop { 0% { transform: scale(.3) rotate(-8deg); } 60% { transform: scale(1.25) rotate(3deg); } 100% { transform: none; } }
   @keyframes drop { from { opacity: 0; transform: translateY(-40px) rotate(-25deg) scale(.4); } to { opacity: 1; transform: none; } }
@@ -455,11 +477,11 @@
       <span class="num-dash" aria-hidden="true">–</span>
       <label>To<input id="numTo" type="number" inputmode="numeric" step="1" enterkeyhint="done"></label>
     </div>
-    <div class="presets">
-      <button type="button" class="btn" data-range="1,6">1–6</button>
-      <button type="button" class="btn" data-range="1,10">1–10</button>
-      <button type="button" class="btn" data-range="1,100">1–100</button>
+    <div class="ranges-head">
+      <span>Saved ranges</span>
+      <button type="button" class="link-btn" id="editRanges">Edit</button>
     </div>
+    <div class="presets" id="ranges"></div>
   </div>
 
   <div class="list-card">
@@ -553,13 +575,26 @@
       <button type="button" class="btn" id="exportBtn">⬇ Save backup</button>
       <button type="button" class="btn" id="importBtn">⬆ Restore</button>
     </div>
-    <p class="hint-text">Your lists are only stored on this device. Save a backup file to keep them safe or move them to another phone. Restoring replaces all your lists.</p>
+    <p class="hint-text">Your lists are only stored on this device. Save a backup file to keep them safe or move them to another phone. Restoring replaces all your lists and saved ranges.</p>
     <input type="file" id="importFile" accept=".json,application/json" hidden>
 
     <div class="dialog-row">
       <span class="spacer"></span>
       <button type="button" class="btn primary" id="settingsClose">Done</button>
     </div>
+  </dialog>
+
+  <dialog id="rangeDialog">
+    <form id="rangeForm">
+      <h2 id="rangeTitle">Save range</h2>
+      <input class="field" id="rangeName" placeholder="Name (optional), e.g. d6" autocomplete="off" enterkeyhint="done" maxlength="20">
+      <p class="hint-text">Leave the name empty to show just the numbers.</p>
+      <div class="dialog-row">
+        <span class="spacer"></span>
+        <button type="button" class="btn" id="rangeCancel">Cancel</button>
+        <button type="submit" class="btn primary" id="rangeSave">Save</button>
+      </div>
+    </form>
   </dialog>
 
   <dialog id="importDialog">
@@ -1065,22 +1100,125 @@ for (const id of ['numFrom', 'numTo']) {
     const n = readNumbers();
     if (n) { numbers = n; setPref(NUM_KEY, JSON.stringify(numbers)); }
     if (result.classList.contains('hint')) result.textContent = hintText();
+    renderRanges();
   });
   $(id).addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); $('pick').click(); }
   });
 }
-document.querySelectorAll('[data-range]').forEach(b => {
-  b.onclick = () => {
-    if (rolling) return;
-    const [from, to] = b.dataset.range.split(',').map(Number);
-    numbers = { from, to };
-    setPref(NUM_KEY, JSON.stringify(numbers));
-    sfx.click();
-    resetCard();
-    render();
-  };
-});
+// ---------- Saved ranges ----------
+// Ranges people keep for later, each with an optional name such as "d6".
+const RANGES_KEY = 'whostarts.ranges';
+const DEFAULT_RANGES = [{ from: 1, to: 6, name: '' }, { from: 1, to: 10, name: '' }, { from: 1, to: 100, name: '' }];
+
+function normalizeRanges(list) {
+  if (!Array.isArray(list)) return null;
+  return list
+    .filter(r => r && Number.isInteger(r.from) && Number.isInteger(r.to))
+    .map(r => ({ from: Math.min(r.from, r.to), to: Math.max(r.from, r.to), name: typeof r.name === 'string' ? r.name.trim().slice(0, 20) : '' }));
+}
+
+let ranges = (() => {
+  try { return normalizeRanges(JSON.parse(pref(RANGES_KEY, 'null'))) || DEFAULT_RANGES.slice(); } catch (e) { return DEFAULT_RANGES.slice(); }
+})();
+let editingRanges = false;
+
+function saveRanges() {
+  setPref(RANGES_KEY, JSON.stringify(ranges));
+}
+
+function sameRange(a, b) {
+  return Math.min(a.from, a.to) === Math.min(b.from, b.to) && Math.max(a.from, a.to) === Math.max(b.from, b.to);
+}
+
+function rangeText(r) {
+  return `${Math.min(r.from, r.to).toLocaleString()}–${Math.max(r.from, r.to).toLocaleString()}`;
+}
+
+function renderRanges() {
+  const box = $('ranges');
+  box.innerHTML = '';
+  if (!ranges.length) editingRanges = false;
+  for (const r of ranges) {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'range-chip'
+      + (!editingRanges && sameRange(r, numbers) ? ' on' : '')
+      + (editingRanges ? ' deleting' : '');
+    if (r.name) {
+      const b = document.createElement('b');
+      b.textContent = r.name;
+      const small = document.createElement('small');
+      small.textContent = rangeText(r);
+      chip.append(b, small);
+    } else {
+      chip.textContent = rangeText(r);
+    }
+    chip.setAttribute('aria-label', editingRanges ? `Remove ${r.name || rangeText(r)}` : `Use ${r.name ? r.name + ', ' : ''}${rangeText(r)}`);
+    chip.onclick = () => {
+      if (rolling) return;
+      if (editingRanges) {
+        ranges = ranges.filter(x => x !== r);
+        saveRanges();
+        sfx.del();
+        renderRanges();
+        return;
+      }
+      numbers = { from: r.from, to: r.to };
+      setPref(NUM_KEY, JSON.stringify(numbers));
+      sfx.click();
+      resetCard();
+      render();
+    };
+    box.append(chip);
+  }
+  if (!editingRanges) {
+    const save = document.createElement('button');
+    save.type = 'button';
+    save.className = 'range-chip save';
+    save.textContent = '☆ Save';
+    save.setAttribute('aria-label', 'Save this range');
+    save.onclick = openRangeDialog;
+    box.append(save);
+  }
+  $('editRanges').hidden = !ranges.length;
+  $('editRanges').textContent = editingRanges ? 'Done' : 'Edit';
+}
+
+$('editRanges').onclick = () => {
+  editingRanges = !editingRanges;
+  sfx.click();
+  renderRanges();
+};
+
+const rangeDialog = $('rangeDialog');
+closeOnBackdrop(rangeDialog);
+
+function openRangeDialog() {
+  if (rolling) return;
+  const n = readNumbers();
+  if (!n) { sfx.out(); toast('Enter whole numbers in From and To'); return; }
+  const existing = ranges.find(r => sameRange(r, n));
+  $('rangeTitle').textContent = existing ? `Rename ${rangeText(n)}` : `Save ${rangeText(n)}`;
+  $('rangeName').value = existing ? existing.name : '';
+  rangeDialog.showModal();
+  $('rangeName').focus();
+}
+
+$('rangeForm').onsubmit = (e) => {
+  e.preventDefault();
+  const n = readNumbers();
+  if (!n) { rangeDialog.close(); return; }
+  const name = $('rangeName').value.trim().replace(/\s+/g, ' ').slice(0, 20);
+  const existing = ranges.find(r => sameRange(r, n));
+  if (existing) existing.name = name;
+  else ranges.push({ from: Math.min(n.from, n.to), to: Math.max(n.from, n.to), name });
+  saveRanges();
+  sfx.add();
+  rangeDialog.close();
+  render();
+};
+$('rangeCancel').onclick = () => rangeDialog.close();
 
 function switchTo(id) {
   state.current = id;
@@ -1341,7 +1479,7 @@ $('settingsBtn').onclick = () => {
 $('settingsClose').onclick = () => settings.close();
 
 $('exportBtn').onclick = () => {
-  const data = { app: 'pick-one', version: 1, exported: new Date().toISOString(), current: state.current, sets: state.sets };
+  const data = { app: 'pick-one', version: 1, exported: new Date().toISOString(), current: state.current, sets: state.sets, ranges };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -1367,6 +1505,9 @@ $('importFile').onchange = async (e) => {
     if (!confirm(`Replace all your lists with the ${lists} from this backup?`)) return;
     state = { sets, current: sets.some(s => s.id === data.current) ? data.current : sets[0].id };
     ensureSlugs();
+    // backups from before saved ranges existed have none; keep the current ones then
+    const savedRanges = normalizeRanges(data.ranges);
+    if (savedRanges) { ranges = savedRanges; saveRanges(); }
     resetCard();
     save(); render();
     sfx.addMany(4);
@@ -1455,6 +1596,8 @@ function hintText() {
   if (mode === 'number') {
     const lo = Math.min(numbers.from, numbers.to).toLocaleString();
     const hi = Math.max(numbers.from, numbers.to).toLocaleString();
+    const named = ranges.find(r => r.name && sameRange(r, numbers));
+    if (named) return shaking ? `Roll or shake to roll ${named.name} (${lo}–${hi}) 📳` : `Tap Roll! to roll ${named.name} (${lo}–${hi})`;
     return shaking ? `Roll or shake for a number from ${lo} to ${hi} 📳` : `Tap Roll! for a number from ${lo} to ${hi}`;
   }
   if (!cur().items.length) return 'Add some options, then tap Pick!';
@@ -1536,6 +1679,7 @@ function render() {
     delete $('pick').dataset.mode;
     $('pick').disabled = rolling;
     if (result.classList.contains('hint')) result.textContent = hintText();
+    renderRanges();
     syncAddress();
     return;
   }

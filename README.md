@@ -39,7 +39,9 @@ Every pick is completely random. Each option in the draw has the same chance eve
 
 ## Rolling a number 🎲
 
-Switch to **🎲 Number** at the top to roll a random number instead of picking from a list. Set **From** and **To** (any whole numbers, even 1 to 1,000,000), or tap **1–6**, **1–10** or **1–100**, then tap **Roll!** (or shake your phone). A die tumbles while numbers race past, and it lands on a number from the range, both ends included. Your range is remembered, and `https://neckfors.github.io/pick-one/#number` opens straight in Number mode.
+Switch to **🎲 Number** at the top to roll a random number instead of picking from a list. Set **From** and **To** (any whole numbers, even 1 to 1,000,000), or tap one of your saved ranges, then tap **Roll!** (or shake your phone). A die tumbles while numbers race past, and it lands on a number from the range, both ends included. Your range is remembered, and `https://neckfors.github.io/pick-one/#number` opens straight in Number mode.
+
+**Saved ranges:** tap **☆ Save** to keep the current range for later. You can give it a name like *d6*, *d20* or *Raffle*, or leave the name empty to show just the numbers. Saving a range you already have lets you rename it. Tap **Edit**, then a range, to remove it. You start with 1–6, 1–10 and 1–100, and saved ranges are included in backups.
 
 ## Managing lists
 
@@ -90,7 +92,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v33` → `whostarts-v34`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v34` → `whostarts-v35`), otherwise installed copies keep showing the old version.
 
 ## Support
 
