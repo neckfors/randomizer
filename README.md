@@ -49,6 +49,14 @@ In the list panel:
 
 Every list has its own address, for example `https://neckfors.github.io/pick-one/#game-night`. Opening it starts Pick One straight on that list, and the address bar follows whichever list you're on. Copy it with ✎ → **🔗 Copy this list's address**, and bookmark it if you like. The address only opens *your* copy of the list on that device. To give a list to someone else, use **Share** below. If you rename a list, it gets a new address, and the old one keeps working.
 
+### Shortcuts on the app icon (Android)
+
+On Android, **press and hold** the Pick One icon on your home screen to jump straight to *🎲 Game night*, *🍳 Who makes dinner* or *🍕 Where to eat*. You can also drag a shortcut onto your home screen as its own icon.
+
+The shortcuts are built into the app, so they always point to these three starting lists. Lists you make yourself don't appear there. A renamed starting list still opens from its shortcut, but the shortcut keeps the original name. If you delete one, its shortcut shows *That list isn't on this phone*. iPhone doesn't support these shortcuts.
+
+If you installed the app before the shortcuts were added, Android may take a day or so to pick them up. Reinstalling makes them appear right away.
+
 ### Sharing a list
 
 Tap ✎ on a list, then **⤴ Share this list**. You get a link to send to anyone. When they open it, Pick One asks whether to add the list, with all its options, to their own lists. The list travels inside the link itself, so nothing is uploaded anywhere.
@@ -76,6 +84,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 | `manifest.json` | App name, icons and colors, so it can be installed |
 | `sw.js` | Service worker that caches the files for offline use |
 | `icon-192.png`, `icon-512.png` | App icons |
+| `shortcut-*.png` | Icons for the long-press shortcuts |
 
 - Your lists are stored in the browser's `localStorage` on your device. Nothing is sent anywhere.
 - Shared lists are encoded in the link after `#list=`, which never reaches the server.
@@ -85,7 +94,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v27` → `whostarts-v28`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v28` → `whostarts-v29`), otherwise installed copies keep showing the old version.
 
 ## Support
 
