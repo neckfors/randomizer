@@ -117,19 +117,25 @@
   }
   #pick:active { transform: scale(.97); }
   #pick:disabled { opacity: .45; }
-  .shake-tip {
+  .shake-ask {
     position: relative;
-    display: block;
-    margin: 10px auto -6px;
-    padding: 4px 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin: 10px 0 -6px;
+  }
+  .shake-ask[hidden] { display: none; }
+  .shake-tip, .shake-no {
+    padding: 4px 6px;
     background: none;
     border: 0;
     font: inherit;
     font-size: .85rem;
-    font-weight: 600;
-    color: var(--accent);
   }
-  .shake-tip[hidden] { display: none; }
+  .shake-tip { font-weight: 600; color: var(--accent); }
+  .shake-no { color: var(--muted); text-decoration: underline; }
 
   #add { display: flex; gap: 8px; margin-bottom: 16px; }
   #name, .field {
@@ -372,7 +378,10 @@
     <div id="crown" aria-hidden="true">👑</div>
     <div class="stage"><div id="result" class="hint">Add some options, then tap Pick!</div></div>
     <button id="pick" type="button">Pick!</button>
-    <button type="button" class="shake-tip" id="shakeTip" hidden></button>
+    <div class="shake-ask" id="shakeAsk" hidden>
+      <button type="button" class="shake-tip" id="shakeTip">📳 Tap to turn on shake to pick</button>
+      <button type="button" class="shake-no" id="shakeNo">No thanks</button>
+    </div>
   </section>
 
   <div class="list-card">
@@ -1296,13 +1305,20 @@ function hintText() {
   return shakeOn && listening ? 'Tap Pick! or shake your phone 📳' : 'Tap Pick! to choose one';
 }
 
-// On iPhone, before motion is allowed, a button under Pick! asks for it.
+// On iPhone, before motion is allowed, a button under Pick! asks for it,
+// with "No thanks" to switch shaking off and hide the question for good.
 function renderShakeTip() {
-  const tip = $('shakeTip');
-  tip.hidden = !shakeOn || listening;
-  tip.textContent = '📳 Tap to turn on shake to pick';
+  $('shakeAsk').hidden = !shakeOn || listening;
   if (result.classList.contains('hint')) result.textContent = hintText();
 }
+
+$('shakeNo').onclick = () => {
+  shakeOn = false;
+  setPref(SHAKE_KEY, '0');
+  sfx.out();
+  toast('Okay! You can turn it on later in ⚙️ Settings.');
+  renderShakeTip();
+};
 
 $('shakeTip').onclick = async () => {
   if (await enableShake()) {
