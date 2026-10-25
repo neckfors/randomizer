@@ -117,6 +117,21 @@
   }
   #pick:active { transform: scale(.97); }
   #pick:disabled { opacity: .45; }
+  .shake-tip {
+    position: relative;
+    display: block;
+    margin: 10px auto -6px;
+    padding: 4px 8px;
+    background: none;
+    border: 0;
+    font: inherit;
+    font-size: .85rem;
+    color: var(--muted);
+  }
+  .shake-tip[hidden] { display: none; }
+  .shake-tip[data-mode="ask"] { color: var(--accent); font-weight: 600; }
+  .shake-tip.wiggle { animation: wiggle .5s ease-in-out; }
+  @keyframes wiggle { 0%, 100% { transform: none; } 20% { transform: rotate(-6deg); } 40% { transform: rotate(6deg); } 60% { transform: rotate(-4deg); } 80% { transform: rotate(4deg); } }
 
   #add { display: flex; gap: 8px; margin-bottom: 16px; }
   #name, .field {
@@ -358,6 +373,7 @@
     <div id="crown" aria-hidden="true">👑</div>
     <div class="stage"><div id="result" class="hint">Add some options, then tap Pick!</div></div>
     <button id="pick" type="button">Pick!</button>
+    <button type="button" class="shake-tip" id="shakeTip" hidden></button>
   </section>
 
   <div class="list-card">
@@ -433,7 +449,7 @@
     <label class="switch-row">
       <input type="checkbox" id="shakeToggle">
       <span class="switch" aria-hidden="true"></span>
-      <span class="once-text">Shake to pick<small id="shakeHint">Shake your phone instead of tapping Pick!</small></span>
+      <span class="once-text">Shake to pick<small id="shakeHint">Give your phone two quick shakes instead of tapping Pick!</small></span>
     </label>
     <label class="switch-row">
       <input type="checkbox" id="soundToggle">
@@ -1114,7 +1130,10 @@ $('importFile').onchange = async (e) => {
 };
 
 // ---------- Shake to pick ----------
-let shakeOn = pref(SHAKE_KEY, '0') === '1';
+// On by default on phones (touch screen with motion sensors); computers never see it.
+const isPhone = typeof DeviceMotionEvent !== 'undefined' && matchMedia('(pointer: coarse)').matches;
+const MOTION_OK_KEY = 'whostarts.motionOk';
+let shakeOn = isPhone && pref(SHAKE_KEY, '1') === '1';
 let listening = false;
 let lastMotion = null;
 let shakeHits = [];
@@ -1122,9 +1141,9 @@ let lastShakePick = 0;
 const needsMotionPermission = typeof DeviceMotionEvent !== 'undefined'
   && typeof DeviceMotionEvent.requestPermission === 'function';
 
-if (typeof DeviceMotionEvent === 'undefined') {
+if (!isPhone) {
   $('shakeToggle').disabled = true;
-  $('shakeHint').textContent = 'Not available on this device';
+  $('shakeHint').textContent = 'Only on phones';
 }
 
 function onMotion(e) {
@@ -1148,7 +1167,7 @@ function onMotion(e) {
 }
 
 function shakePick() {
-  if (rolling || document.querySelector('dialog[open]')) return;
+  if (!shakeOn || rolling || document.querySelector('dialog[open]')) return;
   const pick = $('pick');
   if (pick.disabled || pick.dataset.mode === 'reset') return;
   pick.click();
@@ -1166,10 +1185,44 @@ async function enableShake() {
   if (!needsMotionPermission) { listenForShakes(); return true; }
   try {
     const answer = await DeviceMotionEvent.requestPermission();
-    if (answer === 'granted') { listenForShakes(); return true; }
+    if (answer === 'granted') {
+      setPref(MOTION_OK_KEY, '1');
+      listenForShakes();
+      return true;
+    }
   } catch (e) {}
   return false;
 }
+
+// The line under Pick!: a reminder that shaking works, or on iPhone (before
+// motion is allowed) a button that asks for it.
+function renderShakeTip() {
+  const tip = $('shakeTip');
+  tip.hidden = !shakeOn;
+  if (!shakeOn) return;
+  tip.dataset.mode = listening ? 'info' : 'ask';
+  tip.textContent = listening ? '📳 or shake your phone' : '📳 Tap to turn on shake to pick';
+}
+
+$('shakeTip').onclick = async () => {
+  const tip = $('shakeTip');
+  if (tip.dataset.mode === 'info') {
+    tip.classList.remove('wiggle');
+    void tip.offsetWidth;
+    tip.classList.add('wiggle');
+    toast('Give your phone two quick shakes');
+    return;
+  }
+  if (await enableShake()) {
+    sfx.in();
+    toast('Shake your phone to pick!');
+  } else {
+    shakeOn = false;
+    setPref(SHAKE_KEY, '0');
+    toast('Motion access was not allowed. You can try again in ⚙️ Settings.');
+  }
+  renderShakeTip();
+};
 
 $('shakeToggle').onchange = async (e) => {
   if (e.target.checked) {
@@ -1187,15 +1240,20 @@ $('shakeToggle').onchange = async (e) => {
     sfx.out();
   }
   setPref(SHAKE_KEY, shakeOn ? '1' : '0');
+  renderShakeTip();
 };
 
 if (shakeOn) {
-  if (needsMotionPermission) {
-    document.addEventListener('click', () => { if (shakeOn) enableShake(); }, { once: true });
-  } else {
+  if (!needsMotionPermission) {
     listenForShakes();
+  } else if (pref(MOTION_OK_KEY, '0') === '1') {
+    // allowed before, so the first tap anywhere turns it back on without asking
+    document.addEventListener('click', async () => {
+      if (shakeOn && !listening) { await enableShake(); renderShakeTip(); }
+    }, { once: true, capture: true });
   }
 }
+renderShakeTip();
 
 // ---------- Options in the current list ----------
 function render() {

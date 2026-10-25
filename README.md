@@ -51,7 +51,7 @@ Tap ✎ on a list, then **⤴ Share this list**. You get a link to send to anyon
 
 ## Settings ⚙️
 
-- **Shake to pick:** shake your phone instead of tapping Pick! On iPhone, you'll be asked to allow motion access the first time.
+- **Shake to pick** (on by default on phones): give your phone two quick shakes instead of tapping Pick! A small *📳 or shake your phone* under the Pick! button reminds you. On iPhone, that line first says *Tap to turn on shake to pick*, because Safari asks for motion access once. You can switch it off here.
 - **Sound effects:** on or off (the 🔊 button at the top does the same).
 - **Backup:** *Save backup* downloads a file with all your lists. *Restore* loads such a file and replaces your lists with it. Use it to keep your lists safe, or to move them to a new phone.
 
@@ -81,7 +81,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v21` → `whostarts-v22`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v22` → `whostarts-v23`), otherwise installed copies keep showing the old version.
 
 ## Support
 
