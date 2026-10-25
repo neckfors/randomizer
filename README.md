@@ -45,6 +45,10 @@ In the list panel:
 - **Drag ⠿** to put your lists in the order you like.
 - **Select** lets you tick one or more lists and delete them all at once (it asks first, and always keeps at least one list).
 
+### Each list's own address
+
+Every list has its own address, for example `https://neckfors.github.io/pick-one/#game-night`. Opening it starts Pick One straight on that list, and the address bar follows whichever list you're on. Copy it with ✎ → **🔗 Copy this list's address**, and bookmark it if you like. The address only opens *your* copy of the list on that device. To give a list to someone else, use **Share** below. If you rename a list, it gets a new address, and the old one keeps working.
+
 ### Sharing a list
 
 Tap ✎ on a list, then **⤴ Share this list**. You get a link to send to anyone. When they open it, Pick One asks whether to add the list, with all its options, to their own lists. The list travels inside the link itself, so nothing is uploaded anywhere.
@@ -81,7 +85,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v25` → `whostarts-v26`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v26` → `whostarts-v27`), otherwise installed copies keep showing the old version.
 
 ## Support
 

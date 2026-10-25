@@ -435,6 +435,8 @@
       <div class="emojis" id="emojiPicker" role="radiogroup" aria-label="List icon"></div>
       <input class="field emoji-input" id="emojiInput" placeholder="…or type any emoji 😀" autocomplete="off" enterkeyhint="done" aria-label="Type any emoji as the list icon">
       <button type="button" class="btn wide" id="setShare" style="margin-top: 16px">⤴ Share this list</button>
+      <button type="button" class="btn wide" id="setLink" style="margin-top: 8px">🔗 Copy this list’s address</button>
+      <p class="hint-text" id="setLinkHint"></p>
       <div class="dialog-row">
         <button type="button" class="btn danger" id="setDelete">Delete</button>
         <span class="spacer"></span>
@@ -537,6 +539,10 @@ function normalizeSet(s) {
     history: (Array.isArray(s.history) ? s.history : [])
       .filter(h => h && h.name)
       .slice(0, MAX_HISTORY),
+    // the list's own address (#slug); ensureSlugs() fills it in when missing
+    slug: typeof s.slug === 'string' ? s.slug : '',
+    // earlier addresses, so links keep working after a rename
+    aliases: (Array.isArray(s.aliases) ? s.aliases : []).filter(a => typeof a === 'string').slice(0, 10),
   };
 }
 
@@ -565,7 +571,39 @@ function setPref(key, value) {
   try { localStorage.setItem(key, value); } catch (e) {}
 }
 
+// ---------- List addresses ----------
+// Every list has its own address, like …/pick-one/#game-night, that opens the
+// app straight on that list.
+function slugify(name) {
+  return name.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'list';
+}
+
+function slugTaken(slug, except) {
+  return state.sets.some(s => s !== except && (s.slug === slug || s.aliases.includes(slug)));
+}
+
+function uniqueSlug(name, except) {
+  const base = slugify(name);
+  let slug = base;
+  for (let i = 2; slugTaken(slug, except); i++) slug = `${base}-${i}`;
+  return slug;
+}
+
+function ensureSlugs() {
+  const seen = new Set();
+  for (const s of state.sets) {
+    if (!s.slug || seen.has(s.slug)) s.slug = uniqueSlug(s.name, s);
+    seen.add(s.slug);
+  }
+}
+
+function addressOf(set) {
+  return `${location.origin}${location.pathname}#${set.slug}`;
+}
+
 let state = load();
+ensureSlugs();
 let rolling = false;
 let winnerId = null;     // crowned row, until the next pick
 let freshIds = new Set();// rows that just got added
@@ -932,6 +970,10 @@ function openSetDialog(id) {
   $('setSave').textContent = set ? 'Save' : 'Create';
   $('setDelete').hidden = !set;
   $('setShare').hidden = !set;
+  $('setLink').hidden = !set;
+  $('setLinkHint').hidden = !set;
+  // "Share" sends the list's contents to someone; the address opens your own copy
+  if (set) $('setLinkHint').textContent = `Opens “${set.name}” straight away on this phone: …/pick-one/#${set.slug}`;
   $('setDelete').disabled = state.sets.length < 2;
   chosenEmoji = set ? set.emoji : '📋';
   $('emojiInput').value = '';
@@ -949,12 +991,19 @@ $('setForm').onsubmit = (e) => {
   if (!name) { $('setName').focus(); return; }
   const set = state.sets.find(s => s.id === editId);
   if (set) {
+    if (slugify(name) !== slugify(set.name)) {
+      // new address for the new name; the old one keeps working as an alias
+      const next = uniqueSlug(name, set);
+      set.aliases = [set.slug, ...set.aliases.filter(a => a !== set.slug && a !== next)].slice(0, 10);
+      set.slug = next;
+    }
     set.name = name;
     set.emoji = chosenEmoji;
     sfx.in();
   } else {
     const fresh = normalizeSet({ name, emoji: chosenEmoji });
     state.sets.push(fresh);
+    ensureSlugs();
     state.current = fresh.id;
     resetCard();
     sheet.close();
@@ -1068,6 +1117,7 @@ $('importAdd').onclick = () => {
   if (!pendingImport) return;
   pendingImport.name = uniqueName(pendingImport.name);
   state.sets.push(pendingImport);
+  ensureSlugs();
   state.current = pendingImport.id;
   pendingImport = null;
   importDialog.close();
@@ -1077,7 +1127,49 @@ $('importAdd').onclick = () => {
   toast('List added!');
 };
 $('importCancel').onclick = () => { pendingImport = null; importDialog.close(); };
-addEventListener('hashchange', checkSharedLink);
+
+// Opens the list named in the address (#game-night). Returns true when it switched.
+function openFromAddress() {
+  const m = location.hash.match(/^#([a-z0-9-]+)$/);
+  if (!m) return false;
+  const set = state.sets.find(s => s.slug === m[1] || s.aliases.includes(m[1]));
+  if (!set) {
+    toast('That list isn’t on this phone');
+    return false;
+  }
+  if (set.id === state.current) return false;
+  state.current = set.id;
+  resetCard();
+  save();
+  return true;
+}
+
+// Keeps the address bar on the current list, so it can be copied or bookmarked.
+function syncAddress() {
+  if (location.hash.startsWith('#list=')) return;
+  const want = '#' + cur().slug;
+  if (location.hash !== want) history.replaceState(null, '', location.pathname + location.search + want);
+}
+
+addEventListener('hashchange', () => {
+  if (location.hash.startsWith('#list=')) { checkSharedLink(); return; }
+  if (rolling) return;
+  if (openFromAddress()) sfx.swap();
+  render();
+});
+
+$('setLink').onclick = async () => {
+  const set = state.sets.find(s => s.id === editId);
+  if (!set) return;
+  const url = addressOf(set);
+  try {
+    await navigator.clipboard.writeText(url);
+    sfx.add();
+    toast('Address copied');
+  } catch (e) {
+    prompt('This list’s address:', url);
+  }
+};
 
 // ---------- Settings, backup and restore ----------
 const settings = $('settingsDialog');
@@ -1121,6 +1213,7 @@ $('importFile').onchange = async (e) => {
     const lists = `${sets.length} list${sets.length === 1 ? '' : 's'}`;
     if (!confirm(`Replace all your lists with the ${lists} from this backup?`)) return;
     state = { sets, current: sets.some(s => s.id === data.current) ? data.current : sets[0].id };
+    ensureSlugs();
     resetCard();
     save(); render();
     sfx.addMany(4);
@@ -1281,6 +1374,7 @@ function render() {
   }
   renderSets();
   renderHistory();
+  syncAddress();
 
   const lists = $('lists');
   lists.innerHTML = '';
@@ -1519,6 +1613,7 @@ function land(winner) {
 $('support').onclick = () => sfx.add();
 
 renderMute();
+openFromAddress();
 render();
 checkSharedLink();
 
