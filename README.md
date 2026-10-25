@@ -6,6 +6,12 @@ A tiny web app that picks one thing at random from a list, with a slot-machine s
 
 It installs on your phone like a normal app, works offline, and remembers your lists.
 
+<p align="center">
+  <img src="screenshots/lists.png" alt="A list of options: Alex, Ben, Mia, Noah (left out) and Sam" width="250">
+  <img src="screenshots/picked.png" alt="Sam has been picked, shown in a gold badge with a crown" width="250">
+  <img src="screenshots/number.png" alt="Number mode with the dice d4, d6, d12, d20 and 2d6" width="250">
+</p>
+
 ## What can it be used for?
 
 Anything where you need a fair, random pick:
@@ -26,10 +32,10 @@ Anything where you need a fair, random pick:
 ## How it works
 
 1. **Choose a list:** tap the list button under the Pick! area to see all your lists (*🎲 Game night*, *🍳 Who makes dinner*, *🍕 Where to eat*, …) and tap one to switch. Each list keeps its own options, so the names in one list never show up in another.
-2. **Add options** using the field under the list (the **Add** button lights up once you type something). Add several at once by separating them with commas (`Anna, Erik, Sara`), or paste a list with one option per line.
+2. **Add options** using the field under the list (the **Add** button lights up once you type something). Add several at once by separating them with commas (`Ben, Sam`), or paste a list with one option per line.
 3. **Tap an option** to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
 4. **Tap Pick!** and watch it spin. The picked option lights up in gold, with a 👑 and confetti.
-5. **Rename options:** tap **Edit** above the list. The names turn into fields you can change; tap **Done** when finished. Outside Edit, names can't be changed by accident.
+5. **Rename an option** with its **✎**: the row turns into a field with a **✓**. Type the new name and tap ✓ or press Enter (Esc cancels). Tapping somewhere else saves too.
 6. Remove an option for good with **✕**. A bar with **Undo** shows for a few seconds in case it was a mistake.
 
 Every pick is completely random. Each option in the draw has the same chance every time, even if it was picked last time.
@@ -45,7 +51,7 @@ Switch to **🎲 Number** at the top to roll a random number instead of picking 
 1. **Add a range** with the **From**, **To** and **Name (optional)** fields and **Add**. The Add button stays greyed out until From and To are whole numbers. Any whole numbers work, even 1 to 1,000,000. You start with the dice *d4* (1–4), *d6* (1–6), *d12* (1–12), *d20* (1–20) and *2d6* (2–12, two dice added up), which you can rename, change or remove.
 2. **Tap a range** to choose it. It gets a ✓.
 3. **Tap Roll!** (or shake your phone). A die tumbles while numbers race past, and it lands on a number from the range, both ends included.
-4. **Change or rename a range:** tap **Edit** above the ranges. Each row's From, To and name turn into fields; change them and tap **Done** when finished. Numbers are put in order if you swap them, and a range you already have is not added twice. **✕** removes a range.
+4. **Change a range** with its **✎**: the row turns into From, To and Name fields with a **✓**. Change what you like and tap ✓ or press Enter (Esc cancels). Numbers are put in order if you swap them, and a range you already have is not added twice. **✕** removes a range.
 
 **Roll each number only once:** switch this on for a range when the same number must not come up twice, like drawing raffle tickets. Numbers already rolled sit out, the top shows how many are left, and when every number has been rolled the button turns into **↺ Start over**. The setting is saved per range.
 
@@ -92,6 +98,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 | `manifest.json` | App name, icons and colors, so it can be installed |
 | `sw.js` | Service worker that caches the files for offline use |
 | `icon-192.png`, `icon-512.png` | App icons |
+| `screenshots/` | The pictures in this README |
 
 - Your lists are stored in the browser's `localStorage` on your device. Nothing is sent anywhere.
 - Shared lists are encoded in the link after `#list=`, which never reaches the server.
@@ -101,7 +108,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v41` → `whostarts-v42`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v42` → `whostarts-v43`), otherwise installed copies keep showing the old version.
 
 ## Support
 

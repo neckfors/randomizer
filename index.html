@@ -142,8 +142,6 @@
   body.number-mode .list-tip { display: none !important; }
   #rangeList li.current-range { background: var(--glow); }
   body.number-mode .add-range { display: flex !important; }
-  body.number-mode .edit-head.list-only { display: none; }
-  body.number-mode .edit-head.number-only { display: flex !important; }
   .add-range { gap: 6px; margin-bottom: 4px; }
   .add-range .btn { padding: 10px 12px; }
   .add-range input {
@@ -160,35 +158,28 @@
   .add-range input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   #numName { flex: 1; }
   .btn:disabled, #addBtn:disabled, #addRangeBtn:disabled { opacity: .4; }
-  .edit-head { display: flex; justify-content: flex-end; margin: 0 2px 4px; }
-  .edit-head .link-btn[hidden] { display: none; }
   #rangeList .label small { margin-left: 8px; color: var(--muted); font-size: .85rem; }
   #rangeList .label b { font-weight: 700; }
   #rangeList li:not(.current-range) .dot { border-color: var(--muted); }
-  .pick-dot { flex: none; align-self: stretch; display: grid; place-items: center; width: 48px; padding-left: 4px; }
-  .range-edge, .range-name, .opt-name {
-    padding: 6px 2px;
-    border: 0;
-    border-bottom: 1.5px dashed var(--muted);
-    border-radius: 0;
-    background: transparent;
+  /* ✎ on each row; tapping it opens that row for editing with a ✓ to save */
+  .row-edit { flex: none; width: 40px; height: 52px; color: var(--muted); font-size: 1.05rem; }
+  li.editing { padding: 6px 0 6px 12px; gap: 6px; background: var(--glow); }
+  .row-field {
+    flex: 1;
+    min-width: 0;
+    padding: 9px 10px;
+    border: 1.5px solid var(--accent);
+    border-radius: 10px;
+    background: var(--card);
     color: var(--text);
     font: inherit;
-    font-weight: 600;
   }
-  .range-edge { flex: none; min-width: 2.6ch; text-align: center; -moz-appearance: textfield; appearance: textfield; }
-  .range-edge::-webkit-outer-spin-button,
-  .range-edge::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .range-edge:hover { border-bottom-color: var(--text); }
-  .range-edge:focus { outline: none; border-bottom: 1.5px solid var(--accent); }
-  .range-dash { flex: none; padding: 0 4px; color: var(--muted); }
-  .range-name { flex: 1; min-width: 0; margin-left: 12px; padding: 6px 4px; }
-  .opt-name { flex: 1; min-width: 0; margin: 0 4px; padding: 6px 4px; font-weight: 400; text-overflow: ellipsis; }
-  .opt-name:hover { border-bottom-color: var(--text); }
-  .opt-name:focus { outline: none; border-bottom: 1.5px solid var(--accent); }
-  .range-name::placeholder { color: var(--muted); font-weight: 400; font-style: italic; }
-  .range-name:hover { border-bottom-color: var(--text); }
-  .range-name:focus { outline: none; border-bottom: 1.5px solid var(--accent); }
+  .row-field:focus { outline: none; box-shadow: 0 0 0 3px var(--glow); }
+  .row-field.num { flex: 0 0 4em; width: 4em; text-align: center; -moz-appearance: textfield; appearance: textfield; }
+  .row-field.num::-webkit-outer-spin-button,
+  .row-field.num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .range-dash { flex: none; color: var(--muted); }
+  .row-ok { flex: none; width: 48px; height: 44px; color: var(--accent); font-size: 1.3rem; font-weight: 700; }
   @keyframes flip { from { transform: translateY(-60%) scaleY(.6); opacity: .2; filter: blur(2px); } to { transform: none; opacity: 1; filter: none; } }
   @keyframes pop { 0% { transform: scale(.3) rotate(-8deg); } 60% { transform: scale(1.25) rotate(3deg); } 100% { transform: none; } }
   @keyframes drop { from { opacity: 0; transform: translateY(-40px) rotate(-25deg) scale(.4); } to { opacity: 1; transform: none; } }
@@ -275,7 +266,7 @@
   /* normal view: the whole row is one button */
   .toggle { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 14px 4px 14px 14px; text-align: left; }
   .toggle .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  li.out .label, li.out .opt-name { color: var(--muted); text-decoration: line-through; }
+  li.out .label { color: var(--muted); text-decoration: line-through; }
   li.out .dot { border-color: var(--muted); }
   li.bounce .dot { animation: bounce .3s cubic-bezier(.2, 1.8, .4, 1); }
   @keyframes bounce { 0% { transform: scale(.5); } 100% { transform: none; } }
@@ -535,10 +526,9 @@
     <button class="btn" type="submit" id="addRangeBtn" disabled>Add</button>
   </form>
 
-  <div class="edit-head number-only"><button type="button" class="link-btn" id="editRanges">Edit</button></div>
   <div id="rangeList" class="number-only"></div>
 
-  <p class="tip number-only">Tap a range to roll it. Tap Edit to change its numbers or name. ✕ removes it.</p>
+  <p class="tip number-only">Tap a range to roll it. ✎ changes its numbers or name, ✕ removes it.</p>
 
   <div class="list-card">
     <button class="set-btn" id="setBtn" type="button" aria-haspopup="dialog">
@@ -555,11 +545,10 @@
   </div>
 
   <form id="add">
-    <input id="name" placeholder="Add options, e.g. Anna, Erik" autocomplete="off" enterkeyhint="done" maxlength="600">
+    <input id="name" placeholder="Add options, e.g. Ben, Sam" autocomplete="off" enterkeyhint="done" maxlength="600">
     <button class="btn" type="submit" id="addBtn" disabled>Add</button>
   </form>
 
-  <div class="edit-head list-only"><button type="button" class="link-btn" id="editOptions">Edit</button></div>
   <div id="lists"></div>
 
   <details class="history" id="history" hidden>
@@ -571,7 +560,7 @@
     </div>
   </details>
 
-  <p class="tip list-tip">Tap an option to leave it out of the draw. It stays in your list, so tap it again to bring it back. Tap Edit to rename options. Only ✕ removes it.</p>
+  <p class="tip list-tip">Tap an option to leave it out of the draw. It stays in your list, so tap it again to bring it back. ✎ renames it, and only ✕ removes it.</p>
 
   <a class="support" id="support" href="https://paypal.me/neckfors" target="_blank" rel="noopener"><span class="heart">♥</span> Support the app</a>
 
@@ -783,9 +772,6 @@ function addressOf(set) {
 let state = load();
 ensureSlugs();
 let rolling = false;
-// Edit mode turns option names and range numbers/names into fields; off by
-// default so the rows stay clean.
-let editing = false;
 // "lists" picks an option from the current list; "number" rolls a number From–To
 let mode = pref(MODE_KEY, 'lists') === 'number' ? 'number' : 'lists';
 let numbers = (() => {
@@ -1154,18 +1140,9 @@ function resetCard() {
 }
 
 // ---------- Lists / Number mode ----------
-function setEditing(on) {
-  editing = on;
-  document.activeElement?.blur?.(); // saves a field that is still being typed in
-  sfx.click();
-  render();
-}
-$('editOptions').onclick = () => { if (!rolling) setEditing(!editing); };
-$('editRanges').onclick = () => { if (!rolling) setEditing(!editing); };
-
 function setMode(next) {
   if (rolling || next === mode) return;
-  editing = false;
+  stopEditing();
   mode = next;
   setPref(MODE_KEY, mode);
   resetCard();
@@ -1241,17 +1218,63 @@ function selectRange(r) {
   setPref(NUM_KEY, JSON.stringify(numbers));
 }
 
-// Number inputs grow with their number (or placeholder) so short and long ranges both fit.
-function fitEdge(input) {
-  const text = String(input.value || input.placeholder || '');
-  input.style.width = `${Math.max(1, text.length) + 1.6}ch`;
+// ---------- Editing a row ----------
+// Each row has a ✎. Tapping it opens just that row: its fields and a ✓.
+// Enter or ✓ saves, Esc cancels, and tapping somewhere else saves too (or
+// drops changes that can't be saved, with a message).
+let editingOption = null;   // id of the option being renamed
+let editingRange = null;    // the range being changed
+let activeEditSave = null;  // saves the open row before another one opens
+
+function stopEditing() {
+  editingOption = null;
+  editingRange = null;
+  activeEditSave = null;
+}
+
+function editButton(label, start) {
+  const b = document.createElement('button');
+  b.className = 'row-edit';
+  b.textContent = '✎';
+  b.setAttribute('aria-label', label);
+  // keeps focus where it is, so an open row is saved by this tap, not by a blur
+  b.addEventListener('pointerdown', (e) => e.preventDefault());
+  b.onclick = () => {
+    if (rolling) return;
+    if (activeEditSave) activeEditSave();
+    stopEditing();
+    start();
+    sfx.click();
+    render();
+    const field = document.querySelector('li.editing input');
+    if (field) { field.focus(); field.select(); }
+  };
+  return b;
+}
+
+function makeEditRow(li, nodes, fields, saveRow, cancel) {
+  li.classList.add('editing');
+  const ok = document.createElement('button');
+  ok.className = 'row-ok';
+  ok.textContent = '✓';
+  ok.setAttribute('aria-label', 'Save');
+  ok.addEventListener('pointerdown', (e) => e.preventDefault());
+  ok.onclick = () => saveRow(true);
+  for (const f of fields) {
+    f.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); saveRow(true); }
+      if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+    });
+  }
+  li.addEventListener('focusout', (e) => {
+    if (!li.contains(e.relatedTarget)) saveRow(false);
+  });
+  li.append(...nodes, ok);
 }
 
 function renderRanges() {
   const box = $('rangeList');
   box.innerHTML = '';
-  $('editRanges').hidden = !ranges.length;
-  $('editRanges').textContent = editing ? 'Done' : 'Edit';
   if (!ranges.length) {
     box.innerHTML = '<div class="empty">No ranges yet. Add one above, like 1 to 6.</div>';
     return;
@@ -1262,13 +1285,94 @@ function renderRanges() {
     const li = document.createElement('li');
     li.className = (r === selected ? 'in current-range' : '') + (r === freshRange ? ' fresh' : '');
 
-    const choose = () => {
+    // The range being changed: From, To and name fields and ✓.
+    if (r === editingRange) {
+      const numberField = (value, label) => {
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.inputMode = 'numeric';
+        input.step = '1';
+        input.className = 'row-field num';
+        input.value = value;
+        input.setAttribute('aria-label', label);
+        return input;
+      };
+      const fromField = numberField(r.from, 'From');
+      const toField = numberField(r.to, 'To');
+      const dash = document.createElement('span');
+      dash.className = 'range-dash';
+      dash.textContent = '–';
+      const nameField = document.createElement('input');
+      nameField.className = 'row-field';
+      nameField.value = r.name;
+      nameField.placeholder = 'Name';
+      nameField.maxLength = 20;
+      nameField.enterKeyHint = 'done';
+      nameField.autocomplete = 'off';
+      nameField.setAttribute('aria-label', 'Name (optional)');
+
+      const close = () => { stopEditing(); render(); };
+      // Keeps the numbers in order and never duplicates another range.
+      const saveRow = (stay) => {
+        if (editingRange !== r) return;
+        const a = Number(fromField.value);
+        const b = Number(toField.value);
+        const whole = fromField.value !== '' && toField.value !== '' && Number.isInteger(a) && Number.isInteger(b);
+        const next = { from: Math.min(a, b), to: Math.max(a, b) };
+        const problem = !whole ? 'Enter whole numbers'
+          : next.to - next.from >= 2 ** 32 ? 'That range is too big'
+          : ranges.some(x => x !== r && sameRange(x, next)) ? `You already have ${rangeText(next)}` : '';
+        if (problem) {
+          sfx.out();
+          toast(problem);
+          if (stay) { fromField.focus(); return; }
+          close();
+          return;
+        }
+        const name = nameField.value.trim().replace(/\s+/g, ' ').slice(0, 20);
+        if (next.from !== r.from || next.to !== r.to || name !== r.name) {
+          const wasCurrent = r === currentRange();
+          r.from = next.from;
+          r.to = next.to;
+          r.name = name;
+          r.used = (r.used || []).filter(n => n >= r.from && n <= r.to);
+          saveRanges();
+          if (wasCurrent) selectRange(r);
+          sfx.in();
+        }
+        resetCard();
+        close();
+      };
+      activeEditSave = () => saveRow(false);
+      makeEditRow(li, [fromField, dash, toField, nameField], [fromField, toField, nameField], saveRow, close);
+      ul.append(li);
+      continue;
+    }
+
+    // The whole row chooses the range, shown as "d6 1–6" or "1–6".
+    const row = document.createElement('button');
+    row.className = 'toggle';
+    row.setAttribute('aria-pressed', r === selected);
+    row.innerHTML = '<span class="dot"></span><span class="label"></span>';
+    const label = row.querySelector('.label');
+    if (r.name) {
+      const b = document.createElement('b');
+      b.textContent = r.name;
+      const small = document.createElement('small');
+      small.textContent = rangeText(r);
+      label.append(b, small);
+    } else {
+      label.textContent = rangeText(r);
+    }
+    row.onclick = () => {
       if (rolling || r === selected) return;
       selectRange(r);
       sfx.in();
       resetCard();
       render();
     };
+
+    const edit = editButton(`Change ${r.name || rangeText(r)}`, () => { editingRange = r; });
 
     const del = document.createElement('button');
     del.className = 'del';
@@ -1300,123 +1404,7 @@ function renderRanges() {
       }, reducedMotion ? 0 : 250);
     };
 
-    // Normal view: the whole row chooses the range, shown as "d6 1–6" or "1–6".
-    if (!editing) {
-      const row = document.createElement('button');
-      row.className = 'toggle';
-      row.setAttribute('aria-pressed', r === selected);
-      row.innerHTML = '<span class="dot"></span><span class="label"></span>';
-      const label = row.querySelector('.label');
-      if (r.name) {
-        const b = document.createElement('b');
-        b.textContent = r.name;
-        const small = document.createElement('small');
-        small.textContent = rangeText(r);
-        label.append(b, small);
-      } else {
-        label.textContent = rangeText(r);
-      }
-      row.onclick = choose;
-      li.append(row, del);
-      ul.append(li);
-      continue;
-    }
-
-    // Edit mode: the circle chooses the range; numbers and name are edited in place.
-    const dot = document.createElement('button');
-    dot.className = 'pick-dot';
-    dot.setAttribute('aria-pressed', r === selected);
-    dot.innerHTML = '<span class="dot"></span>';
-    dot.setAttribute('aria-label', `Roll ${r.name || rangeText(r)}`);
-    dot.onclick = choose;
-
-    const edge = (key) => {
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.inputMode = 'numeric';
-      input.step = '1';
-      input.className = 'range-edge';
-      input.value = r[key];
-      input.enterKeyHint = 'done';
-      input.setAttribute('aria-label', key === 'from' ? `From, ${rangeText(r)}` : `To, ${rangeText(r)}`);
-      fitEdge(input);
-      input.addEventListener('input', () => fitEdge(input));
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
-        if (e.key === 'Escape') { input.value = r[key]; fitEdge(input); input.blur(); }
-      });
-      input.addEventListener('change', commitNumbers);
-      return input;
-    };
-    const fromInput = edge('from');
-    const toInput = edge('to');
-    const dash = document.createElement('span');
-    dash.className = 'range-dash';
-    dash.textContent = '–';
-
-    const showNumbers = () => {
-      fromInput.value = r.from;
-      toInput.value = r.to;
-      fitEdge(fromInput);
-      fitEdge(toInput);
-    };
-    // Saves new From/To, keeping them in order and never duplicating another row.
-    function commitNumbers() {
-      const a = Number(fromInput.value);
-      const b = Number(toInput.value);
-      if (fromInput.value === '' || toInput.value === '' || !Number.isInteger(a) || !Number.isInteger(b)) {
-        showNumbers();
-        sfx.out();
-        toast('Enter whole numbers');
-        return;
-      }
-      const next = { from: Math.min(a, b), to: Math.max(a, b) };
-      if (next.to - next.from >= 2 ** 32) { showNumbers(); sfx.out(); toast('That range is too big'); return; }
-      if (ranges.some(x => x !== r && sameRange(x, next))) {
-        showNumbers();
-        sfx.out();
-        toast(`You already have ${rangeText(next)}`);
-        return;
-      }
-      if (next.from === r.from && next.to === r.to) { showNumbers(); return; }
-      const wasCurrent = r === currentRange();
-      r.from = next.from;
-      r.to = next.to;
-      r.used = (r.used || []).filter(n => n >= r.from && n <= r.to);
-      saveRanges();
-      if (wasCurrent) selectRange(r);
-      showNumbers();
-      sfx.in();
-      // no full redraw, so tapping straight into another field keeps focus
-      dot.setAttribute('aria-label', `Roll ${r.name || rangeText(r)}`);
-      if (result.classList.contains('hint')) result.textContent = hintText();
-    }
-
-    // Saves when the field loses focus or Enter is pressed.
-    const name = document.createElement('input');
-    name.className = 'range-name';
-    name.value = r.name;
-    name.placeholder = 'Add a name';
-    name.maxLength = 20;
-    name.enterKeyHint = 'done';
-    name.autocomplete = 'off';
-    name.setAttribute('aria-label', `Name for ${rangeText(r)}`);
-    name.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); name.blur(); }
-      if (e.key === 'Escape') { name.value = r.name; name.blur(); }
-    });
-    name.addEventListener('change', () => {
-      const next = name.value.trim().replace(/\s+/g, ' ').slice(0, 20);
-      name.value = next;
-      if (next === r.name) return;
-      r.name = next;
-      saveRanges();
-      sfx.in();
-      dot.setAttribute('aria-label', `Roll ${r.name || rangeText(r)}`);
-      if (result.classList.contains('hint')) result.textContent = hintText();
-    });
-
-    li.append(dot, fromInput, dash, toInput, name, del);
+    li.append(row, edit, del);
     ul.append(li);
   }
   box.append(ul);
@@ -1473,7 +1461,7 @@ $('addRange').onsubmit = (e) => {
 };
 
 function switchTo(id) {
-  editing = false;
+  stopEditing();
   state.current = id;
   resetCard();
   sfx.swap();
@@ -1996,10 +1984,7 @@ function render() {
   const lists = $('lists');
   lists.innerHTML = '';
 
-  $('editOptions').hidden = !items.length;
-  $('editOptions').textContent = editing ? 'Done' : 'Edit';
   if (!items.length) {
-    editing = false;
     lists.innerHTML = '<div class="empty">Nothing here yet. Add people, places, food, movies, anything.</div>';
     return;
   }
@@ -2022,14 +2007,46 @@ function list(players) {
       + (freshIds.has(p.id) ? ' fresh' : '')
       + (p.id === bounceId ? ' bounce' : '');
 
-    // Normally the whole row leaves the option in or out of the draw. In edit
-    // mode only the circle does, and the name becomes a field to rename it.
+    // The option being renamed: a field and ✓ instead of the usual row.
+    if (p.id === editingOption) {
+      const field = document.createElement('input');
+      field.className = 'row-field';
+      field.value = p.name;
+      field.maxLength = 40;
+      field.enterKeyHint = 'done';
+      field.autocomplete = 'off';
+      field.setAttribute('aria-label', `New name for ${p.name}`);
+      const close = () => { stopEditing(); render(); };
+      const saveName = (stay) => {
+        if (editingOption !== p.id) return;
+        const next = field.value.trim().replace(/\s+/g, ' ').slice(0, 40);
+        const taken = next.toLowerCase() !== p.name.toLowerCase()
+          && cur().items.some(x => x !== p && x.name.toLowerCase() === next.toLowerCase());
+        const problem = !next ? 'An option needs a name. Use ✕ to remove it.'
+          : taken ? `“${next}” is already in the list` : '';
+        if (problem) {
+          sfx.out();
+          toast(problem);
+          if (stay) { field.focus(); return; }
+          close();
+          return;
+        }
+        if (next !== p.name) { p.name = next; save(); sfx.in(); }
+        close();
+      };
+      activeEditSave = () => saveName(false);
+      makeEditRow(li, [field], [field], saveName, close);
+      ul.append(li);
+      continue;
+    }
+
+    // The whole row leaves the option in or out of the draw.
     const toggle = document.createElement('button');
-    toggle.className = editing ? 'pick-dot' : 'toggle';
+    toggle.className = 'toggle';
     toggle.setAttribute('aria-pressed', p.playing);
     toggle.setAttribute('aria-label', p.playing ? `Leave ${p.name} out` : `Put ${p.name} back in`);
-    toggle.innerHTML = editing ? '<span class="dot"></span>' : '<span class="dot"></span><span class="label"></span>';
-    if (!editing) toggle.querySelector('.label').textContent = p.name;
+    toggle.innerHTML = '<span class="dot"></span><span class="label"></span>';
+    toggle.querySelector('.label').textContent = p.name;
     toggle.onclick = () => {
       if (rolling) return;
       p.playing = !p.playing;
@@ -2038,41 +2055,7 @@ function list(players) {
       changed();
     };
 
-    const name = document.createElement('input');
-    name.className = 'opt-name';
-    name.value = p.name;
-    name.maxLength = 40;
-    name.enterKeyHint = 'done';
-    name.autocomplete = 'off';
-    name.setAttribute('aria-label', `Name of option ${p.name}`);
-    name.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); name.blur(); }
-      if (e.key === 'Escape') { name.value = p.name; name.blur(); }
-    });
-    name.addEventListener('change', () => {
-      const next = name.value.trim().replace(/\s+/g, ' ').slice(0, 40);
-      if (!next) { name.value = p.name; sfx.out(); toast('An option needs a name. Use ✕ to remove it.'); return; }
-      if (next.toLowerCase() !== p.name.toLowerCase() && cur().items.some(x => x !== p && x.name.toLowerCase() === next.toLowerCase())) {
-        name.value = p.name;
-        sfx.out();
-        toast(`“${next}” is already in the list`);
-        return;
-      }
-      name.value = next;
-      if (next === p.name) return;
-      p.name = next;
-      save();
-      sfx.in();
-      // no full redraw, so tapping straight into another name keeps focus;
-      // the list is put back in alphabetical order on the next change
-      toggle.setAttribute('aria-label', p.playing ? `Leave ${p.name} out` : `Put ${p.name} back in`);
-      del.setAttribute('aria-label', `Delete ${p.name}`);
-    });
-
-    const crown = document.createElement('span');
-    crown.className = 'crown-mark';
-    crown.textContent = '👑';
-    crown.setAttribute('aria-hidden', 'true');
+    const edit = editButton(`Rename ${p.name}`, () => { editingOption = p.id; });
 
     const del = document.createElement('button');
     del.className = 'del';
@@ -2099,9 +2082,14 @@ function list(players) {
     };
 
     li.append(toggle);
-    if (editing) li.append(name);
-    if (p.id === winnerId) li.append(crown);
-    li.append(del);
+    if (p.id === winnerId) {
+      const crown = document.createElement('span');
+      crown.className = 'crown-mark';
+      crown.textContent = '👑';
+      crown.setAttribute('aria-hidden', 'true');
+      li.append(crown);
+    }
+    li.append(edit, del);
     ul.append(li);
   }
   return ul;
