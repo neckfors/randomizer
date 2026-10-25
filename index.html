@@ -103,15 +103,10 @@
   #crown { position: relative; height: 0; font-size: 2rem; line-height: 1; opacity: 0; }
   /* pulled up into the card's top padding, so the space above it matches the space under the badge */
   #crown.show { height: 2.2rem; margin-top: -12px; opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
-  #die { position: relative; height: 0; font-size: 3.6rem; line-height: 1; opacity: 0; }
-  #die.rolling { height: 4.2rem; opacity: 1; animation: tumble .45s linear infinite; }
-  @keyframes tumble {
-    0% { transform: translateY(0) rotate(0deg); }
-    25% { transform: translateY(-12px) rotate(90deg); }
-    50% { transform: translateY(0) rotate(180deg); }
-    75% { transform: translateY(-12px) rotate(270deg); }
-    100% { transform: translateY(0) rotate(360deg); }
-  }
+  /* a square box around the 🎲, so it spins around its own middle */
+  #die { position: relative; width: 1.2em; height: 0; margin: 0 auto; font-size: 3.6rem; line-height: 1.2em; text-align: center; opacity: 0; }
+  #die.rolling { height: 1.2em; opacity: 1; animation: spin .45s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   .mode-tabs {
     display: flex;
@@ -2392,7 +2387,7 @@ function startOverRange() {
 }
 
 // ---------- Rolling a number ----------
-// Numbers from the range race past while a 🎲 tumbles, then it lands on a
+// Numbers from the range race past while a 🎲 spins, then it lands on a
 // number picked uniformly at random from the chosen range (both ends included).
 // With "roll each number only once", it picks uniformly among the numbers not
 // rolled yet: the k-th free number is found by stepping past the used ones.
