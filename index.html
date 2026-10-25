@@ -141,10 +141,29 @@
   body.number-mode #history,
   body.number-mode .list-tip { display: none !important; }
   #rangeList li.current-range { background: var(--glow); }
-  #rangeList li.draft { background: transparent; }
-  .draft .plus { color: var(--accent); font-size: 1.4rem; font-weight: 700; }
-  .draft .range-edge { font-weight: 400; }
-  .draft .range-edge::placeholder { color: var(--muted); font-style: italic; }
+  body.number-mode .add-range { display: flex !important; }
+  body.number-mode .edit-head.list-only { display: none; }
+  body.number-mode .edit-head.number-only { display: flex !important; }
+  .add-range { gap: 6px; margin-bottom: 4px; }
+  .add-range .btn { padding: 10px 12px; }
+  .add-range input {
+    min-width: 0;
+    padding: 12px 8px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    font: inherit;
+  }
+  .add-range input[type="number"] { flex: 0 0 3.9em; width: 3.9em; text-align: center; -moz-appearance: textfield; appearance: textfield; }
+  .add-range input[type="number"]::-webkit-outer-spin-button,
+  .add-range input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #numName { flex: 1; }
+  .btn:disabled, #addBtn:disabled, #addRangeBtn:disabled { opacity: .4; }
+  .edit-head { display: flex; justify-content: flex-end; margin: 0 2px 4px; }
+  .edit-head .link-btn[hidden] { display: none; }
+  #rangeList .label small { margin-left: 8px; color: var(--muted); font-size: .85rem; }
+  #rangeList .label b { font-weight: 700; }
   #rangeList li:not(.current-range) .dot { border-color: var(--muted); }
   .pick-dot { flex: none; align-self: stretch; display: grid; place-items: center; width: 48px; padding-left: 4px; }
   .range-edge, .range-name, .opt-name {
@@ -253,7 +272,10 @@
   .dot { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--accent); display: grid; place-items: center; font-size: .8rem; color: var(--accent-text); }
   li.in .dot { background: var(--accent); }
   li.in .dot::after { content: "✓"; }
-  li.out .opt-name { color: var(--muted); text-decoration: line-through; }
+  /* normal view: the whole row is one button */
+  .toggle { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 14px 4px 14px 14px; text-align: left; }
+  .toggle .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  li.out .label, li.out .opt-name { color: var(--muted); text-decoration: line-through; }
   li.out .dot { border-color: var(--muted); }
   li.bounce .dot { animation: bounce .3s cubic-bezier(.2, 1.8, .4, 1); }
   @keyframes bounce { 0% { transform: scale(.5); } 100% { transform: none; } }
@@ -406,6 +428,9 @@
   .seg { display: flex; gap: 8px; }
   .seg button { flex: 1; }
   .seg button.on { border: 2px solid var(--accent); background: var(--glow); font-weight: 600; }
+  .spin-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0 4px; }
+  .spin-value { flex: none; font-weight: 700; color: var(--accent); }
+  #spinTime { width: 100%; accent-color: var(--accent); }
 
   #importList { max-height: 30vh; overflow-y: auto; margin: 8px 0 0; }
   #importList li { padding: 8px 14px; }
@@ -503,9 +528,17 @@
     </label>
   </div>
 
+  <form id="addRange" class="add-range number-only">
+    <input id="numFrom" type="number" inputmode="numeric" step="1" placeholder="From" enterkeyhint="next" aria-label="From">
+    <input id="numTo" type="number" inputmode="numeric" step="1" placeholder="To" enterkeyhint="next" aria-label="To">
+    <input id="numName" placeholder="Name (optional)" autocomplete="off" enterkeyhint="done" maxlength="20" aria-label="Name (optional)">
+    <button class="btn" type="submit" id="addRangeBtn" disabled>Add</button>
+  </form>
+
+  <div class="edit-head number-only"><button type="button" class="link-btn" id="editRanges">Edit</button></div>
   <div id="rangeList" class="number-only"></div>
 
-  <p class="tip number-only">Tap the circle to choose a range. Tap the numbers or the name to change them. ✕ removes it. Fill in the last row to add a range.</p>
+  <p class="tip number-only">Tap a range to roll it. Tap Edit to change its numbers or name. ✕ removes it.</p>
 
   <div class="list-card">
     <button class="set-btn" id="setBtn" type="button" aria-haspopup="dialog">
@@ -523,9 +556,10 @@
 
   <form id="add">
     <input id="name" placeholder="Add options, e.g. Anna, Erik" autocomplete="off" enterkeyhint="done" maxlength="600">
-    <button class="btn" type="submit">Add</button>
+    <button class="btn" type="submit" id="addBtn" disabled>Add</button>
   </form>
 
+  <div class="edit-head list-only"><button type="button" class="link-btn" id="editOptions">Edit</button></div>
   <div id="lists"></div>
 
   <details class="history" id="history" hidden>
@@ -537,7 +571,7 @@
     </div>
   </details>
 
-  <p class="tip list-tip">Tap the circle to leave an option out of the draw. It stays in your list, so tap it again to bring it back. Tap a name to change it. Only ✕ removes it.</p>
+  <p class="tip list-tip">Tap an option to leave it out of the draw. It stays in your list, so tap it again to bring it back. Tap Edit to rename options. Only ✕ removes it.</p>
 
   <a class="support" id="support" href="https://paypal.me/neckfors" target="_blank" rel="noopener"><span class="heart">♥</span> Support the app</a>
 
@@ -592,6 +626,11 @@
       <span class="switch" aria-hidden="true"></span>
       <span class="once-text">Sound effects<small>On iPhone, the silent switch also mutes them</small></span>
     </label>
+    <label class="spin-row">
+      <span class="once-text">Spin time<small>How long a pick or roll spins before it lands</small></span>
+      <span class="spin-value" id="spinValue"></span>
+    </label>
+    <input type="range" id="spinTime" min="0" max="3" step="0.5" aria-label="Spin time in seconds">
 
     <h3>Backup</h3>
     <div class="seg">
@@ -626,6 +665,7 @@
 const KEY = 'whostarts.v1';
 const MUTE_KEY = 'whostarts.muted';
 const SHAKE_KEY = 'whostarts.shake';
+const SPIN_KEY = 'whostarts.spin';
 const MODE_KEY = 'whostarts.mode';
 const NUM_KEY = 'whostarts.numbers';
 
@@ -743,6 +783,9 @@ function addressOf(set) {
 let state = load();
 ensureSlugs();
 let rolling = false;
+// Edit mode turns option names and range numbers/names into fields; off by
+// default so the rows stay clean.
+let editing = false;
 // "lists" picks an option from the current list; "number" rolls a number From–To
 let mode = pref(MODE_KEY, 'lists') === 'number' ? 'number' : 'lists';
 let numbers = (() => {
@@ -1111,8 +1154,18 @@ function resetCard() {
 }
 
 // ---------- Lists / Number mode ----------
+function setEditing(on) {
+  editing = on;
+  document.activeElement?.blur?.(); // saves a field that is still being typed in
+  sfx.click();
+  render();
+}
+$('editOptions').onclick = () => { if (!rolling) setEditing(!editing); };
+$('editRanges').onclick = () => { if (!rolling) setEditing(!editing); };
+
 function setMode(next) {
   if (rolling || next === mode) return;
+  editing = false;
   mode = next;
   setPref(MODE_KEY, mode);
   resetCard();
@@ -1197,114 +1250,25 @@ function fitEdge(input) {
 function renderRanges() {
   const box = $('rangeList');
   box.innerHTML = '';
+  $('editRanges').hidden = !ranges.length;
+  $('editRanges').textContent = editing ? 'Done' : 'Edit';
+  if (!ranges.length) {
+    box.innerHTML = '<div class="empty">No ranges yet. Add one above, like 1 to 6.</div>';
+    return;
+  }
   const selected = currentRange();
   const ul = document.createElement('ul');
   for (const r of ranges) {
     const li = document.createElement('li');
     li.className = (r === selected ? 'in current-range' : '') + (r === freshRange ? ' fresh' : '');
 
-    // The circle chooses the range; the numbers and the name are edited in place.
-    const choose = document.createElement('button');
-    choose.className = 'pick-dot';
-    choose.setAttribute('aria-pressed', r === selected);
-    choose.innerHTML = '<span class="dot"></span>';
-    choose.setAttribute('aria-label', `Roll ${r.name || rangeText(r)}`);
-    choose.onclick = () => {
+    const choose = () => {
       if (rolling || r === selected) return;
       selectRange(r);
       sfx.in();
       resetCard();
       render();
     };
-
-    const fit = fitEdge;
-    const edge = (key) => {
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.inputMode = 'numeric';
-      input.step = '1';
-      input.className = 'range-edge';
-      input.value = r[key];
-      input.enterKeyHint = 'done';
-      input.setAttribute('aria-label', key === 'from' ? `From, ${rangeText(r)}` : `To, ${rangeText(r)}`);
-      fit(input);
-      input.addEventListener('input', () => fit(input));
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
-        if (e.key === 'Escape') { input.value = r[key]; fit(input); input.blur(); }
-      });
-      input.addEventListener('change', commitNumbers);
-      return input;
-    };
-    const fromInput = edge('from');
-    const toInput = edge('to');
-    const dash = document.createElement('span');
-    dash.className = 'range-dash';
-    dash.textContent = '–';
-
-    const showNumbers = () => {
-      fromInput.value = r.from;
-      toInput.value = r.to;
-      fit(fromInput);
-      fit(toInput);
-    };
-    // Saves new From/To, keeping them in order and never duplicating another row.
-    function commitNumbers() {
-      const a = Number(fromInput.value);
-      const b = Number(toInput.value);
-      if (fromInput.value === '' || toInput.value === '' || !Number.isInteger(a) || !Number.isInteger(b)) {
-        showNumbers();
-        sfx.out();
-        toast('Enter whole numbers');
-        return;
-      }
-      const next = { from: Math.min(a, b), to: Math.max(a, b) };
-      if (next.to - next.from >= 2 ** 32) { showNumbers(); sfx.out(); toast('That range is too big'); return; }
-      if (ranges.some(x => x !== r && sameRange(x, next))) {
-        showNumbers();
-        sfx.out();
-        toast(`You already have ${rangeText(next)}`);
-        return;
-      }
-      if (next.from === r.from && next.to === r.to) { showNumbers(); return; }
-      const wasCurrent = r === currentRange();
-      r.from = next.from;
-      r.to = next.to;
-      r.used = (r.used || []).filter(n => n >= r.from && n <= r.to);
-      saveRanges();
-      if (wasCurrent) selectRange(r);
-      showNumbers();
-      sfx.in();
-      // no full redraw, so tapping straight into another field keeps focus
-      choose.setAttribute('aria-label', `Roll ${r.name || rangeText(r)}`);
-      if (result.classList.contains('hint')) result.textContent = hintText();
-    }
-
-    // The name is edited right in the row: tap, type, done. It saves when the
-    // field loses focus or Enter is pressed.
-    const name = document.createElement('input');
-    name.className = 'range-name';
-    name.value = r.name;
-    name.placeholder = '✎ Add a name';
-    name.maxLength = 20;
-    name.enterKeyHint = 'done';
-    name.autocomplete = 'off';
-    name.setAttribute('aria-label', `Name for ${rangeText(r)}`);
-    name.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); name.blur(); }
-      if (e.key === 'Escape') { name.value = r.name; name.blur(); }
-    });
-    name.addEventListener('change', () => {
-      const next = name.value.trim().replace(/\s+/g, ' ').slice(0, 20);
-      name.value = next;
-      if (next === r.name) return;
-      r.name = next;
-      saveRanges();
-      sfx.in();
-      // no full redraw, so tapping straight into another name field keeps focus
-      choose.setAttribute('aria-label', `Roll ${r.name || rangeText(r)}`);
-      if (result.classList.contains('hint')) result.textContent = hintText();
-    });
 
     const del = document.createElement('button');
     del.className = 'del';
@@ -1336,81 +1300,157 @@ function renderRanges() {
       }, reducedMotion ? 0 : 250);
     };
 
-    li.append(choose, fromInput, dash, toInput, name, del);
+    // Normal view: the whole row chooses the range, shown as "d6 1–6" or "1–6".
+    if (!editing) {
+      const row = document.createElement('button');
+      row.className = 'toggle';
+      row.setAttribute('aria-pressed', r === selected);
+      row.innerHTML = '<span class="dot"></span><span class="label"></span>';
+      const label = row.querySelector('.label');
+      if (r.name) {
+        const b = document.createElement('b');
+        b.textContent = r.name;
+        const small = document.createElement('small');
+        small.textContent = rangeText(r);
+        label.append(b, small);
+      } else {
+        label.textContent = rangeText(r);
+      }
+      row.onclick = choose;
+      li.append(row, del);
+      ul.append(li);
+      continue;
+    }
+
+    // Edit mode: the circle chooses the range; numbers and name are edited in place.
+    const dot = document.createElement('button');
+    dot.className = 'pick-dot';
+    dot.setAttribute('aria-pressed', r === selected);
+    dot.innerHTML = '<span class="dot"></span>';
+    dot.setAttribute('aria-label', `Roll ${r.name || rangeText(r)}`);
+    dot.onclick = choose;
+
+    const edge = (key) => {
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.inputMode = 'numeric';
+      input.step = '1';
+      input.className = 'range-edge';
+      input.value = r[key];
+      input.enterKeyHint = 'done';
+      input.setAttribute('aria-label', key === 'from' ? `From, ${rangeText(r)}` : `To, ${rangeText(r)}`);
+      fitEdge(input);
+      input.addEventListener('input', () => fitEdge(input));
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+        if (e.key === 'Escape') { input.value = r[key]; fitEdge(input); input.blur(); }
+      });
+      input.addEventListener('change', commitNumbers);
+      return input;
+    };
+    const fromInput = edge('from');
+    const toInput = edge('to');
+    const dash = document.createElement('span');
+    dash.className = 'range-dash';
+    dash.textContent = '–';
+
+    const showNumbers = () => {
+      fromInput.value = r.from;
+      toInput.value = r.to;
+      fitEdge(fromInput);
+      fitEdge(toInput);
+    };
+    // Saves new From/To, keeping them in order and never duplicating another row.
+    function commitNumbers() {
+      const a = Number(fromInput.value);
+      const b = Number(toInput.value);
+      if (fromInput.value === '' || toInput.value === '' || !Number.isInteger(a) || !Number.isInteger(b)) {
+        showNumbers();
+        sfx.out();
+        toast('Enter whole numbers');
+        return;
+      }
+      const next = { from: Math.min(a, b), to: Math.max(a, b) };
+      if (next.to - next.from >= 2 ** 32) { showNumbers(); sfx.out(); toast('That range is too big'); return; }
+      if (ranges.some(x => x !== r && sameRange(x, next))) {
+        showNumbers();
+        sfx.out();
+        toast(`You already have ${rangeText(next)}`);
+        return;
+      }
+      if (next.from === r.from && next.to === r.to) { showNumbers(); return; }
+      const wasCurrent = r === currentRange();
+      r.from = next.from;
+      r.to = next.to;
+      r.used = (r.used || []).filter(n => n >= r.from && n <= r.to);
+      saveRanges();
+      if (wasCurrent) selectRange(r);
+      showNumbers();
+      sfx.in();
+      // no full redraw, so tapping straight into another field keeps focus
+      dot.setAttribute('aria-label', `Roll ${r.name || rangeText(r)}`);
+      if (result.classList.contains('hint')) result.textContent = hintText();
+    }
+
+    // Saves when the field loses focus or Enter is pressed.
+    const name = document.createElement('input');
+    name.className = 'range-name';
+    name.value = r.name;
+    name.placeholder = 'Add a name';
+    name.maxLength = 20;
+    name.enterKeyHint = 'done';
+    name.autocomplete = 'off';
+    name.setAttribute('aria-label', `Name for ${rangeText(r)}`);
+    name.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); name.blur(); }
+      if (e.key === 'Escape') { name.value = r.name; name.blur(); }
+    });
+    name.addEventListener('change', () => {
+      const next = name.value.trim().replace(/\s+/g, ' ').slice(0, 20);
+      name.value = next;
+      if (next === r.name) return;
+      r.name = next;
+      saveRanges();
+      sfx.in();
+      dot.setAttribute('aria-label', `Roll ${r.name || rangeText(r)}`);
+      if (result.classList.contains('hint')) result.textContent = hintText();
+    });
+
+    li.append(dot, fromInput, dash, toInput, name, del);
     ul.append(li);
   }
-  ul.append(draftRow());
   box.append(ul);
   freshRange = null;
 }
 
-// ---------- The empty row at the end ----------
-// Filling in From and To there adds a new range; a name can be typed first or later.
-let draft = { from: '', to: '', name: '' };
-
-function draftRow() {
-  const li = document.createElement('li');
-  li.className = 'draft';
-
-  const plus = document.createElement('span');
-  plus.className = 'pick-dot plus';
-  plus.textContent = '+';
-  plus.setAttribute('aria-hidden', 'true');
-
-  const edge = (key, placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.inputMode = 'numeric';
-    input.step = '1';
-    input.className = 'range-edge';
-    input.placeholder = placeholder;
-    input.value = draft[key];
-    input.enterKeyHint = key === 'from' ? 'next' : 'done';
-    input.setAttribute('aria-label', `New range, ${placeholder}`);
-    fitEdge(input);
-    input.addEventListener('input', () => { draft[key] = input.value; fitEdge(input); });
-    input.addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter') return;
-      e.preventDefault();
-      if (key === 'from') toInput.focus();
-      else input.blur();
-    });
-    input.addEventListener('change', addDraft);
-    return input;
-  };
-  const fromInput = edge('from', 'From');
-  const toInput = edge('to', 'To');
-  const dash = document.createElement('span');
-  dash.className = 'range-dash';
-  dash.textContent = '–';
-
-  const name = document.createElement('input');
-  name.className = 'range-name';
-  name.placeholder = '✎ Add a name';
-  name.value = draft.name;
-  name.maxLength = 20;
-  name.enterKeyHint = 'done';
-  name.autocomplete = 'off';
-  name.setAttribute('aria-label', 'New range, name');
-  name.addEventListener('input', () => { draft.name = name.value; });
-  name.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); name.blur(); } });
-  name.addEventListener('change', addDraft);
-
-  li.append(plus, fromInput, dash, toInput, name);
-  return li;
+// ---------- Adding a range ----------
+// From and To are required, the name is optional; Add stays greyed out until
+// both numbers are whole numbers.
+function readNewRange() {
+  const fromText = $('numFrom').value;
+  const toText = $('numTo').value;
+  const a = Number(fromText);
+  const b = Number(toText);
+  if (fromText === '' || toText === '' || !Number.isInteger(a) || !Number.isInteger(b)) return null;
+  return { from: Math.min(a, b), to: Math.max(a, b) };
 }
 
-// Turns the empty row into a range once both numbers are there; it becomes the
-// range to roll, and a fresh empty row appears.
-function addDraft() {
-  if (draft.from === '' || draft.to === '') return;
-  const a = Number(draft.from);
-  const b = Number(draft.to);
-  if (!Number.isInteger(a) || !Number.isInteger(b)) { sfx.out(); toast('Enter whole numbers'); return; }
-  const r = { from: Math.min(a, b), to: Math.max(a, b), name: draft.name.trim().replace(/\s+/g, ' ').slice(0, 20), once: false, used: [] };
+function updateAddRange() {
+  $('addRangeBtn').disabled = !readNewRange();
+}
+for (const id of ['numFrom', 'numTo', 'numName']) $(id).addEventListener('input', updateAddRange);
+// Enter in From moves on to To
+$('numFrom').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); $('numTo').focus(); }
+});
+
+$('addRange').onsubmit = (e) => {
+  e.preventDefault();
+  const n = readNewRange();
+  if (!n) return;
   // randomInt works with 32-bit numbers, which covers any range people type
-  if (r.to - r.from >= 2 ** 32) { sfx.out(); toast('That range is too big'); return; }
-  draft = { from: '', to: '', name: '' };
+  if (n.to - n.from >= 2 ** 32) { sfx.out(); toast('That range is too big'); return; }
+  const r = { ...n, name: $('numName').value.trim().replace(/\s+/g, ' ').slice(0, 20), once: false, used: [] };
   const existing = ranges.find(x => sameRange(x, r));
   if (existing) {
     selectRange(existing);
@@ -1423,11 +1463,17 @@ function addDraft() {
     freshRange = r;
     sfx.add();
   }
+  $('numFrom').value = '';
+  $('numTo').value = '';
+  $('numName').value = '';
+  updateAddRange();
+  document.activeElement?.blur?.();
   resetCard();
   render();
-}
+};
 
 function switchTo(id) {
+  editing = false;
   state.current = id;
   resetCard();
   sfx.swap();
@@ -1675,8 +1721,20 @@ closeOnBackdrop(settings);
 
 function renderSettings() {
   $('shakeToggle').checked = shakeOn;
+  $('spinTime').value = spinSeconds;
+  renderSpinValue();
   renderMute();
 }
+
+function renderSpinValue() {
+  $('spinValue').textContent = spinSeconds === 0 ? 'Instant' : `${spinSeconds.toLocaleString()} s`;
+}
+$('spinTime').addEventListener('input', (e) => {
+  spinSeconds = Number(e.target.value);
+  setPref(SPIN_KEY, String(spinSeconds));
+  renderSpinValue();
+  sfx.click();
+});
 
 $('settingsBtn').onclick = () => {
   if (rolling) return;
@@ -1938,7 +1996,10 @@ function render() {
   const lists = $('lists');
   lists.innerHTML = '';
 
+  $('editOptions').hidden = !items.length;
+  $('editOptions').textContent = editing ? 'Done' : 'Edit';
   if (!items.length) {
+    editing = false;
     lists.innerHTML = '<div class="empty">Nothing here yet. Add people, places, food, movies, anything.</div>';
     return;
   }
@@ -1961,12 +2022,14 @@ function list(players) {
       + (freshIds.has(p.id) ? ' fresh' : '')
       + (p.id === bounceId ? ' bounce' : '');
 
-    // The circle leaves the option in or out of the draw; the name is edited in place.
+    // Normally the whole row leaves the option in or out of the draw. In edit
+    // mode only the circle does, and the name becomes a field to rename it.
     const toggle = document.createElement('button');
-    toggle.className = 'pick-dot';
+    toggle.className = editing ? 'pick-dot' : 'toggle';
     toggle.setAttribute('aria-pressed', p.playing);
     toggle.setAttribute('aria-label', p.playing ? `Leave ${p.name} out` : `Put ${p.name} back in`);
-    toggle.innerHTML = '<span class="dot"></span>';
+    toggle.innerHTML = editing ? '<span class="dot"></span>' : '<span class="dot"></span><span class="label"></span>';
+    if (!editing) toggle.querySelector('.label').textContent = p.name;
     toggle.onclick = () => {
       if (rolling) return;
       p.playing = !p.playing;
@@ -1976,7 +2039,7 @@ function list(players) {
     };
 
     const name = document.createElement('input');
-    name.className = 'opt-name label';
+    name.className = 'opt-name';
     name.value = p.name;
     name.maxLength = 40;
     name.enterKeyHint = 'done';
@@ -2035,7 +2098,8 @@ function list(players) {
       }, reducedMotion ? 0 : 250);
     };
 
-    li.append(toggle, name);
+    li.append(toggle);
+    if (editing) li.append(name);
     if (p.id === winnerId) li.append(crown);
     li.append(del);
     ul.append(li);
@@ -2070,8 +2134,15 @@ $('add').onsubmit = (e) => {
   else sfx.in();
   if (added > 1) toast(`Added ${added} options`);
   input.value = '';
+  updateAddBtn();
   changed();
 };
+
+// Add stays greyed out until something has been typed.
+function updateAddBtn() {
+  $('addBtn').disabled = !$('name').value.trim();
+}
+$('name').addEventListener('input', updateAddBtn);
 
 // A pasted list with one option per line becomes "a, b, c" in the one-line field.
 $('name').addEventListener('paste', (e) => {
@@ -2081,6 +2152,7 @@ $('name').addEventListener('paste', (e) => {
   const input = e.target;
   const joined = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean).join(', ');
   input.setRangeText(joined, input.selectionStart, input.selectionEnd, 'end');
+  updateAddBtn();
 });
 
 // ---------- Recent picks ----------
@@ -2125,6 +2197,22 @@ $('clearHistory').onclick = () => {
   save(); render();
 };
 $('history').addEventListener('toggle', () => { if ($('history').open) renderHistory(); });
+
+// ---------- Spin time ----------
+// A spin is 26 ticks that slow down; the pauses add up to about 3 seconds.
+// The setting (0–3 s, see Settings) scales those pauses; 0 lands straight away.
+const SPIN_TICKS = 26;
+const spinPause = (progress) => 45 + 330 * progress ** 3;
+const BASE_SPIN_MS = Array.from({ length: SPIN_TICKS - 1 }, (_, i) => spinPause((i + 1) / SPIN_TICKS)).reduce((a, b) => a + b, 0);
+const MAX_SPIN_SECONDS = 3;
+let spinSeconds = Math.min(MAX_SPIN_SECONDS, Math.max(0, Number(pref(SPIN_KEY, String(MAX_SPIN_SECONDS))) || 0));
+
+function spinTicks(canSpin) {
+  return canSpin && !reducedMotion && spinSeconds > 0 ? SPIN_TICKS : 1;
+}
+function spinDelay(progress) {
+  return spinPause(progress) * (spinSeconds * 1000) / BASE_SPIN_MS;
+}
 
 // ---------- Picking ----------
 function showName(name) {
@@ -2178,7 +2266,7 @@ $('pick').onclick = () => {
 };
 
 function spinSlots(playing, winner) {
-  const total = playing.length > 1 && !reducedMotion ? 26 : 1;
+  const total = spinTicks(playing.length > 1);
   let tick = 0;
   let current = null;
 
@@ -2194,7 +2282,7 @@ function spinSlots(playing, winner) {
       const progress = tick / total;
       sfx.tick(progress);
       if (navigator.vibrate) navigator.vibrate(5);
-      setTimeout(spin, 45 + 330 * progress ** 3);
+      setTimeout(spin, spinDelay(progress));
       return;
     }
     land(winner);
@@ -2279,7 +2367,7 @@ function rollNumber() {
   $('pick').disabled = true;
   sfx.start();
 
-  const total = min !== max && !reducedMotion ? 26 : 1;
+  const total = spinTicks(min !== max);
   let tick = 0;
   (function spin() {
     tick++;
@@ -2288,7 +2376,7 @@ function rollNumber() {
       const progress = tick / total;
       sfx.tick(progress);
       if (navigator.vibrate) navigator.vibrate(5);
-      setTimeout(spin, 45 + 330 * progress ** 3);
+      setTimeout(spin, spinDelay(progress));
       return;
     }
     rolling = false;
