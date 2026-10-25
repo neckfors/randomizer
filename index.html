@@ -101,7 +101,8 @@
   }
   /* takes no room until a pick lands, so the card has no empty gap at the top */
   #crown { position: relative; height: 0; font-size: 2rem; line-height: 1; opacity: 0; }
-  #crown.show { height: 2.2rem; opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
+  /* pulled up into the card's top padding, so the space above it matches the space under the badge */
+  #crown.show { height: 2.2rem; margin-top: -12px; opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
   #die { position: relative; height: 0; font-size: 3.6rem; line-height: 1; opacity: 0; }
   #die.rolling { height: 4.2rem; opacity: 1; animation: tumble .45s linear infinite; }
   @keyframes tumble {
