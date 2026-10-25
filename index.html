@@ -345,12 +345,14 @@
     left: 50%; bottom: calc(24px + env(safe-area-inset-bottom));
     z-index: 20;
     transform: translate(-50%, 20px);
-    max-width: 90vw;
+    width: max-content;
+    max-width: calc(100vw - 32px);
     padding: 10px 16px;
     border-radius: 999px;
     background: var(--text);
     color: var(--bg);
     font-size: .95rem;
+    text-align: center;
     opacity: 0;
     pointer-events: none;
     transition: opacity .2s, transform .2s;
