@@ -1,8 +1,8 @@
-# 👑 Pick One
+# 👑 Randomizer
 
 A tiny web app that picks one thing at random from a list, rolls up to four 3D dice or flips a coin, with a slot-machine spin, confetti and sound effects.
 
-**Try it:** https://neckfors.github.io/pick-one/
+**Try it:** https://neckfors.github.io/randomizer/
 
 It installs on your phone like a normal app, works offline, and remembers your lists.
 
@@ -56,13 +56,13 @@ Switch to **🎲 Dice** at the top to roll dice, or any random number, instead o
 4. **Tap Roll!** (or shake your phone). 3D dice, standing on one corner, spin while numbers race past (their dots slide around into new numbers), slow down with them and shrink away as it lands on a number from the range, both ends included. With several dice, the total shows in the gold badge with the dice under it, like *4 + 5*.
 5. **Change a range** with its **✎**: the row turns into From, To and Name fields with a green **Save** button. Change what you like and tap Save or press Enter (Esc cancels). Numbers are put in order if you swap them, and a range you already have is not added twice. **✕** removes a range (tap the red **Delete** to confirm, or **Cancel**).
 
-**Roll each number only once:** switch this on for a range when the same number must not come up twice, like drawing raffle tickets. Numbers already rolled sit out, the top shows how many are left, and when every number has been rolled the button turns into **↺ Start over**. The setting is saved per range, and works with one die.
+**Roll each number only once:** switch this on for a range when the same number must not come up twice, like drawing raffle tickets. Numbers already rolled sit out, the switch shows how many have been rolled, and when every number has been rolled the button turns into **↺ Start over**. The setting is saved per range, and works with one die.
 
-Your ranges are remembered and included in backups. `https://neckfors.github.io/pick-one/#dice` opens straight in Dice mode (older `#number` links still work).
+Your ranges are remembered and included in backups. `https://neckfors.github.io/randomizer/#dice` opens straight in Dice mode (older `#number` links still work).
 
 ## Flipping a coin 🪙
 
-Switch to **🪙 Coin** at the top and tap **Flip!** (or shake your phone). The gold coin is tossed toward you, flipping end over end, then drops back down, wobbles to a stop with a clink and a glint, and lands on **H** or **T**. The result shows as *Heads* or *Tails*. Each side comes up half the time. Under the card, a tally counts how many heads and tails you've flipped; **Reset** starts it over. `https://neckfors.github.io/pick-one/#coin` opens straight in Coin mode.
+Switch to **🪙 Coin** at the top and tap **Flip!** (or shake your phone). The gold coin is tossed toward you, flipping end over end, then drops back down, wobbles to a stop with a clink and a glint, and lands on **H** or **T**. The result shows as *Heads* or *Tails*. Each side comes up half the time. Under the card, a tally counts how many heads and tails you've flipped; **Reset** starts it over. `https://neckfors.github.io/randomizer/#coin` opens straight in Coin mode.
 
 ## Managing lists
 
@@ -75,11 +75,11 @@ In the list panel:
 
 ### Each list's own address
 
-Every list has its own address, for example `https://neckfors.github.io/pick-one/#game-night`. Opening it starts Pick One straight on that list, and the address bar follows whichever list you're on. Copy it with ✎ → **🔗 Copy this list's address**, and bookmark it if you like. The address only opens *your* copy of the list on that device. To give a list to someone else, use **Share** below. If you rename a list, it gets a new address, and the old one keeps working.
+Every list has its own address, for example `https://neckfors.github.io/randomizer/#game-night`. Opening it starts Randomizer straight on that list, and the address bar follows whichever list you're on. Copy it with ✎ → **🔗 Copy this list's address**, and bookmark it if you like. The address only opens *your* copy of the list on that device. To give a list to someone else, use **Share** below. If you rename a list, it gets a new address, and the old one keeps working.
 
 ### Sharing a list
 
-Tap ✎ on a list, then **⤴ Share this list**. You get a link to send to anyone. When they open it, Pick One asks whether to add the list, with all its options, to their own lists. The list travels inside the link itself, so nothing is uploaded anywhere.
+Tap ✎ on a list, then **⤴ Share this list**. You get a link to send to anyone. When they open it, Randomizer asks whether to add the list, with all its options, to their own lists. The list travels inside the link itself, so nothing is uploaded anywhere.
 
 ## Settings ⚙️
 
@@ -98,6 +98,8 @@ On **Android** the installed app opens fullscreen, without the status bar. (iPho
 > On iPhone, the silent switch also mutes the sound effects.
 
 **Updates:** the app checks for a new version whenever you open it or come back to it. When one has downloaded, a bar with **✨ New version available · Update** appears at the top; tap **Update** to switch to it. Your lists and ranges are kept.
+
+**Used to be Pick One:** the app was called *Pick One* and lived at `neckfors.github.io/pick-one/`. Old links, bookmarks and installed copies are sent to the new address automatically, and your lists come along. If you had installed the old app, install it again from the new address and remove the old icon.
 
 ## Tech
 
@@ -119,7 +121,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v61` → `whostarts-v62`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v62` → `whostarts-v63`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 

@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Pick One</title>
+<title>Randomizer</title>
 <meta name="theme-color" content="#1f6f54">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Pick One">
+<meta name="apple-mobile-web-app-title" content="Randomizer">
 <style>
   :root {
     --bg: #f4f5f2;
@@ -47,9 +47,8 @@
     margin: 0 auto;
   }
   header { display: flex; align-items: center; justify-content: space-between; padding: 16px 0 8px; }
-  h1 { font-size: 1.5rem; margin: 0; }
-  .right { display: flex; align-items: center; gap: 2px; }
-  #count { color: var(--muted); font-size: .95rem; margin-right: 4px; }
+  h1 { font-size: 1.5rem; margin: 0; white-space: nowrap; }
+  .right { display: flex; align-items: center; gap: 2px; min-width: 0; }
   .icon-btn { background: none; border: 0; font-size: 1.3rem; width: 40px; height: 40px; border-radius: 50%; color: var(--text); }
 
   .starter {
@@ -601,9 +600,8 @@
 </head>
 <body>
   <header>
-    <h1>Pick One</h1>
+    <h1>Randomizer</h1>
     <div class="right">
-      <span id="count"></span>
       <button class="icon-btn" id="mute" type="button"></button>
       <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings">⚙️</button>
     </div>
@@ -857,7 +855,7 @@ function setPref(key, value) {
 }
 
 // ---------- List addresses ----------
-// Every list has its own address, like …/pick-one/#game-night, that opens the
+// Every list has its own address, like …/randomizer/#game-night, that opens the
 // app straight on that list.
 function slugify(name) {
   return name.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
@@ -1683,7 +1681,7 @@ function openSetDialog(id) {
   $('setLink').hidden = !set;
   $('setLinkHint').hidden = !set;
   // "Share" sends the list's contents to someone; the address opens your own copy
-  if (set) $('setLinkHint').textContent = `Opens “${set.name}” straight away on this phone: …/pick-one/#${set.slug}`;
+  if (set) $('setLinkHint').textContent = `Opens “${set.name}” straight away on this phone: …/randomizer/#${set.slug}`;
   $('setDelete').disabled = state.sets.length < 2;
   chosenEmoji = set ? set.emoji : '📋';
   $('emojiInput').value = '';
@@ -1774,7 +1772,7 @@ $('setShare').onclick = async () => {
   const url = `${location.origin}${location.pathname}#list=${code}`;
   try {
     if (navigator.share) {
-      await navigator.share({ title: `Pick One: ${set.name}`, text: `${set.emoji} ${set.name} for Pick One`, url });
+      await navigator.share({ title: `Randomizer: ${set.name}`, text: `${set.emoji} ${set.name} for Randomizer`, url });
       return;
     }
     await navigator.clipboard.writeText(url);
@@ -1920,11 +1918,11 @@ $('settingsBtn').onclick = () => {
 $('settingsClose').onclick = () => settings.close();
 
 $('exportBtn').onclick = () => {
-  const data = { app: 'pick-one', version: 1, exported: new Date().toISOString(), current: state.current, sets: state.sets, ranges };
+  const data = { app: 'randomizer', version: 1, exported: new Date().toISOString(), current: state.current, sets: state.sets, ranges };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `pick-one-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `randomizer-backup-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.append(a);
   a.click();
   a.remove();
@@ -1956,7 +1954,7 @@ $('importFile').onchange = async (e) => {
     toast(`Restored ${lists}`);
   } catch (err) {
     sfx.out();
-    toast('That file is not a Pick One backup.');
+    toast('That file is not a Randomizer backup.');
   }
 };
 
@@ -2117,7 +2115,6 @@ function render() {
     $(id).setAttribute('aria-selected', mode === m);
   }
   if (mode === 'coin') {
-    $('count').textContent = '';
     $('headsCount').textContent = coinTally.heads.toLocaleString();
     $('tailsCount').textContent = coinTally.tails.toLocaleString();
     $('coinReset').hidden = !coinTally.heads && !coinTally.tails;
@@ -2146,7 +2143,6 @@ function render() {
           ? `Only for ${label}: ${used.toLocaleString()} of ${rangeSize(r).toLocaleString()} rolled. They sit out until you start over`
           : `Only affects ${label}, not your other ranges`;
     }
-    $('count').textContent = r && r.once ? `${numbersLeft(r).toLocaleString()} of ${rangeSize(r).toLocaleString()} left` : '';
     // with "roll each number only once", the button turns into Start over
     // once every number has been rolled
     const exhausted = r && r.once && numbersLeft(r) === 0;
@@ -2166,7 +2162,6 @@ function render() {
   }
   const items = cur().items;
   const playing = items.filter(p => p.playing).length;
-  $('count').textContent = items.length ? `${playing} of ${items.length} in the draw` : '';
   $('onceToggle').checked = !!cur().once;
   $('onceHint').textContent = cur().once
     ? `Only in “${cur().name}”: picked options sit out until you start over`

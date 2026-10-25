@@ -1,8 +1,8 @@
 {
-  "name": "Pick One",
-  "short_name": "Pick One",
-  "id": "/pick-one/?app=pick-one",
-  "description": "Add anything to a list and let it pick one at random.",
+  "name": "Randomizer",
+  "short_name": "Randomizer",
+  "id": "/randomizer/?app=randomizer",
+  "description": "Pick from your lists, roll dice or flip a coin, all at random.",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
