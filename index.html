@@ -126,12 +126,10 @@
     border: 0;
     font: inherit;
     font-size: .85rem;
-    color: var(--muted);
+    font-weight: 600;
+    color: var(--accent);
   }
   .shake-tip[hidden] { display: none; }
-  .shake-tip[data-mode="ask"] { color: var(--accent); font-weight: 600; }
-  .shake-tip.wiggle { animation: wiggle .5s ease-in-out; }
-  @keyframes wiggle { 0%, 100% { transform: none; } 20% { transform: rotate(-6deg); } 40% { transform: rotate(6deg); } 60% { transform: rotate(-4deg); } 80% { transform: rotate(4deg); } }
 
   #add { display: flex; gap: 8px; margin-bottom: 16px; }
   #name, .field {
@@ -1194,25 +1192,21 @@ async function enableShake() {
   return false;
 }
 
-// The line under Pick!: a reminder that shaking works, or on iPhone (before
-// motion is allowed) a button that asks for it.
+// The text in the card before a pick; it mentions shaking once that works.
+function hintText() {
+  if (!cur().items.length) return 'Add some options, then tap Pick!';
+  return shakeOn && listening ? 'Tap Pick! or shake your phone 📳' : 'Tap Pick! to choose one';
+}
+
+// On iPhone, before motion is allowed, a button under Pick! asks for it.
 function renderShakeTip() {
   const tip = $('shakeTip');
-  tip.hidden = !shakeOn;
-  if (!shakeOn) return;
-  tip.dataset.mode = listening ? 'info' : 'ask';
-  tip.textContent = listening ? '📳 or shake your phone' : '📳 Tap to turn on shake to pick';
+  tip.hidden = !shakeOn || listening;
+  tip.textContent = '📳 Tap to turn on shake to pick';
+  if (result.classList.contains('hint')) result.textContent = hintText();
 }
 
 $('shakeTip').onclick = async () => {
-  const tip = $('shakeTip');
-  if (tip.dataset.mode === 'info') {
-    tip.classList.remove('wiggle');
-    void tip.offsetWidth;
-    tip.classList.add('wiggle');
-    toast('Give your phone two quick shakes');
-    return;
-  }
   if (await enableShake()) {
     sfx.in();
     toast('Shake your phone to pick!');
@@ -1278,7 +1272,7 @@ function render() {
   }
   pick.disabled = rolling || (playing === 0 && !exhausted);
   if (result.classList.contains('hint')) {
-    result.textContent = items.length ? 'Tap Pick! to choose one' : 'Add some options, then tap Pick!';
+    result.textContent = hintText();
   }
   renderSets();
   renderHistory();
