@@ -76,7 +76,8 @@
   @keyframes pulse { from { box-shadow: 0 0 0 0 var(--glow); } to { box-shadow: 0 0 0 8px var(--glow); } }
   @keyframes rays { to { transform: rotate(360deg); } }
 
-  .stage { position: relative; height: 3.2rem; display: grid; place-items: center; }
+  .stage { position: relative; min-height: 3.2rem; display: grid; place-items: center; }
+  #result.long { font-size: 1.5rem; }
   #result {
     font-size: 2rem;
     font-weight: 800;
@@ -85,12 +86,19 @@
   }
   #result.hint { font-size: 1rem; font-weight: 400; color: var(--muted); }
   #result.flip { animation: flip .09s ease-out; color: var(--muted); }
-  #result.won { color: var(--text); animation: pop .7s cubic-bezier(.2, 1.6, .4, 1); }
-  #sub { position: relative; min-height: 1.4rem; color: var(--gold); font-weight: 700; letter-spacing: .02em; }
-  #sub.show { animation: rise .5s .2s both ease-out; }
+  #result.won {
+    background: var(--gold);
+    color: #1d2321;
+    padding: .12em .6em;
+    border-radius: 14px;
+    box-shadow: 0 0 0 4px rgba(224, 164, 0, .3), 0 0 28px rgba(224, 164, 0, .6);
+    animation: pop .7s cubic-bezier(.2, 1.6, .4, 1);
+  }
+  #crown { position: relative; height: 2.2rem; font-size: 2rem; line-height: 1; opacity: 0; }
+  #crown.show { opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
   @keyframes flip { from { transform: translateY(-60%) scaleY(.6); opacity: .2; filter: blur(2px); } to { transform: none; opacity: 1; filter: none; } }
   @keyframes pop { 0% { transform: scale(.3) rotate(-8deg); } 60% { transform: scale(1.25) rotate(3deg); } 100% { transform: none; } }
-  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes drop { from { opacity: 0; transform: translateY(-40px) rotate(-25deg) scale(.4); } to { opacity: 1; transform: none; } }
 
   #pick {
     position: relative;
@@ -174,8 +182,8 @@
   </header>
 
   <section class="starter" id="card">
+    <div id="crown" aria-hidden="true">👑</div>
     <div class="stage"><div id="result" class="hint">Add some options, then tap Pick!</div></div>
-    <div id="sub"></div>
     <button id="pick" type="button">Pick!</button>
   </section>
 
@@ -423,7 +431,7 @@ $('add').onsubmit = (e) => {
 function showName(name) {
   result.className = '';
   void result.offsetWidth; // restart the flip animation
-  result.className = 'flip';
+  result.className = 'flip' + (name.length > 14 ? ' long' : '');
   result.textContent = name;
 }
 
@@ -444,8 +452,7 @@ $('pick').onclick = () => {
   winnerId = null;
   render();
   $('card').className = 'starter rolling';
-  $('sub').className = '';
-  $('sub').textContent = '';
+  $('crown').className = '';
   $('pick').textContent = 'Picking…';
   sfx.start();
 
@@ -477,10 +484,9 @@ function land(winner) {
   winnerId = winner.id;
   result.className = '';
   void result.offsetWidth;
-  result.className = 'won';
+  result.className = 'won' + (winner.name.length > 14 ? ' long' : '');
   result.textContent = winner.name;
-  $('sub').textContent = '🎉 Picked! 🎉';
-  $('sub').className = 'show';
+  $('crown').className = 'show';
   $('card').className = 'starter winner';
   $('pick').textContent = 'Pick again';
   render();

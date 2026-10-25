@@ -26,7 +26,7 @@ Anything where you need a fair, random pick:
 
 1. **Add options** using the field at the top.
 2. **Tap an option** to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
-3. **Tap Pick!** and watch it spin. The pick gets confetti and a 👑.
+3. **Tap Pick!** and watch it spin. The picked option lights up in gold, with a 👑 and confetti.
 4. Remove an option for good with **✕**.
 
 Every pick is completely random. Each option in the draw has the same chance every time, even if it was picked last time.
@@ -58,4 +58,4 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v6` → `whostarts-v7`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v7` → `whostarts-v8`), otherwise installed copies keep showing the old version.
