@@ -155,12 +155,9 @@
   .num-dash { color: var(--muted); }
   #rangeList li.current-range { background: var(--glow); }
   #rangeList li:not(.current-range) .dot { border-color: var(--muted); }
-  #rangeList .toggle { flex: 0 0 auto; padding-right: 10px; }
-  .range-num { font-weight: 600; white-space: nowrap; }
-  .range-name {
-    flex: 1;
-    min-width: 0;
-    padding: 6px 4px;
+  .pick-dot { flex: none; align-self: stretch; display: grid; place-items: center; width: 48px; padding-left: 4px; }
+  .range-edge, .range-name {
+    padding: 6px 2px;
     border: 0;
     border-bottom: 1.5px dashed var(--muted);
     border-radius: 0;
@@ -169,6 +166,13 @@
     font: inherit;
     font-weight: 600;
   }
+  .range-edge { flex: none; min-width: 2.6ch; text-align: center; -moz-appearance: textfield; appearance: textfield; }
+  .range-edge::-webkit-outer-spin-button,
+  .range-edge::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .range-edge:hover { border-bottom-color: var(--text); }
+  .range-edge:focus { outline: none; border-bottom: 1.5px solid var(--accent); }
+  .range-dash { flex: none; padding: 0 4px; color: var(--muted); }
+  .range-name { flex: 1; min-width: 0; margin-left: 12px; padding: 6px 4px; }
   .range-name::placeholder { color: var(--muted); font-weight: 400; font-style: italic; }
   .range-name:hover { border-bottom-color: var(--text); }
   .range-name:focus { outline: none; border-bottom: 1.5px solid var(--accent); }
@@ -475,7 +479,7 @@
 
   <div id="rangeList" class="number-only"></div>
 
-  <p class="tip number-only">Tap a range to roll it. Tap its name to name or rename it. ✕ removes it.</p>
+  <p class="tip number-only">Tap the circle to choose a range. Tap the numbers or the name to change them. ✕ removes it.</p>
 
   <div class="list-card">
     <button class="set-btn" id="setBtn" type="button" aria-haspopup="dialog">
@@ -1120,11 +1124,11 @@ function renderRanges() {
     const li = document.createElement('li');
     li.className = (r === selected ? 'in current-range' : '') + (r === freshRange ? ' fresh' : '');
 
+    // The circle chooses the range; the numbers and the name are edited in place.
     const choose = document.createElement('button');
-    choose.className = 'toggle';
+    choose.className = 'pick-dot';
     choose.setAttribute('aria-pressed', r === selected);
-    choose.innerHTML = '<span class="dot"></span><span class="range-num"></span>';
-    choose.querySelector('.range-num').textContent = rangeText(r);
+    choose.innerHTML = '<span class="dot"></span>';
     choose.setAttribute('aria-label', `Roll ${r.name || rangeText(r)}`);
     choose.onclick = () => {
       if (rolling || r === selected) return;
@@ -1133,6 +1137,68 @@ function renderRanges() {
       resetCard();
       render();
     };
+
+    const fit = (input) => { input.style.width = `${Math.max(1, String(input.value).length) + 1.6}ch`; };
+    const edge = (key) => {
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.inputMode = 'numeric';
+      input.step = '1';
+      input.className = 'range-edge';
+      input.value = r[key];
+      input.enterKeyHint = 'done';
+      input.setAttribute('aria-label', key === 'from' ? `From, ${rangeText(r)}` : `To, ${rangeText(r)}`);
+      fit(input);
+      input.addEventListener('input', () => fit(input));
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+        if (e.key === 'Escape') { input.value = r[key]; fit(input); input.blur(); }
+      });
+      input.addEventListener('change', commitNumbers);
+      return input;
+    };
+    const fromInput = edge('from');
+    const toInput = edge('to');
+    const dash = document.createElement('span');
+    dash.className = 'range-dash';
+    dash.textContent = '–';
+
+    const showNumbers = () => {
+      fromInput.value = r.from;
+      toInput.value = r.to;
+      fit(fromInput);
+      fit(toInput);
+    };
+    // Saves new From/To, keeping them in order and never duplicating another row.
+    function commitNumbers() {
+      const a = Number(fromInput.value);
+      const b = Number(toInput.value);
+      if (fromInput.value === '' || toInput.value === '' || !Number.isInteger(a) || !Number.isInteger(b)) {
+        showNumbers();
+        sfx.out();
+        toast('Enter whole numbers');
+        return;
+      }
+      const next = { from: Math.min(a, b), to: Math.max(a, b) };
+      if (next.to - next.from >= 2 ** 32) { showNumbers(); sfx.out(); toast('That range is too big'); return; }
+      if (ranges.some(x => x !== r && sameRange(x, next))) {
+        showNumbers();
+        sfx.out();
+        toast(`You already have ${rangeText(next)}`);
+        return;
+      }
+      if (next.from === r.from && next.to === r.to) { showNumbers(); return; }
+      const wasCurrent = r === currentRange();
+      r.from = next.from;
+      r.to = next.to;
+      saveRanges();
+      if (wasCurrent) selectRange(r);
+      showNumbers();
+      sfx.in();
+      // no full redraw, so tapping straight into another field keeps focus
+      choose.setAttribute('aria-label', `Roll ${r.name || rangeText(r)}`);
+      if (result.classList.contains('hint')) result.textContent = hintText();
+    }
 
     // The name is edited right in the row: tap, type, done. It saves when the
     // field loses focus or Enter is pressed.
@@ -1177,7 +1243,7 @@ function renderRanges() {
       }, reducedMotion ? 0 : 250);
     };
 
-    li.append(choose, name, del);
+    li.append(choose, fromInput, dash, toInput, name, del);
     ul.append(li);
   }
   box.append(ul);
@@ -1599,11 +1665,11 @@ function hintText() {
     if (!r) return 'Add a range, then tap Roll!';
     const lo = r.from.toLocaleString();
     const hi = r.to.toLocaleString();
-    if (r.name) return shaking ? `Roll or shake to roll ${r.name} (${lo}–${hi}) 📳` : `Tap Roll! to roll ${r.name} (${lo}–${hi})`;
-    return shaking ? `Roll or shake for a number from ${lo} to ${hi} 📳` : `Tap Roll! for a number from ${lo} to ${hi}`;
+    if (r.name) return shaking ? `Roll or shake to roll ${r.name} (${lo}–${hi})` : `Tap Roll! to roll ${r.name} (${lo}–${hi})`;
+    return shaking ? `Roll or shake for a number from ${lo} to ${hi}` : `Tap Roll! for a number from ${lo} to ${hi}`;
   }
   if (!cur().items.length) return 'Add some options, then tap Pick!';
-  return shaking ? 'Tap Pick! or shake your phone 📳' : 'Tap Pick! to choose one';
+  return shaking ? 'Tap Pick! or shake your phone' : 'Tap Pick! to choose one';
 }
 
 // On iPhone, before motion has ever been allowed, a button under Pick! asks for

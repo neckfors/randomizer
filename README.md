@@ -42,9 +42,9 @@ Every pick is completely random. Each option in the draw has the same chance eve
 Switch to **🎲 Number** at the top to roll a random number instead of picking from a list. It works just like a list, except each row is a range of numbers:
 
 1. **Add a range** with the From – To fields and **Add**. Any whole numbers work, even 1 to 1,000,000. You start with 1–6, 1–10 and 1–100.
-2. **Tap a row** to choose the range to roll. It gets a ✓.
+2. **Tap the circle** at the start of a row to choose the range to roll. It gets a ✓.
 3. **Tap Roll!** (or shake your phone). A die tumbles while numbers race past, and it lands on a number from the range, both ends included.
-4. **Name a range right in its row:** tap the name field next to the numbers (it says *✎ Add a name* until you give it one), type a name like *d6*, *d20* or *Raffle*, and press Enter or tap elsewhere. Tap it again any time to rename it, or clear it to remove the name. **✕** removes a range.
+4. **Change a range right in its row:** tap the numbers to change From or To, and press Enter or tap elsewhere to save. They are put in order if you swap them, and a range you already have is not added twice. **Name a range** the same way: tap the name field next to the numbers (it says *✎ Add a name* until you give it one), type a name like *d6*, *d20* or *Raffle*, and press Enter or tap elsewhere. Tap it again any time to rename it, or clear it to remove the name. **✕** removes a range.
 
 Your ranges are remembered and included in backups. `https://neckfors.github.io/pick-one/#number` opens straight in Number mode.
 
@@ -67,7 +67,7 @@ Tap ✎ on a list, then **⤴ Share this list**. You get a link to send to anyon
 
 ## Settings ⚙️
 
-- **Shake to pick** (on by default on phones): give your phone two quick shakes instead of tapping Pick! The hint in the Pick! card then reads *Tap Pick! or shake your phone 📳*. On iPhone, a *📳 Tap to turn on shake to pick* button shows first, because Safari asks for motion access once. Tap *No thanks* next to it if you don't want shaking. You can switch it on or off here any time.
+- **Shake to pick** (on by default on phones): give your phone two quick shakes instead of tapping Pick! The hint in the Pick! card then reads *Tap Pick! or shake your phone*. On iPhone, a *📳 Tap to turn on shake to pick* button shows first, because Safari asks for motion access once. Tap *No thanks* next to it if you don't want shaking. You can switch it on or off here any time.
 - **Sound effects:** on or off (the 🔊 button at the top does the same).
 - **Backup:** *Save backup* downloads a file with all your lists. *Restore* loads such a file and replaces your lists with it. Use it to keep your lists safe, or to move them to a new phone.
 
@@ -97,7 +97,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v36` → `whostarts-v37`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v37` → `whostarts-v38`), otherwise installed copies keep showing the old version.
 
 ## Support
 
