@@ -97,6 +97,64 @@
   /* takes no room until a pick lands, so the card has no empty gap at the top */
   #crown { position: relative; height: 0; font-size: 2rem; line-height: 1; opacity: 0; }
   #crown.show { height: 2.2rem; opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
+  #die { position: relative; height: 0; font-size: 2.4rem; line-height: 1; opacity: 0; }
+  #die.rolling { height: 2.8rem; opacity: 1; animation: tumble .45s linear infinite; }
+  @keyframes tumble {
+    0% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-8px) rotate(90deg); }
+    50% { transform: translateY(0) rotate(180deg); }
+    75% { transform: translateY(-8px) rotate(270deg); }
+    100% { transform: translateY(0) rotate(360deg); }
+  }
+
+  .mode-tabs {
+    display: flex;
+    gap: 3px;
+    padding: 3px;
+    margin: 4px 0 0;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .mode-tabs button {
+    flex: 1;
+    padding: 8px;
+    border: 0;
+    border-radius: 9px;
+    background: none;
+    font: inherit;
+    font-weight: 600;
+    color: var(--muted);
+    transition: background .15s, color .15s;
+  }
+  .mode-tabs button.on { background: var(--accent); color: var(--accent-text); }
+
+  /* Number mode: From/To take the place of the list */
+  .number-card { display: none; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  body.number-mode .number-card { display: block; }
+  body.number-mode .list-card,
+  body.number-mode #add,
+  body.number-mode #lists,
+  body.number-mode #history,
+  body.number-mode .tip { display: none !important; }
+  .num-row { display: flex; align-items: flex-end; gap: 10px; }
+  .num-row label { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; font-size: .85rem; color: var(--muted); }
+  .num-row input {
+    width: 100%;
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    font-size: 1.3rem;
+    font-weight: 700;
+    text-align: center;
+  }
+  .num-dash { padding-bottom: 12px; font-size: 1.3rem; color: var(--muted); }
+  .presets { display: flex; gap: 8px; margin-top: 12px; }
+  .presets .btn { flex: 1; padding: 8px; font-size: .9rem; }
   @keyframes flip { from { transform: translateY(-60%) scaleY(.6); opacity: .2; filter: blur(2px); } to { transform: none; opacity: 1; filter: none; } }
   @keyframes pop { 0% { transform: scale(.3) rotate(-8deg); } 60% { transform: scale(1.25) rotate(3deg); } 100% { transform: none; } }
   @keyframes drop { from { opacity: 0; transform: translateY(-40px) rotate(-25deg) scale(.4); } to { opacity: 1; transform: none; } }
@@ -375,8 +433,14 @@
     </div>
   </header>
 
+  <div class="mode-tabs" role="tablist" aria-label="What to pick">
+    <button type="button" role="tab" id="modeLists">📋 Lists</button>
+    <button type="button" role="tab" id="modeNumber">🎲 Number</button>
+  </div>
+
   <section class="starter" id="card">
     <div id="crown" aria-hidden="true">👑</div>
+    <div id="die" aria-hidden="true">🎲</div>
     <div class="stage"><div id="result" class="hint">Add some options, then tap Pick!</div></div>
     <button id="pick" type="button">Pick!</button>
     <div class="shake-ask" id="shakeAsk" hidden>
@@ -384,6 +448,19 @@
       <button type="button" class="shake-no" id="shakeNo">No thanks</button>
     </div>
   </section>
+
+  <div class="number-card" id="numberCard">
+    <div class="num-row">
+      <label>From<input id="numFrom" type="number" inputmode="numeric" step="1" enterkeyhint="done"></label>
+      <span class="num-dash" aria-hidden="true">–</span>
+      <label>To<input id="numTo" type="number" inputmode="numeric" step="1" enterkeyhint="done"></label>
+    </div>
+    <div class="presets">
+      <button type="button" class="btn" data-range="1,6">1–6</button>
+      <button type="button" class="btn" data-range="1,10">1–10</button>
+      <button type="button" class="btn" data-range="1,100">1–100</button>
+    </div>
+  </div>
 
   <div class="list-card">
     <button class="set-btn" id="setBtn" type="button" aria-haspopup="dialog">
@@ -503,6 +580,8 @@
 const KEY = 'whostarts.v1';
 const MUTE_KEY = 'whostarts.muted';
 const SHAKE_KEY = 'whostarts.shake';
+const MODE_KEY = 'whostarts.mode';
+const NUM_KEY = 'whostarts.numbers';
 
 const STARTER_LISTS = [['Game night', '🎲'], ['Who makes dinner', '🍳'], ['Where to eat', '🍕']];
 const EMOJIS = ['📋', '🎲', '🎮', '🃏', '🍕', '🍔', '🍳', '🍽️', '🍻', '☕', '🎬', '📺', '📚', '🎵', '🧹', '🚗', '✈️', '🏃', '🐶', '🎁', '💡', '❤️'];
@@ -589,8 +668,11 @@ function slugify(name) {
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'list';
 }
 
+// "#number" is the address of Number mode, so no list may use it
+const RESERVED_SLUGS = ['number'];
+
 function slugTaken(slug, except) {
-  return state.sets.some(s => s !== except && (s.slug === slug || s.aliases.includes(slug)));
+  return RESERVED_SLUGS.includes(slug) || state.sets.some(s => s !== except && (s.slug === slug || s.aliases.includes(slug)));
 }
 
 function uniqueSlug(name, except) {
@@ -603,7 +685,7 @@ function uniqueSlug(name, except) {
 function ensureSlugs() {
   const seen = new Set();
   for (const s of state.sets) {
-    if (!s.slug || seen.has(s.slug)) s.slug = uniqueSlug(s.name, s);
+    if (!s.slug || seen.has(s.slug) || RESERVED_SLUGS.includes(s.slug)) s.slug = uniqueSlug(s.name, s);
     seen.add(s.slug);
   }
 }
@@ -615,6 +697,15 @@ function addressOf(set) {
 let state = load();
 ensureSlugs();
 let rolling = false;
+// "lists" picks an option from the current list; "number" rolls a number From–To
+let mode = pref(MODE_KEY, 'lists') === 'number' ? 'number' : 'lists';
+let numbers = (() => {
+  try {
+    const n = JSON.parse(pref(NUM_KEY, 'null'));
+    if (n && Number.isInteger(n.from) && Number.isInteger(n.to)) return n;
+  } catch (e) {}
+  return { from: 1, to: 6 };
+})();
 let winnerId = null;     // crowned row, until the next pick
 let freshIds = new Set();// rows that just got added
 let bounceId = null;     // row that was just toggled
@@ -943,10 +1034,53 @@ function resetCard() {
   winnerId = null;
   result.className = 'hint';
   $('crown').className = '';
+  $('die').className = '';
   $('card').className = 'starter';
-  $('pick').textContent = 'Pick!';
+  $('pick').textContent = mode === 'number' ? 'Roll!' : 'Pick!';
   delete $('pick').dataset.mode;
 }
+
+// ---------- Lists / Number mode ----------
+function setMode(next) {
+  if (rolling || next === mode) return;
+  mode = next;
+  setPref(MODE_KEY, mode);
+  resetCard();
+  sfx.swap();
+  render();
+}
+$('modeLists').onclick = () => setMode('lists');
+$('modeNumber').onclick = () => setMode('number');
+
+// From/To are saved as soon as they are whole numbers; anything else waits
+// until it is fixed, and Roll! explains what is wrong.
+function readNumbers() {
+  const from = Number($('numFrom').value);
+  const to = Number($('numTo').value);
+  if ($('numFrom').value === '' || $('numTo').value === '' || !Number.isInteger(from) || !Number.isInteger(to)) return null;
+  return { from, to };
+}
+for (const id of ['numFrom', 'numTo']) {
+  $(id).addEventListener('input', () => {
+    const n = readNumbers();
+    if (n) { numbers = n; setPref(NUM_KEY, JSON.stringify(numbers)); }
+    if (result.classList.contains('hint')) result.textContent = hintText();
+  });
+  $(id).addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); $('pick').click(); }
+  });
+}
+document.querySelectorAll('[data-range]').forEach(b => {
+  b.onclick = () => {
+    if (rolling) return;
+    const [from, to] = b.dataset.range.split(',').map(Number);
+    numbers = { from, to };
+    setPref(NUM_KEY, JSON.stringify(numbers));
+    sfx.click();
+    resetCard();
+    render();
+  };
+});
 
 function switchTo(id) {
   state.current = id;
@@ -1140,6 +1274,13 @@ $('importCancel').onclick = () => { pendingImport = null; importDialog.close(); 
 
 // Opens the list named in the address (#game-night). Returns true when it switched.
 function openFromAddress() {
+  if (location.hash === '#number') {
+    if (mode === 'number') return false;
+    mode = 'number';
+    setPref(MODE_KEY, mode);
+    resetCard();
+    return true;
+  }
   const m = location.hash.match(/^#([a-z0-9-]+)$/);
   if (!m) return false;
   const set = state.sets.find(s => s.slug === m[1] || s.aliases.includes(m[1]));
@@ -1147,6 +1288,8 @@ function openFromAddress() {
     toast('That list isn’t on this phone');
     return false;
   }
+  // a list's address always shows the list, even if Number was open
+  if (mode !== 'lists') { mode = 'lists'; setPref(MODE_KEY, mode); resetCard(); }
   if (set.id === state.current) return false;
   state.current = set.id;
   resetCard();
@@ -1157,7 +1300,7 @@ function openFromAddress() {
 // Keeps the address bar on the current list, so it can be copied or bookmarked.
 function syncAddress() {
   if (location.hash.startsWith('#list=')) return;
-  const want = '#' + cur().slug;
+  const want = mode === 'number' ? '#number' : '#' + cur().slug;
   if (location.hash !== want) history.replaceState(null, '', location.pathname + location.search + want);
 }
 
@@ -1308,8 +1451,13 @@ function motionAllowedBefore() {
 
 // The text in the card before a pick; it mentions shaking once that works.
 function hintText() {
-  if (!cur().items.length) return 'Add some options, then tap Pick!';
   const shaking = shakeOn && (listening || motionAllowedBefore());
+  if (mode === 'number') {
+    const lo = Math.min(numbers.from, numbers.to).toLocaleString();
+    const hi = Math.max(numbers.from, numbers.to).toLocaleString();
+    return shaking ? `Roll or shake for a number from ${lo} to ${hi} 📳` : `Tap Roll! for a number from ${lo} to ${hi}`;
+  }
+  if (!cur().items.length) return 'Add some options, then tap Pick!';
   return shaking ? 'Tap Pick! or shake your phone 📳' : 'Tap Pick! to choose one';
 }
 
@@ -1375,6 +1523,22 @@ renderShakeTip();
 
 // ---------- Options in the current list ----------
 function render() {
+  document.body.classList.toggle('number-mode', mode === 'number');
+  $('modeLists').classList.toggle('on', mode === 'lists');
+  $('modeNumber').classList.toggle('on', mode === 'number');
+  $('modeLists').setAttribute('aria-selected', mode === 'lists');
+  $('modeNumber').setAttribute('aria-selected', mode === 'number');
+  if (mode === 'number') {
+    $('count').textContent = '';
+    // don't overwrite a field while someone is typing in it
+    if (document.activeElement !== $('numFrom')) $('numFrom').value = numbers.from;
+    if (document.activeElement !== $('numTo')) $('numTo').value = numbers.to;
+    delete $('pick').dataset.mode;
+    $('pick').disabled = rolling;
+    if (result.classList.contains('hint')) result.textContent = hintText();
+    syncAddress();
+    return;
+  }
   const items = cur().items;
   const playing = items.filter(p => p.playing).length;
   $('count').textContent = items.length ? `${playing} of ${items.length} in the draw` : '';
@@ -1576,6 +1740,7 @@ function startOver() {
 // Picks one option uniformly at random from those in the draw, then plays the
 // slot-machine spin that lands on it.
 $('pick').onclick = () => {
+  if (mode === 'number') { rollNumber(); return; }
   if ($('pick').dataset.mode === 'reset') { startOver(); return; }
   const playing = cur().items.filter(p => p.playing);
   if (!playing.length || rolling) return;
@@ -1636,10 +1801,64 @@ function land(winner) {
   burst(r.left + r.width / 2, r.top + r.height / 2);
 }
 
+// ---------- Rolling a number ----------
+// Numbers from the range race past while a 🎲 tumbles, then it lands on a
+// number picked uniformly at random from From to To (both included).
+function rollNumber() {
+  if (rolling) return;
+  const n = readNumbers();
+  if (!n) { sfx.out(); toast('Enter whole numbers in From and To'); return; }
+  const min = Math.min(n.from, n.to);
+  const max = Math.max(n.from, n.to);
+  // randomInt works with 32-bit numbers, which covers any range people type
+  if (max - min >= 2 ** 32) { sfx.out(); toast('That range is too big'); return; }
+  const roll = () => min + randomInt(max - min + 1);
+  const number = roll();
+
+  document.activeElement?.blur?.(); // closes the keyboard
+  rolling = true;
+  $('card').className = 'starter rolling';
+  $('crown').className = '';
+  $('die').className = 'rolling';
+  $('pick').textContent = 'Rolling…';
+  $('pick').disabled = true;
+  sfx.start();
+
+  const total = min !== max && !reducedMotion ? 26 : 1;
+  let tick = 0;
+  (function spin() {
+    tick++;
+    if (tick < total) {
+      showName(roll().toLocaleString());
+      const progress = tick / total;
+      sfx.tick(progress);
+      if (navigator.vibrate) navigator.vibrate(5);
+      setTimeout(spin, 45 + 330 * progress ** 3);
+      return;
+    }
+    rolling = false;
+    const shown = number.toLocaleString();
+    $('die').className = '';
+    result.className = '';
+    void result.offsetWidth;
+    result.className = 'won' + (shown.length > 14 ? ' long' : '');
+    result.textContent = shown;
+    $('crown').className = 'show';
+    $('card').className = 'starter winner';
+    $('pick').textContent = 'Roll again';
+    render();
+    sfx.win();
+    if (navigator.vibrate) navigator.vibrate([40, 60, 40, 60, 120]);
+    const r = result.getBoundingClientRect();
+    burst(r.left + r.width / 2, r.top + r.height / 2);
+  })();
+}
+
 $('support').onclick = () => sfx.add();
 
 renderMute();
 openFromAddress();
+resetCard();
 render();
 checkSharedLink();
 

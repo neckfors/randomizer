@@ -21,6 +21,7 @@ Anything where you need a fair, random pick:
 - 📚 **What to read or play next** from your backlog
 - 🏃 **Which workout today:** run, gym, yoga, rest day…
 - 🤔 **Any tough decision:** when you just can't choose, let it choose
+- 🔢 **A random number:** roll a die, pick a raffle ticket, or any number between two values
 
 ## How it works
 
@@ -35,6 +36,10 @@ Every pick is completely random. Each option in the draw has the same chance eve
 **Pick each only once:** switch this on for a list when you want to go round instead, like taking turns on chores. Whatever gets picked sits out automatically, and when everything has been picked, the button turns into **↺ Start over** to put everything back. The setting is saved per list, so *Game night* can allow repeats while *Who makes dinner* takes turns.
 
 **Recent picks:** under the options, *🕘 Recent picks* keeps the last 100 picks for each list, handy for "who did the dishes last time?". It shows the newest 10; tap *Show all* to see the rest.
+
+## Rolling a number 🎲
+
+Switch to **🎲 Number** at the top to roll a random number instead of picking from a list. Set **From** and **To** (any whole numbers, even 1 to 1,000,000), or tap **1–6**, **1–10** or **1–100**, then tap **Roll!** (or shake your phone). A die tumbles while numbers race past, and it lands on a number from the range, both ends included. Your range is remembered, and `https://neckfors.github.io/pick-one/#number` opens straight in Number mode.
 
 ## Managing lists
 
@@ -85,7 +90,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v32` → `whostarts-v33`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v33` → `whostarts-v34`), otherwise installed copies keep showing the old version.
 
 ## Support
 
