@@ -294,6 +294,13 @@
     animation: arm .25s cubic-bezier(.2, 1.6, .4, 1);
   }
   @keyframes arm { from { transform: scale(.6); } to { transform: none; } }
+  li.confirming .row-edit { display: none; }
+  .del-cancel {
+    flex: none; height: 40px; padding: 0 12px; margin-right: 6px; align-self: center;
+    border: 1px solid var(--line); border-radius: 10px;
+    color: var(--text); font-size: .95rem; font-weight: 600;
+    animation: arm .25s cubic-bezier(.2, 1.6, .4, 1);
+  }
   .empty { color: var(--muted); text-align: center; padding: 24px 8px; }
   .tip { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 20px; }
 
@@ -480,7 +487,6 @@
   }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
-  /* "Removed … · Undo", same place and look as the messages, but tappable */
   /* shown at the top once a new version has downloaded; stays until tapped */
   #updateBar {
     position: fixed;
@@ -512,38 +518,6 @@
     font-weight: 700;
   }
   @keyframes drop-in { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
-
-  #undoBar {
-    position: fixed;
-    left: 50%; bottom: calc(24px + env(safe-area-inset-bottom));
-    z-index: 21;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: max-content;
-    max-width: calc(100vw - 32px);
-    padding: 4px 4px 4px 16px;
-    border-radius: 999px;
-    background: var(--text);
-    color: var(--bg);
-    font-size: .95rem;
-    opacity: 0;
-    transform: translate(-50%, 20px);
-    pointer-events: none;
-    transition: opacity .2s, transform .2s;
-  }
-  #undoBar.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
-  #undoText { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #undoBtn {
-    flex: none;
-    padding: 8px 14px;
-    border: 0;
-    border-radius: 999px;
-    background: var(--accent);
-    color: var(--accent-text);
-    font: inherit;
-    font-weight: 700;
-  }
 
   #confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
 
@@ -714,7 +688,6 @@
   </dialog>
 
   <div id="toast" role="status" aria-live="polite"></div>
-  <div id="undoBar" role="status" aria-live="polite"><span id="undoText"></span><button type="button" id="undoBtn">Undo</button></div>
   <div id="updateBar" role="status" aria-live="polite" hidden><span>✨ New version available</span><button type="button" id="updateBtn">Update</button></div>
   <canvas id="confetti"></canvas>
 
@@ -867,7 +840,6 @@ function byName(a, b) {
 
 let toastTimer;
 function toast(msg) {
-  hideUndo();
   const t = $('toast');
   t.textContent = msg;
   t.classList.add('show');
@@ -875,19 +847,20 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-// After removing something, a bar offers to put it back for a few seconds.
-let undoTimer;
-let undoAction = null;
 // ✕ asks first: one tap turns it into a red Delete button in the same spot,
-// a second tap removes the row. Tapping anywhere else, or waiting, puts ✕ back.
+// with Cancel next to it where ✎ was. Delete removes the row; Cancel, tapping
+// anywhere else or waiting a few seconds puts ✕ back.
 let armedDel = null;
 function disarmDelete() {
   if (!armedDel) return;
-  clearTimeout(armedDel.timer);
-  armedDel.btn.classList.remove('armed');
-  armedDel.btn.textContent = '✕';
-  armedDel.btn.setAttribute('aria-label', armedDel.label);
+  const { btn, label, cancel, timer } = armedDel;
   armedDel = null;
+  clearTimeout(timer);
+  btn.classList.remove('armed');
+  btn.textContent = '✕';
+  btn.setAttribute('aria-label', label);
+  cancel.remove();
+  btn.parentElement?.classList.remove('confirming');
 }
 function confirmDelete(del, remove) {
   del.onclick = (e) => {
@@ -896,36 +869,23 @@ function confirmDelete(del, remove) {
     if (armedDel && armedDel.btn === del) { disarmDelete(); remove(); return; }
     disarmDelete();
     const label = del.getAttribute('aria-label');
-    armedDel = { btn: del, label, timer: setTimeout(disarmDelete, 4000) };
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'del-cancel';
+    cancel.textContent = 'Cancel';
+    cancel.onclick = (ev) => { ev.stopPropagation(); disarmDelete(); };
+    del.before(cancel);
+    del.parentElement.classList.add('confirming');
+    armedDel = { btn: del, label, cancel, timer: setTimeout(disarmDelete, 6000) };
     del.classList.add('armed');
     del.textContent = 'Delete';
-    del.setAttribute('aria-label', `Tap again to confirm: ${label}`);
+    del.setAttribute('aria-label', `Confirm: ${label}`);
     sfx.click();
   };
 }
 document.addEventListener('pointerdown', (e) => {
   if (armedDel && e.target !== armedDel.btn) disarmDelete();
 }, true);
-
-function offerUndo(msg, action) {
-  $('toast').classList.remove('show');
-  undoAction = action;
-  $('undoText').textContent = msg;
-  $('undoBar').classList.add('show');
-  clearTimeout(undoTimer);
-  undoTimer = setTimeout(hideUndo, 5000);
-}
-function hideUndo() {
-  undoAction = null;
-  $('undoBar').classList.remove('show');
-}
-$('undoBtn').onclick = () => {
-  const action = undoAction;
-  hideUndo();
-  if (!action || rolling) return;
-  action();
-  sfx.add();
-};
 
 // Closes a dialog when its dimmed backdrop is tapped.
 function closeOnBackdrop(d) {
@@ -1489,24 +1449,12 @@ function renderRanges() {
       sfx.del();
       li.classList.add('leaving');
       setTimeout(() => {
-        const index = ranges.indexOf(r);
         const wasSelected = r === currentRange();
         ranges = ranges.filter(x => x !== r);
         saveRanges();
         if (wasSelected && ranges.length) selectRange(ranges[0]);
         resetCard();
         render();
-        offerUndo(`Removed ${r.name ? '“' + r.name + '”' : rangeText(r)}`, () => {
-          if (ranges.includes(r)) return;
-          // its numbers may have been added again meanwhile; then keep that one
-          if (ranges.some(x => sameRange(x, r))) { toast(`You already have ${rangeText(r)}`); return; }
-          ranges.splice(Math.min(index, ranges.length), 0, r);
-          saveRanges();
-          if (wasSelected) selectRange(r);
-          freshRange = r;
-          resetCard();
-          render();
-        });
       }, reducedMotion ? 0 : 250);
     });
 
@@ -2192,12 +2140,6 @@ function list(players) {
         set.items.splice(index, 1);
         if (winnerId === p.id) winnerId = null;
         changed();
-        offerUndo(`Removed “${p.name}”`, () => {
-          if (!state.sets.includes(set) || set.items.includes(p)) return;
-          set.items.splice(Math.min(index, set.items.length), 0, p);
-          freshIds.add(p.id);
-          changed();
-        });
       }, reducedMotion ? 0 : 250);
     });
 
