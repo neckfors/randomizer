@@ -132,6 +132,9 @@
   /* Number mode shows ranges in place of the list */
   .number-only { display: none !important; }
   body.number-mode .number-only { display: block !important; }
+  body.number-mode .number-only[hidden] { display: none !important; }
+  .range-once-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-bottom: 12px; }
+  .range-once-card .once { border-top: 0; }
   body.number-mode .list-card,
   body.number-mode #add,
   body.number-mode #lists,
@@ -144,7 +147,7 @@
   .draft .range-edge::placeholder { color: var(--muted); font-style: italic; }
   #rangeList li:not(.current-range) .dot { border-color: var(--muted); }
   .pick-dot { flex: none; align-self: stretch; display: grid; place-items: center; width: 48px; padding-left: 4px; }
-  .range-edge, .range-name {
+  .range-edge, .range-name, .opt-name {
     padding: 6px 2px;
     border: 0;
     border-bottom: 1.5px dashed var(--muted);
@@ -161,6 +164,9 @@
   .range-edge:focus { outline: none; border-bottom: 1.5px solid var(--accent); }
   .range-dash { flex: none; padding: 0 4px; color: var(--muted); }
   .range-name { flex: 1; min-width: 0; margin-left: 12px; padding: 6px 4px; }
+  .opt-name { flex: 1; min-width: 0; margin: 0 4px; padding: 6px 4px; font-weight: 400; text-overflow: ellipsis; }
+  .opt-name:hover { border-bottom-color: var(--text); }
+  .opt-name:focus { outline: none; border-bottom: 1.5px solid var(--accent); }
   .range-name::placeholder { color: var(--muted); font-weight: 400; font-style: italic; }
   .range-name:hover { border-bottom-color: var(--text); }
   .range-name:focus { outline: none; border-bottom: 1.5px solid var(--accent); }
@@ -237,19 +243,17 @@
   li button { background: none; border: 0; font: inherit; color: inherit; }
   li.hot { background: var(--glow); }
   li.crowned { animation: shine 1.2s ease-out; background: rgba(224, 164, 0, .14); }
-  li.crowned .label::after { content: " 👑"; }
+  .crown-mark { flex: none; margin-left: 6px; }
   li.fresh { animation: slidein .35s cubic-bezier(.2, 1.4, .4, 1); }
   li.leaving { animation: leave .25s ease-in forwards; }
   @keyframes shine { 0% { background: rgba(224, 164, 0, .6); } 100% { background: rgba(224, 164, 0, .14); } }
   @keyframes slidein { from { transform: translateX(-30px) scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
   @keyframes leave { to { transform: translateX(60px); opacity: 0; } }
 
-  .toggle { flex: 1; text-align: left; padding: 14px 4px 14px 14px; display: flex; align-items: center; gap: 10px; min-width: 0; }
-  .toggle .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dot { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--accent); display: grid; place-items: center; font-size: .8rem; color: var(--accent-text); }
   li.in .dot { background: var(--accent); }
   li.in .dot::after { content: "✓"; }
-  li.out .label { color: var(--muted); text-decoration: line-through; }
+  li.out .opt-name { color: var(--muted); text-decoration: line-through; }
   li.out .dot { border-color: var(--muted); }
   li.bounce .dot { animation: bounce .3s cubic-bezier(.2, 1.8, .4, 1); }
   @keyframes bounce { 0% { transform: scale(.5); } 100% { transform: none; } }
@@ -425,6 +429,39 @@
   }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+  /* "Removed … · Undo", same place and look as the messages, but tappable */
+  #undoBar {
+    position: fixed;
+    left: 50%; bottom: calc(24px + env(safe-area-inset-bottom));
+    z-index: 21;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    padding: 4px 4px 4px 16px;
+    border-radius: 999px;
+    background: var(--text);
+    color: var(--bg);
+    font-size: .95rem;
+    opacity: 0;
+    transform: translate(-50%, 20px);
+    pointer-events: none;
+    transition: opacity .2s, transform .2s;
+  }
+  #undoBar.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+  #undoText { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #undoBtn {
+    flex: none;
+    padding: 8px 14px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font: inherit;
+    font-weight: 700;
+  }
+
   #confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -457,6 +494,14 @@
       <button type="button" class="shake-no" id="shakeNo">No thanks</button>
     </div>
   </section>
+
+  <div class="range-once-card number-only" id="rangeOnceCard">
+    <label class="once">
+      <input type="checkbox" id="rangeOnceToggle">
+      <span class="switch" aria-hidden="true"></span>
+      <span class="once-text">Roll each number only once<small id="rangeOnceHint"></small></span>
+    </label>
+  </div>
 
   <div id="rangeList" class="number-only"></div>
 
@@ -492,7 +537,7 @@
     </div>
   </details>
 
-  <p class="tip list-tip">Tap an option to leave it out of the draw. It stays in your list, so tap it again to bring it back. Only ✕ removes it.</p>
+  <p class="tip list-tip">Tap the circle to leave an option out of the draw. It stays in your list, so tap it again to bring it back. Tap a name to change it. Only ✕ removes it.</p>
 
   <a class="support" id="support" href="https://paypal.me/neckfors" target="_blank" rel="noopener"><span class="heart">♥</span> Support the app</a>
 
@@ -574,6 +619,7 @@
   </dialog>
 
   <div id="toast" role="status" aria-live="polite"></div>
+  <div id="undoBar" role="status" aria-live="polite"><span id="undoText"></span><button type="button" id="undoBtn">Undo</button></div>
   <canvas id="confetti"></canvas>
 
 <script>
@@ -724,12 +770,36 @@ function byName(a, b) {
 
 let toastTimer;
 function toast(msg) {
+  hideUndo();
   const t = $('toast');
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
 }
+
+// After removing something, a bar offers to put it back for a few seconds.
+let undoTimer;
+let undoAction = null;
+function offerUndo(msg, action) {
+  $('toast').classList.remove('show');
+  undoAction = action;
+  $('undoText').textContent = msg;
+  $('undoBar').classList.add('show');
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideUndo, 5000);
+}
+function hideUndo() {
+  undoAction = null;
+  $('undoBar').classList.remove('show');
+}
+$('undoBtn').onclick = () => {
+  const action = undoAction;
+  hideUndo();
+  if (!action || rolling) return;
+  action();
+  sfx.add();
+};
 
 // Closes a dialog when its dimmed backdrop is tapped.
 function closeOnBackdrop(d) {
@@ -1069,11 +1139,30 @@ function normalizeRanges(list) {
   if (!Array.isArray(list)) return null;
   return list
     .filter(r => r && Number.isInteger(r.from) && Number.isInteger(r.to))
-    .map(r => ({ from: Math.min(r.from, r.to), to: Math.max(r.from, r.to), name: typeof r.name === 'string' ? r.name.trim().slice(0, 20) : '' }));
+    .map(r => {
+      const from = Math.min(r.from, r.to);
+      const to = Math.max(r.from, r.to);
+      return {
+        from,
+        to,
+        name: typeof r.name === 'string' ? r.name.trim().slice(0, 20) : '',
+        // "roll each number only once": the numbers rolled so far sit out
+        once: !!r.once,
+        used: [...new Set(Array.isArray(r.used) ? r.used : [])].filter(n => Number.isInteger(n) && n >= from && n <= to),
+      };
+    });
+}
+
+function rangeSize(r) {
+  return r.to - r.from + 1;
+}
+
+function numbersLeft(r) {
+  return rangeSize(r) - (r.used || []).length;
 }
 
 let ranges = (() => {
-  try { return normalizeRanges(JSON.parse(pref(RANGES_KEY, 'null'))) || DEFAULT_RANGES.map(r => ({ ...r })); } catch (e) { return DEFAULT_RANGES.map(r => ({ ...r })); }
+  try { return normalizeRanges(JSON.parse(pref(RANGES_KEY, 'null'))) || normalizeRanges(DEFAULT_RANGES); } catch (e) { return normalizeRanges(DEFAULT_RANGES); }
 })();
 let freshRange = null;   // row that was just added
 
@@ -1181,6 +1270,7 @@ function renderRanges() {
       const wasCurrent = r === currentRange();
       r.from = next.from;
       r.to = next.to;
+      r.used = (r.used || []).filter(n => n >= r.from && n <= r.to);
       saveRanges();
       if (wasCurrent) selectRange(r);
       showNumbers();
@@ -1225,11 +1315,24 @@ function renderRanges() {
       sfx.del();
       li.classList.add('leaving');
       setTimeout(() => {
+        const index = ranges.indexOf(r);
+        const wasSelected = r === currentRange();
         ranges = ranges.filter(x => x !== r);
         saveRanges();
-        if (r === selected && ranges.length) selectRange(ranges[0]);
+        if (wasSelected && ranges.length) selectRange(ranges[0]);
         resetCard();
         render();
+        offerUndo(`Removed ${r.name ? '“' + r.name + '”' : rangeText(r)}`, () => {
+          if (ranges.includes(r)) return;
+          // its numbers may have been added again meanwhile; then keep that one
+          if (ranges.some(x => sameRange(x, r))) { toast(`You already have ${rangeText(r)}`); return; }
+          ranges.splice(Math.min(index, ranges.length), 0, r);
+          saveRanges();
+          if (wasSelected) selectRange(r);
+          freshRange = r;
+          resetCard();
+          render();
+        });
       }, reducedMotion ? 0 : 250);
     };
 
@@ -1304,7 +1407,7 @@ function addDraft() {
   const a = Number(draft.from);
   const b = Number(draft.to);
   if (!Number.isInteger(a) || !Number.isInteger(b)) { sfx.out(); toast('Enter whole numbers'); return; }
-  const r = { from: Math.min(a, b), to: Math.max(a, b), name: draft.name.trim().replace(/\s+/g, ' ').slice(0, 20) };
+  const r = { from: Math.min(a, b), to: Math.max(a, b), name: draft.name.trim().replace(/\s+/g, ' ').slice(0, 20), once: false, used: [] };
   // randomInt works with 32-bit numbers, which covers any range people type
   if (r.to - r.from >= 2 ** 32) { sfx.out(); toast('That range is too big'); return; }
   draft = { from: '', to: '', name: '' };
@@ -1777,9 +1880,29 @@ function render() {
   $('modeLists').setAttribute('aria-selected', mode === 'lists');
   $('modeNumber').setAttribute('aria-selected', mode === 'number');
   if (mode === 'number') {
-    $('count').textContent = '';
-    delete $('pick').dataset.mode;
-    $('pick').disabled = rolling || !ranges.length;
+    const r = currentRange();
+    $('rangeOnceCard').hidden = !r;
+    const pick = $('pick');
+    if (r) {
+      const label = r.name ? `“${r.name}”` : rangeText(r);
+      const used = (r.used || []).length;
+      $('rangeOnceToggle').checked = !!r.once;
+      $('rangeOnceHint').textContent = r.once
+        ? `Only for ${label}: ${used.toLocaleString()} of ${rangeSize(r).toLocaleString()} rolled. They sit out until you start over`
+        : `Only affects ${label}, not your other ranges`;
+    }
+    $('count').textContent = r && r.once ? `${numbersLeft(r).toLocaleString()} of ${rangeSize(r).toLocaleString()} left` : '';
+    // with "roll each number only once", the button turns into Start over
+    // once every number has been rolled
+    const exhausted = r && r.once && numbersLeft(r) === 0;
+    if (exhausted && !rolling) {
+      pick.dataset.mode = 'reset';
+      pick.textContent = '↺ Start over';
+    } else if (pick.dataset.mode === 'reset') {
+      delete pick.dataset.mode;
+      pick.textContent = 'Roll!';
+    }
+    pick.disabled = rolling || !ranges.length;
     if (result.classList.contains('hint')) result.textContent = hintText();
     renderRanges();
     syncAddress();
@@ -1838,11 +1961,12 @@ function list(players) {
       + (freshIds.has(p.id) ? ' fresh' : '')
       + (p.id === bounceId ? ' bounce' : '');
 
+    // The circle leaves the option in or out of the draw; the name is edited in place.
     const toggle = document.createElement('button');
-    toggle.className = 'toggle';
+    toggle.className = 'pick-dot';
     toggle.setAttribute('aria-pressed', p.playing);
-    toggle.innerHTML = '<span class="dot"></span><span class="label"></span>';
-    toggle.querySelector('.label').textContent = p.name;
+    toggle.setAttribute('aria-label', p.playing ? `Leave ${p.name} out` : `Put ${p.name} back in`);
+    toggle.innerHTML = '<span class="dot"></span>';
     toggle.onclick = () => {
       if (rolling) return;
       p.playing = !p.playing;
@@ -1850,6 +1974,42 @@ function list(players) {
       bounceId = p.id;
       changed();
     };
+
+    const name = document.createElement('input');
+    name.className = 'opt-name label';
+    name.value = p.name;
+    name.maxLength = 40;
+    name.enterKeyHint = 'done';
+    name.autocomplete = 'off';
+    name.setAttribute('aria-label', `Name of option ${p.name}`);
+    name.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); name.blur(); }
+      if (e.key === 'Escape') { name.value = p.name; name.blur(); }
+    });
+    name.addEventListener('change', () => {
+      const next = name.value.trim().replace(/\s+/g, ' ').slice(0, 40);
+      if (!next) { name.value = p.name; sfx.out(); toast('An option needs a name. Use ✕ to remove it.'); return; }
+      if (next.toLowerCase() !== p.name.toLowerCase() && cur().items.some(x => x !== p && x.name.toLowerCase() === next.toLowerCase())) {
+        name.value = p.name;
+        sfx.out();
+        toast(`“${next}” is already in the list`);
+        return;
+      }
+      name.value = next;
+      if (next === p.name) return;
+      p.name = next;
+      save();
+      sfx.in();
+      // no full redraw, so tapping straight into another name keeps focus;
+      // the list is put back in alphabetical order on the next change
+      toggle.setAttribute('aria-label', p.playing ? `Leave ${p.name} out` : `Put ${p.name} back in`);
+      del.setAttribute('aria-label', `Delete ${p.name}`);
+    });
+
+    const crown = document.createElement('span');
+    crown.className = 'crown-mark';
+    crown.textContent = '👑';
+    crown.setAttribute('aria-hidden', 'true');
 
     const del = document.createElement('button');
     del.className = 'del';
@@ -1860,13 +2020,24 @@ function list(players) {
       sfx.del();
       li.classList.add('leaving');
       setTimeout(() => {
-        cur().items = cur().items.filter(x => x.id !== p.id);
+        const set = cur();
+        const index = set.items.indexOf(p);
+        if (index < 0) return;
+        set.items.splice(index, 1);
         if (winnerId === p.id) winnerId = null;
         changed();
+        offerUndo(`Removed “${p.name}”`, () => {
+          if (!state.sets.includes(set) || set.items.includes(p)) return;
+          set.items.splice(Math.min(index, set.items.length), 0, p);
+          freshIds.add(p.id);
+          changed();
+        });
       }, reducedMotion ? 0 : 250);
     };
 
-    li.append(toggle, del);
+    li.append(toggle, name);
+    if (p.id === winnerId) li.append(crown);
+    li.append(del);
     ul.append(li);
   }
   return ul;
@@ -1986,7 +2157,11 @@ function startOver() {
 // Picks one option uniformly at random from those in the draw, then plays the
 // slot-machine spin that lands on it.
 $('pick').onclick = () => {
-  if (mode === 'number') { rollNumber(); return; }
+  if (mode === 'number') {
+    if ($('pick').dataset.mode === 'reset') { startOverRange(); return; }
+    rollNumber();
+    return;
+  }
   if ($('pick').dataset.mode === 'reset') { startOver(); return; }
   const playing = cur().items.filter(p => p.playing);
   if (!playing.length || rolling) return;
@@ -2047,9 +2222,33 @@ function land(winner) {
   burst(r.left + r.width / 2, r.top + r.height / 2);
 }
 
+// Switching "roll each number only once" on or off starts the range fresh.
+$('rangeOnceToggle').onchange = (e) => {
+  const r = currentRange();
+  if (!r || rolling) { e.target.checked = !!(r && r.once); return; }
+  r.once = e.target.checked;
+  r.used = [];
+  saveRanges();
+  r.once ? sfx.in() : sfx.out();
+  resetCard();
+  render();
+};
+
+function startOverRange() {
+  const r = currentRange();
+  if (!r) return;
+  r.used = [];
+  saveRanges();
+  resetCard();
+  sfx.swap();
+  render();
+}
+
 // ---------- Rolling a number ----------
 // Numbers from the range race past while a 🎲 tumbles, then it lands on a
 // number picked uniformly at random from the chosen range (both ends included).
+// With "roll each number only once", it picks uniformly among the numbers not
+// rolled yet: the k-th free number is found by stepping past the used ones.
 function rollNumber() {
   if (rolling) return;
   const range = currentRange();
@@ -2058,7 +2257,18 @@ function rollNumber() {
   const min = range.from;
   const max = range.to;
   const roll = () => min + randomInt(max - min + 1);
-  const number = roll();
+  let number;
+  if (range.once) {
+    const left = numbersLeft(range);
+    if (left <= 0) return;
+    number = min + randomInt(left);
+    for (const u of [...range.used].sort((a, b) => a - b)) {
+      if (u <= number) number++;
+      else break;
+    }
+  } else {
+    number = roll();
+  }
 
   document.activeElement?.blur?.(); // closes the keyboard
   rolling = true;
@@ -2082,6 +2292,10 @@ function rollNumber() {
       return;
     }
     rolling = false;
+    if (range.once) {
+      range.used = [...(range.used || []), number];
+      saveRanges();
+    }
     const shown = number.toLocaleString();
     $('die').className = '';
     result.className = '';

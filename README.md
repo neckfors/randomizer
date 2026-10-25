@@ -27,9 +27,10 @@ Anything where you need a fair, random pick:
 
 1. **Choose a list:** tap the list button under the Pick! area to see all your lists (*🎲 Game night*, *🍳 Who makes dinner*, *🍕 Where to eat*, …) and tap one to switch. Each list keeps its own options, so the names in one list never show up in another.
 2. **Add options** using the field under the list. Add several at once by separating them with commas (`Anna, Erik, Sara`), or paste a list with one option per line.
-3. **Tap an option** to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
+3. **Tap the circle** in front of an option to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
 4. **Tap Pick!** and watch it spin. The picked option lights up in gold, with a 👑 and confetti.
-5. Remove an option for good with **✕**.
+5. **Rename an option** by tapping its name, typing, and pressing Enter or tapping elsewhere.
+6. Remove an option for good with **✕**. A bar with **Undo** shows for a few seconds in case it was a mistake.
 
 Every pick is completely random. Each option in the draw has the same chance every time, even if it was picked last time.
 
@@ -46,7 +47,9 @@ Switch to **🎲 Number** at the top to roll a random number instead of picking 
 3. **Tap Roll!** (or shake your phone). A die tumbles while numbers race past, and it lands on a number from the range, both ends included.
 4. **Change a range right in its row:** tap the numbers to change From or To, and press Enter or tap elsewhere to save. They are put in order if you swap them, and a range you already have is not added twice. **Name a range** the same way: tap the name field next to the numbers (it says *✎ Add a name* until you give it one), type a name like *d6*, *d20* or *Raffle*, and press Enter or tap elsewhere. Tap it again any time to rename it, or clear it to remove the name. **✕** removes a range.
 
-Your ranges are remembered and included in backups. `https://neckfors.github.io/pick-one/#number` opens straight in Number mode.
+**Roll each number only once:** switch this on for a range when the same number must not come up twice, like drawing raffle tickets. Numbers already rolled sit out, the top shows how many are left, and when every number has been rolled the button turns into **↺ Start over**. The setting is saved per range.
+
+Removing a range shows an **Undo** bar, just like options. Your ranges are remembered and included in backups. `https://neckfors.github.io/pick-one/#number` opens straight in Number mode.
 
 ## Managing lists
 
@@ -97,7 +100,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v39` → `whostarts-v40`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v40` → `whostarts-v41`), otherwise installed copies keep showing the old version.
 
 ## Support
 
