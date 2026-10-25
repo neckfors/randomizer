@@ -34,7 +34,7 @@ Every pick is completely random. Each option in the draw has the same chance eve
 
 **Pick each only once:** switch this on for a list when you want to go round instead, like taking turns on chores. Whatever gets picked sits out automatically, and when everything has been picked, the button turns into **↺ Start over** to put everything back. The setting is saved per list, so *Game night* can allow repeats while *Who makes dinner* takes turns.
 
-**Recent picks:** under the options, *🕘 Recent picks* shows the last 10 picks for the list, handy for "who did the dishes last time?".
+**Recent picks:** under the options, *🕘 Recent picks* keeps the last 100 picks for each list, handy for "who did the dishes last time?". It shows the newest 10; tap *Show all* to see the rest.
 
 ## Managing lists
 
@@ -81,7 +81,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v24` → `whostarts-v25`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v25` → `whostarts-v26`), otherwise installed copies keep showing the old version.
 
 ## Support
 

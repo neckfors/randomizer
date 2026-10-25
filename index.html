@@ -193,7 +193,8 @@
   #historyList li { justify-content: space-between; padding: 10px 14px; gap: 12px; }
   #historyList .h-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #historyList .h-time { flex: none; color: var(--muted); font-size: .85rem; }
-  #clearHistory { margin-top: 8px; font-size: .85rem; padding: 6px 12px; }
+  .history-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .history-actions .btn { font-size: .85rem; padding: 6px 12px; }
 
   .support {
     display: block;
@@ -398,7 +399,10 @@
   <details class="history" id="history" hidden>
     <summary>🕘 Recent picks</summary>
     <ul id="historyList"></ul>
-    <button type="button" class="btn" id="clearHistory">Clear history</button>
+    <div class="history-actions">
+      <button type="button" class="btn" id="moreHistory" hidden></button>
+      <button type="button" class="btn" id="clearHistory">Clear history</button>
+    </div>
   </details>
 
   <p class="tip">Tap an option to leave it out of the draw. It stays in your list, so tap it again to bring it back. Only ✕ removes it.</p>
@@ -490,7 +494,8 @@ const SHAKE_KEY = 'whostarts.shake';
 
 const STARTER_LISTS = [['Game night', '🎲'], ['Who makes dinner', '🍳'], ['Where to eat', '🍕']];
 const EMOJIS = ['📋', '🎲', '🎮', '🃏', '🍕', '🍔', '🍳', '🍽️', '🍻', '☕', '🎬', '📺', '📚', '🎵', '🧹', '🚗', '✈️', '🏃', '🐶', '🎁', '💡', '❤️'];
-const MAX_HISTORY = 20;
+const MAX_HISTORY = 100;
+const HISTORY_SHOWN = 10;   // shown before "Show all"
 
 function randomInt(n) {
   const a = new Uint32Array(1);
@@ -1387,12 +1392,17 @@ function ago(ts) {
   return rtf.format(-Math.round(s / 86400), 'day');
 }
 
+let historyExpanded = false;
+
 function renderHistory() {
   const h = cur().history;
   $('history').hidden = !h.length;
+  const more = $('moreHistory');
+  more.hidden = h.length <= HISTORY_SHOWN;
+  more.textContent = historyExpanded ? 'Show less' : `Show all ${h.length}`;
   const ul = $('historyList');
   ul.innerHTML = '';
-  for (const entry of h.slice(0, 10)) {
+  for (const entry of h.slice(0, historyExpanded ? MAX_HISTORY : HISTORY_SHOWN)) {
     const li = document.createElement('li');
     li.innerHTML = '<span class="h-name"></span><span class="h-time"></span>';
     li.querySelector('.h-name').textContent = entry.name;
@@ -1400,6 +1410,12 @@ function renderHistory() {
     ul.append(li);
   }
 }
+
+$('moreHistory').onclick = () => {
+  historyExpanded = !historyExpanded;
+  sfx.click();
+  renderHistory();
+};
 
 $('clearHistory').onclick = () => {
   if (!confirm(`Clear the recent picks for "${cur().name}"?`)) return;
