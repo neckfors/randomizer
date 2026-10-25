@@ -117,7 +117,7 @@
   #pick:active { transform: scale(.97); }
   #pick:disabled { opacity: .45; }
 
-  form { display: flex; gap: 8px; margin-bottom: 16px; }
+  #add { display: flex; gap: 8px; margin-bottom: 16px; }
   #name {
     flex: 1;
     min-width: 0;
@@ -181,6 +181,51 @@
   .support .heart { color: #e2735f; display: inline-block; animation: beat 2.4s ease-in-out infinite; }
   @keyframes beat { 0%, 30%, 100% { transform: none; } 10% { transform: scale(1.3); } 20% { transform: scale(1.1); } }
 
+  .sets { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 10px; scrollbar-width: none; }
+  .sets::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: none;
+    font: inherit;
+    font-size: .95rem;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    white-space: nowrap;
+    transition: transform .1s, background .15s;
+  }
+  .chip:active { transform: scale(.95); }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+  .chip.new { color: var(--muted); border-style: dashed; background: transparent; }
+
+  dialog {
+    width: min(92vw, 400px);
+    border: 0;
+    border-radius: 16px;
+    padding: 20px;
+    background: var(--card);
+    color: var(--text);
+  }
+  dialog[open] { animation: slidein .25s cubic-bezier(.2, 1.4, .4, 1); }
+  dialog::backdrop { background: rgba(0, 0, 0, .45); }
+  dialog h2 { margin: 0 0 12px; font-size: 1.15rem; }
+  #setName {
+    width: 100%;
+    font: inherit;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text);
+  }
+  .dialog-row { display: flex; gap: 8px; margin-top: 16px; }
+  .dialog-row .spacer { flex: 1; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+  .btn.danger { color: var(--danger); }
+  .btn:disabled { opacity: .4; }
+  .btn[hidden] { display: none; }
+
   #confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -196,6 +241,8 @@
       <button id="mute" type="button"></button>
     </div>
   </header>
+
+  <nav class="sets" id="sets" aria-label="Lists"></nav>
 
   <section class="starter" id="card">
     <div id="crown" aria-hidden="true">👑</div>
@@ -214,21 +261,54 @@
 
   <a class="support" id="support" href="https://paypal.me/neckfors" target="_blank" rel="noopener"><span class="heart">♥</span> Support the app</a>
 
+  <dialog id="setDialog">
+    <form id="setForm">
+      <h2 id="setTitle">New list</h2>
+      <input id="setName" placeholder="e.g. Movie night" autocomplete="off" enterkeyhint="done" maxlength="30">
+      <div class="dialog-row">
+        <button type="button" class="btn danger" id="setDelete">Delete</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn" id="setCancel">Cancel</button>
+        <button type="submit" class="btn primary" id="setSave">Create</button>
+      </div>
+    </form>
+  </dialog>
+
   <canvas id="confetti"></canvas>
 
 <script>
 const KEY = 'whostarts.v1';
 const MUTE_KEY = 'whostarts.muted';
 
+const STARTER_LISTS = ['Game night', 'Who makes dinner', 'Where to eat'];
+
+function newId() {
+  return Date.now().toString(36) + randomInt(1e6).toString(36);
+}
+
+function starterState(firstItems = []) {
+  const sets = STARTER_LISTS.map((name, i) => ({ id: newId() + i, name, items: i === 0 ? firstItems : [] }));
+  return { sets, current: sets[0].id };
+}
+
+// Each list ("set") keeps its own options. Data saved before lists existed was
+// a single { players } list; it becomes the first starter list.
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
-    if (s && Array.isArray(s.players)) return s;
+    if (s && Array.isArray(s.sets) && s.sets.length) return s;
+    if (s && Array.isArray(s.players)) return starterState(s.players);
   } catch (e) {}
-  return { players: [] };
+  return starterState();
 }
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+function randomInt(n) {
+  const a = new Uint32Array(1);
+  crypto.getRandomValues(a);
+  return a[0] % n;
 }
 
 let state = load();
@@ -241,10 +321,8 @@ const $ = (id) => document.getElementById(id);
 const result = $('result');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-function randomInt(n) {
-  const a = new Uint32Array(1);
-  crypto.getRandomValues(a);
-  return a[0] % n;
+function cur() {
+  return state.sets.find(s => s.id === state.current) || state.sets[0];
 }
 
 function byName(a, b) {
@@ -297,6 +375,7 @@ const sfx = {
     for (let i = 0; i < 8; i++) tone(2000 + randomInt(2000), { at: 0.35 + i * 0.07, dur: 0.05, type: 'sine', vol: 0.03 });
   },
   toggleSound() { tone(660, { dur: 0.08 }); tone(990, { at: 0.07, dur: 0.1 }); },
+  swap()   { tone(500, { dur: 0.12, slide: 1000, type: 'sine', vol: 0.08 }); tone(1000, { at: 0.06, dur: 0.06, vol: 0.06 }); },
 };
 
 function renderMute() {
@@ -363,20 +442,120 @@ function drawConfetti() {
   else { confettiRunning = false; cctx.clearRect(0, 0, innerWidth, innerHeight); }
 }
 
-// ---------- List ----------
+// ---------- Lists (sets) ----------
+function renderSets() {
+  const nav = $('sets');
+  nav.innerHTML = '';
+  for (const s of state.sets) {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    const on = s.id === cur().id;
+    chip.className = 'chip' + (on ? ' on' : '');
+    chip.textContent = s.name + (on ? ' ✎' : '');
+    chip.setAttribute('aria-label', on ? `Rename or delete ${s.name}` : `Switch to ${s.name}`);
+    chip.onclick = () => {
+      if (rolling) return;
+      if (on) { openSetDialog('edit'); return; }
+      switchTo(s.id);
+    };
+    nav.append(chip);
+  }
+  const add = document.createElement('button');
+  add.type = 'button';
+  add.className = 'chip new';
+  add.textContent = '+ New list';
+  add.onclick = () => { if (!rolling) openSetDialog('new'); };
+  nav.append(add);
+  // keep the active tab in view by scrolling only the tab row, never the page
+  const active = nav.querySelector('.chip.on');
+  if (active) {
+    const left = active.offsetLeft - nav.offsetLeft;
+    if (left < nav.scrollLeft || left + active.offsetWidth > nav.scrollLeft + nav.clientWidth) {
+      nav.scrollLeft = left - 16;
+    }
+  }
+}
+
+function resetCard() {
+  winnerId = null;
+  result.className = 'hint';
+  $('crown').className = '';
+  $('card').className = 'starter';
+  $('pick').textContent = 'Pick!';
+}
+
+function switchTo(id) {
+  state.current = id;
+  resetCard();
+  sfx.swap();
+  save(); render();
+}
+
+let dialogMode = 'new';
+const dialog = $('setDialog');
+
+function openSetDialog(mode) {
+  dialogMode = mode;
+  $('setTitle').textContent = mode === 'new' ? 'New list' : 'Edit list';
+  $('setName').value = mode === 'new' ? '' : cur().name;
+  $('setSave').textContent = mode === 'new' ? 'Create' : 'Save';
+  $('setDelete').hidden = mode === 'new';
+  $('setDelete').disabled = state.sets.length < 2;
+  dialog.showModal();
+  $('setName').focus();
+}
+
+$('setForm').onsubmit = (e) => {
+  e.preventDefault();
+  const name = $('setName').value.trim().replace(/\s+/g, ' ');
+  if (!name) { $('setName').focus(); return; }
+  if (dialogMode === 'new') {
+    const set = { id: newId(), name, items: [] };
+    state.sets.push(set);
+    state.current = set.id;
+    resetCard();
+    sfx.add();
+  } else {
+    cur().name = name;
+    sfx.in();
+  }
+  dialog.close();
+  save(); render();
+};
+
+$('setCancel').onclick = () => dialog.close();
+
+$('setDelete').onclick = () => {
+  const set = cur();
+  if (state.sets.length < 2) return;
+  if (!confirm(`Delete the list "${set.name}" and everything in it?`)) return;
+  state.sets = state.sets.filter(s => s.id !== set.id);
+  state.current = state.sets[0].id;
+  resetCard();
+  sfx.del();
+  dialog.close();
+  save(); render();
+};
+
+// ---------- Options in the current list ----------
 function render() {
-  const playing = state.players.filter(p => p.playing).length;
-  $('count').textContent = state.players.length ? `${playing} of ${state.players.length} in the draw` : '';
+  const items = cur().items;
+  const playing = items.filter(p => p.playing).length;
+  $('count').textContent = items.length ? `${playing} of ${items.length} in the draw` : '';
   $('pick').disabled = playing === 0 || rolling;
+  if (result.classList.contains('hint')) {
+    result.textContent = items.length ? 'Tap Pick! to choose one' : 'Add some options, then tap Pick!';
+  }
+  renderSets();
 
   const lists = $('lists');
   lists.innerHTML = '';
 
-  if (!state.players.length) {
+  if (!items.length) {
     lists.innerHTML = '<div class="empty">Nothing here yet. Add people, places, food, movies, anything.</div>';
     return;
   }
-  lists.append(list([...state.players].sort(byName)));
+  lists.append(list([...items].sort(byName)));
   freshId = bounceId = null;
 }
 
@@ -413,7 +592,7 @@ function list(players) {
       sfx.del();
       li.classList.add('leaving');
       setTimeout(() => {
-        state.players = state.players.filter(x => x.id !== p.id);
+        cur().items = cur().items.filter(x => x.id !== p.id);
         if (winnerId === p.id) winnerId = null;
         save(); render();
       }, reducedMotion ? 0 : 250);
@@ -430,14 +609,15 @@ $('add').onsubmit = (e) => {
   const input = $('name');
   const name = input.value.trim().replace(/\s+/g, ' ');
   if (!name) return;
-  const existing = state.players.find(p => p.name.toLowerCase() === name.toLowerCase());
+  const items = cur().items;
+  const existing = items.find(p => p.name.toLowerCase() === name.toLowerCase());
   if (existing) {
     existing.playing = true;
     bounceId = existing.id;
     sfx.in();
   } else {
-    const id = Date.now().toString(36) + randomInt(1e6).toString(36);
-    state.players.push({ id, name, playing: true });
+    const id = newId();
+    items.push({ id, name, playing: true });
     freshId = id;
     sfx.add();
   }
@@ -462,7 +642,7 @@ function highlightRow(id) {
 // Picks one option uniformly at random from those in the draw, then plays the
 // slot-machine spin that lands on it.
 $('pick').onclick = () => {
-  const playing = state.players.filter(p => p.playing);
+  const playing = cur().items.filter(p => p.playing);
   if (!playing.length || rolling) return;
   const winner = playing[randomInt(playing.length)];
 

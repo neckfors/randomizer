@@ -4,7 +4,7 @@ A tiny web app that picks one thing at random from a list, with a slot-machine s
 
 **Try it:** https://neckfors.github.io/pick-one/
 
-It installs on your phone like a normal app, works offline, and remembers your list.
+It installs on your phone like a normal app, works offline, and remembers your lists.
 
 ## What can it be used for?
 
@@ -24,10 +24,11 @@ Anything where you need a fair, random pick:
 
 ## How it works
 
-1. **Add options** using the field at the top.
-2. **Tap an option** to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
-3. **Tap Pick!** and watch it spin. The picked option lights up in gold, with a 👑 and confetti.
-4. Remove an option for good with **✕**.
+1. **Choose a list** from the tabs at the top: *Game night*, *Who makes dinner*, *Where to eat*, or make your own with **+ New list**. Each list keeps its own options, so the names in one list never show up in another. Tap the active tab (✎) to rename or delete it.
+2. **Add options** using the field below the Pick! button.
+3. **Tap an option** to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
+4. **Tap Pick!** and watch it spin. The picked option lights up in gold, with a 👑 and confetti.
+5. Remove an option for good with **✕**.
 
 Every pick is completely random. Each option in the draw has the same chance every time, even if it was picked last time.
 
@@ -58,7 +59,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v8` → `whostarts-v9`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v9` → `whostarts-v10`), otherwise installed copies keep showing the old version.
 
 ## Support
 
