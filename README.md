@@ -24,7 +24,7 @@ Anything where you need a fair, random pick:
 
 ## How it works
 
-1. **Choose a list** from the tabs at the top: *Game night*, *Who makes dinner*, *Where to eat*, or make your own with **+ New list**. Each list keeps its own options, so the names in one list never show up in another. Tap the active tab (✎) to rename or delete it.
+1. **Choose a list:** tap the 📋 button at the top to see all your lists (*Game night*, *Who makes dinner*, *Where to eat*, …) and tap one to switch. Make your own with **+ New list**, and use ✎ to rename or delete one. Each list keeps its own options, so the names in one list never show up in another.
 2. **Add options** using the field below the Pick! button.
 3. **Tap an option** to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
 4. **Tap Pick!** and watch it spin. The picked option lights up in gold, with a 👑 and confetti.
@@ -59,7 +59,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v9` → `whostarts-v10`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v10` → `whostarts-v11`), otherwise installed copies keep showing the old version.
 
 ## Support
 
