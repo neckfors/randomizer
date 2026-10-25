@@ -1,6 +1,7 @@
 {
   "name": "Pick One",
   "short_name": "Pick One",
+  "id": "/pick-one/?app=pick-one",
   "description": "Add anything to a list and let it pick one at random.",
   "start_url": "./",
   "scope": "./",
