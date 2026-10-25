@@ -97,15 +97,28 @@
   /* takes no room until a pick lands, so the card has no empty gap at the top */
   #crown { position: relative; height: 0; font-size: 2rem; line-height: 1; opacity: 0; }
   #crown.show { height: 2.2rem; opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
-  #die { position: relative; height: 0; font-size: 2.4rem; line-height: 1; opacity: 0; }
-  #die.rolling { height: 2.8rem; opacity: 1; animation: tumble .45s linear infinite; }
-  @keyframes tumble {
-    0% { transform: translateY(0) rotate(0deg); }
-    25% { transform: translateY(-8px) rotate(90deg); }
-    50% { transform: translateY(0) rotate(180deg); }
-    75% { transform: translateY(-8px) rotate(270deg); }
-    100% { transform: translateY(0) rotate(360deg); }
+  /* the 🎲 hops around the card while a number rolls (moved from JS) */
+  #die { position: relative; height: 0; opacity: 0; transition: height .3s ease; }
+  #die.rolling, #die.thud { height: 5.4rem; opacity: 1; }
+  #dieFace {
+    position: absolute; left: 50%; bottom: 10px;
+    width: 1.2em; margin-left: -.6em;
+    font-size: 3.6rem; line-height: 1; text-align: center;
+    filter: drop-shadow(0 3px 2px rgba(0, 0, 0, .25));
   }
+  #dieShadow {
+    position: absolute; left: 50%; bottom: 4px;
+    width: 52px; height: 10px; margin-left: -26px;
+    border-radius: 50%; background: rgba(0, 0, 0, .3); filter: blur(3px);
+  }
+  #die.thud #dieFace { animation: thud .45s ease-out forwards; }
+  #die.thud #dieShadow { animation: fade .3s forwards; }
+  @keyframes thud {
+    0% { transform: scale(1.3, .7); }
+    35% { transform: scale(1.25) translateY(-6px); opacity: 1; }
+    100% { transform: scale(1.8) translateY(-14px); opacity: 0; }
+  }
+  @keyframes fade { to { opacity: 0; } }
 
   .mode-tabs {
     display: flex;
@@ -271,7 +284,16 @@
   li.out .dot { border-color: var(--muted); }
   li.bounce .dot { animation: bounce .3s cubic-bezier(.2, 1.8, .4, 1); }
   @keyframes bounce { 0% { transform: scale(.5); } 100% { transform: none; } }
-  .del { width: 48px; height: 52px; color: var(--muted); font-size: 1.2rem; }
+  .del { flex: none; width: 48px; height: 52px; color: var(--muted); font-size: 1.2rem; transition: width .18s ease, background-color .18s, color .18s; }
+  /* first tap on ✕: it grows into a red Delete button in the same spot */
+  .del.armed {
+    width: 84px; height: 40px; margin-right: 6px; align-self: center;
+    background: #d64545; color: #fff; border-radius: 10px;
+    font-size: .95rem; font-weight: 700;
+    box-shadow: 0 2px 8px rgba(214, 69, 69, .45);
+    animation: arm .25s cubic-bezier(.2, 1.6, .4, 1);
+  }
+  @keyframes arm { from { transform: scale(.6); } to { transform: none; } }
   .empty { color: var(--muted); text-align: center; padding: 24px 8px; }
   .tip { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 20px; }
 
@@ -547,7 +569,7 @@
 
   <section class="starter" id="card">
     <div id="crown" aria-hidden="true">👑</div>
-    <div id="die" aria-hidden="true">🎲</div>
+    <div id="die" aria-hidden="true"><span id="dieShadow"></span><span id="dieFace">🎲</span></div>
     <div class="stage"><div id="result" class="hint">Add some options, then tap Pick!</div></div>
     <button id="pick" type="button">Pick!</button>
     <div class="shake-ask" id="shakeAsk" hidden>
@@ -856,6 +878,35 @@ function toast(msg) {
 // After removing something, a bar offers to put it back for a few seconds.
 let undoTimer;
 let undoAction = null;
+// ✕ asks first: one tap turns it into a red Delete button in the same spot,
+// a second tap removes the row. Tapping anywhere else, or waiting, puts ✕ back.
+let armedDel = null;
+function disarmDelete() {
+  if (!armedDel) return;
+  clearTimeout(armedDel.timer);
+  armedDel.btn.classList.remove('armed');
+  armedDel.btn.textContent = '✕';
+  armedDel.btn.setAttribute('aria-label', armedDel.label);
+  armedDel = null;
+}
+function confirmDelete(del, remove) {
+  del.onclick = (e) => {
+    e.stopPropagation();
+    if (rolling) return;
+    if (armedDel && armedDel.btn === del) { disarmDelete(); remove(); return; }
+    disarmDelete();
+    const label = del.getAttribute('aria-label');
+    armedDel = { btn: del, label, timer: setTimeout(disarmDelete, 4000) };
+    del.classList.add('armed');
+    del.textContent = 'Delete';
+    del.setAttribute('aria-label', `Tap again to confirm: ${label}`);
+    sfx.click();
+  };
+}
+document.addEventListener('pointerdown', (e) => {
+  if (armedDel && e.target !== armedDel.btn) disarmDelete();
+}, true);
+
 function offerUndo(msg, action) {
   $('toast').classList.remove('show');
   undoAction = action;
@@ -927,6 +978,15 @@ const sfx = {
     lastTick = now;
     tone(900 + randomInt(300) - p * 400, { dur: 0.035, type: 'square', vol: 0.04 });
   },
+  // the die knocking on the table: a low knock plus a short click
+  clack(p) {
+    const now = performance.now();
+    if (now - lastTick < 28) return;
+    lastTick = now;
+    tone(170 + randomInt(90), { dur: 0.05, type: 'square', vol: 0.05 + p * 0.03 });
+    tone(1900 + randomInt(900), { dur: 0.02, vol: 0.05 });
+  },
+  thud()   { tone(150, { dur: 0.22, slide: 55, type: 'sine', vol: 0.3 }); tone(320, { dur: 0.05, type: 'square', vol: 0.05 }); },
   win() {
     [523, 659, 784].forEach((f, i) => tone(f, { at: i * 0.1, dur: 0.14, vol: 0.14 }));
     [1046, 1318, 1568].forEach(f => tone(f, { at: 0.32, dur: 0.8, vol: 0.07 }));
@@ -1179,7 +1239,7 @@ function resetCard() {
   winnerId = null;
   result.className = 'hint';
   $('crown').className = '';
-  $('die').className = '';
+  resetDie();
   $('card').className = 'starter';
   $('pick').textContent = mode === 'number' ? 'Roll!' : 'Pick!';
   delete $('pick').dataset.mode;
@@ -1424,7 +1484,7 @@ function renderRanges() {
     del.className = 'del';
     del.textContent = '✕';
     del.setAttribute('aria-label', `Remove ${r.name || rangeText(r)}`);
-    del.onclick = () => {
+    confirmDelete(del, () => {
       if (rolling || li.classList.contains('leaving')) return;
       sfx.del();
       li.classList.add('leaving');
@@ -1448,7 +1508,7 @@ function renderRanges() {
           render();
         });
       }, reducedMotion ? 0 : 250);
-    };
+    });
 
     li.append(row, edit, del);
     ul.append(li);
@@ -2121,7 +2181,7 @@ function list(players) {
     del.className = 'del';
     del.textContent = '✕';
     del.setAttribute('aria-label', `Delete ${p.name}`);
-    del.onclick = () => {
+    confirmDelete(del, () => {
       if (rolling || li.classList.contains('leaving')) return;
       sfx.del();
       li.classList.add('leaving');
@@ -2139,7 +2199,7 @@ function list(players) {
           changed();
         });
       }, reducedMotion ? 0 : 250);
-    };
+    });
 
     li.append(toggle);
     if (p.id === winnerId) {
@@ -2380,8 +2440,59 @@ function startOverRange() {
   render();
 }
 
+// ---------- The tumbling die ----------
+// Every tick of a roll the 🎲 hops to a new spot and turns as it goes. The
+// ticks slow down, so it rattles at first and bounces in big arcs at the end,
+// then lands upright in the middle and thuds as the number shows.
+var dieAt = { x: 0, r: 0 }; // var: resetCard can run before this line
+
+function stopDieMoves() {
+  [$('dieFace'), $('dieShadow')].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+}
+
+function resetDie() {
+  clearTimeout(resetDie.timer);
+  stopDieMoves();
+  dieAt = { x: 0, r: 0 };
+  $('die').className = '';
+}
+
+function dieHop(ms, last) {
+  const reach = Math.max(0, Math.min(110, $('card').clientWidth / 2 - 50));
+  const to = last
+    ? { x: 0, r: Math.ceil((dieAt.r + 120) / 360) * 360 }
+    : { x: (Math.random() * 2 - 1) * reach, r: dieAt.r + 90 + randomInt(180) };
+  const mid = { x: (dieAt.x + to.x) / 2, r: (dieAt.r + to.r) / 2 };
+  const t = ms / 1000;
+  const h = Math.max(6, Math.min(44, 900 * t * t)); // longer hops fly higher
+  const pose = (p, y) => `translate(${p.x}px, ${y}px) rotate(${p.r}deg)`;
+  stopDieMoves();
+  $('dieFace').animate([
+    { transform: pose(dieAt, 0), easing: 'ease-out' },
+    { transform: pose(mid, -h), easing: 'ease-in' },
+    { transform: pose(to, 0) },
+  ], { duration: ms, fill: 'forwards' });
+  $('dieShadow').animate([
+    { transform: `translateX(${dieAt.x}px)`, opacity: 1 },
+    { transform: `translateX(${mid.x}px) scale(${1 - h / 70})`, opacity: 0.4 },
+    { transform: `translateX(${to.x}px)`, opacity: 1 },
+  ], { duration: ms, fill: 'forwards' });
+  dieAt = to;
+}
+
+function dieThud() {
+  stopDieMoves();
+  $('die').className = 'thud';
+  sfx.thud();
+  $('card').animate([
+    { transform: 'translateY(0)' }, { transform: 'translateY(4px)' },
+    { transform: 'translateY(-2px)' }, { transform: 'translateY(0)' },
+  ], { duration: 260, easing: 'ease-out' });
+  resetDie.timer = setTimeout(() => { $('die').className = ''; }, 450);
+}
+
 // ---------- Rolling a number ----------
-// Numbers from the range race past while a 🎲 tumbles, then it lands on a
+// Numbers from the range race past while the 🎲 hops around, then it lands on a
 // number picked uniformly at random from the chosen range (both ends included).
 // With "roll each number only once", it picks uniformly among the numbers not
 // rolled yet: the k-th free number is found by stepping past the used ones.
@@ -2407,24 +2518,26 @@ function rollNumber() {
   }
 
   document.activeElement?.blur?.(); // closes the keyboard
+  const total = spinTicks(min !== max);
   rolling = true;
   $('card').className = 'starter rolling';
   $('crown').className = '';
-  $('die').className = 'rolling';
+  if (total > 1) { resetDie(); $('die').className = 'rolling'; }
   $('pick').textContent = 'Rolling…';
   $('pick').disabled = true;
   sfx.start();
 
-  const total = spinTicks(min !== max);
   let tick = 0;
   (function spin() {
     tick++;
     if (tick < total) {
       showName(roll().toLocaleString());
       const progress = tick / total;
-      sfx.tick(progress);
+      const delay = spinDelay(progress);
+      sfx.clack(progress);
+      dieHop(delay, tick === total - 1);
       if (navigator.vibrate) navigator.vibrate(5);
-      setTimeout(spin, spinDelay(progress));
+      setTimeout(spin, delay);
       return;
     }
     rolling = false;
@@ -2433,7 +2546,7 @@ function rollNumber() {
       saveRanges();
     }
     const shown = number.toLocaleString();
-    $('die').className = '';
+    if (total > 1) dieThud();
     result.className = '';
     void result.offsetWidth;
     result.className = 'won' + (shown.length > 14 ? ' long' : '');

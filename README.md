@@ -36,7 +36,7 @@ Anything where you need a fair, random pick:
 3. **Tap an option** to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
 4. **Tap Pick!** and watch it spin. The picked option lights up in gold, with a 👑 and confetti.
 5. **Rename an option** with its **✎**: the row turns into a field with a **✓**. Type the new name and tap ✓ or press Enter (Esc cancels). Tapping somewhere else saves too.
-6. Remove an option for good with **✕**. A bar with **Undo** shows for a few seconds in case it was a mistake.
+6. Remove an option for good with **✕**: it turns into a red **Delete** button in the same spot, and a second tap removes it. A bar with **Undo** still shows for a few seconds in case it was a mistake.
 
 Every pick is completely random. Each option in the draw has the same chance every time, even if it was picked last time.
 
@@ -50,8 +50,8 @@ Switch to **🎲 Number** at the top to roll a random number instead of picking 
 
 1. **Add a range** with the **From**, **To** and **Name (optional)** fields and **Add**. The Add button stays greyed out until From and To are whole numbers. Any whole numbers work, even 1 to 1,000,000. You start with the dice *d4* (1–4), *d6* (1–6), *d12* (1–12), *d20* (1–20) and *2d6* (2–12, two dice added up), which you can rename, change or remove.
 2. **Tap a range** to choose it. It gets a ✓.
-3. **Tap Roll!** (or shake your phone). A die tumbles while numbers race past, and it lands on a number from the range, both ends included.
-4. **Change a range** with its **✎**: the row turns into From, To and Name fields with a **✓**. Change what you like and tap ✓ or press Enter (Esc cancels). Numbers are put in order if you swap them, and a range you already have is not added twice. **✕** removes a range.
+3. **Tap Roll!** (or shake your phone). A big die bounces and tumbles around while numbers race past, then thuds down and lands on a number from the range, both ends included.
+4. **Change a range** with its **✎**: the row turns into From, To and Name fields with a **✓**. Change what you like and tap ✓ or press Enter (Esc cancels). Numbers are put in order if you swap them, and a range you already have is not added twice. **✕** removes a range (tap the red **Delete** to confirm).
 
 **Roll each number only once:** switch this on for a range when the same number must not come up twice, like drawing raffle tickets. Numbers already rolled sit out, the top shows how many are left, and when every number has been rolled the button turns into **↺ Start over**. The setting is saved per range.
 
@@ -86,6 +86,8 @@ Tap ✎ on a list, then **⤴ Share this list**. You get a link to send to anyon
 - **iPhone:** open the link in Safari, tap **Share**, then **Add to Home Screen**.
 - **Android:** open the link in Chrome and tap **Install app** (also in the ⋮ menu).
 
+On **Android** the installed app opens fullscreen, without the status bar. (iPhone always keeps the status bar for home screen apps.)
+
 > On iPhone, the silent switch also mutes the sound effects.
 
 **Updates:** the app checks for a new version whenever you open it or come back to it. When one has downloaded, a bar with **✨ New version available · Update** appears at the top; tap **Update** to switch to it. Your lists and ranges are kept.
@@ -110,7 +112,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v45` → `whostarts-v46`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v46` → `whostarts-v47`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
