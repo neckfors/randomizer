@@ -130,53 +130,32 @@
   .mode-tabs button.on { background: var(--accent); color: var(--accent-text); }
 
   /* Number mode: From/To take the place of the list */
-  .number-card { display: none; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
-  body.number-mode .number-card { display: block; }
+  /* Number mode shows ranges in place of the list */
+  .number-only { display: none !important; }
+  body.number-mode .number-only { display: block !important; }
+  body.number-mode .add-range { display: flex !important; }
   body.number-mode .list-card,
   body.number-mode #add,
   body.number-mode #lists,
   body.number-mode #history,
-  body.number-mode .tip { display: none !important; }
-  .num-row { display: flex; align-items: flex-end; gap: 10px; }
-  .num-row label { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; font-size: .85rem; color: var(--muted); }
-  .num-row input {
-    width: 100%;
+  body.number-mode .list-tip { display: none !important; }
+  .add-range { gap: 8px; align-items: center; margin-bottom: 16px; }
+  .add-range input {
+    flex: 1;
+    width: 0;
     min-width: 0;
-    padding: 10px 12px;
+    padding: 12px 10px;
     border-radius: 12px;
     border: 1px solid var(--line);
-    background: var(--bg);
+    background: var(--card);
     color: var(--text);
     font: inherit;
-    font-size: 1.3rem;
-    font-weight: 700;
     text-align: center;
   }
-  .num-dash { padding-bottom: 12px; font-size: 1.3rem; color: var(--muted); }
-  .ranges-head { display: flex; justify-content: space-between; align-items: baseline; margin: 14px 2px 6px; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-  .ranges-head .link-btn { text-transform: none; letter-spacing: 0; font-size: .9rem; }
-  .ranges-head .link-btn[hidden] { display: none; }
-  .presets { display: flex; flex-wrap: wrap; gap: 8px; }
-  .range-chip {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 6px;
-    padding: 8px 12px;
-    border-radius: 12px;
-    border: 1px solid var(--line);
-    background: var(--bg);
-    color: var(--text);
-    font: inherit;
-    font-size: .95rem;
-    transition: transform .1s;
-  }
-  .range-chip:active { transform: scale(.96); }
-  .range-chip b { font-weight: 700; }
-  .range-chip small { color: var(--muted); font-size: .8rem; }
-  .range-chip.on { border: 2px solid var(--accent); background: var(--glow); }
-  .range-chip.save { border-style: dashed; color: var(--accent); font-weight: 600; background: transparent; }
-  .range-chip.deleting { border-color: var(--danger); }
-  .range-chip.deleting::after { content: "✕"; color: var(--danger); font-weight: 700; }
+  .num-dash { color: var(--muted); }
+  #rangeList li.current-range { background: var(--glow); }
+  #rangeList li:not(.current-range) .dot { border-color: var(--muted); }
+  #rangeList .label small { margin-left: 8px; color: var(--muted); font-size: .85rem; }
   @keyframes flip { from { transform: translateY(-60%) scaleY(.6); opacity: .2; filter: blur(2px); } to { transform: none; opacity: 1; filter: none; } }
   @keyframes pop { 0% { transform: scale(.3) rotate(-8deg); } 60% { transform: scale(1.25) rotate(3deg); } 100% { transform: none; } }
   @keyframes drop { from { opacity: 0; transform: translateY(-40px) rotate(-25deg) scale(.4); } to { opacity: 1; transform: none; } }
@@ -471,18 +450,16 @@
     </div>
   </section>
 
-  <div class="number-card" id="numberCard">
-    <div class="num-row">
-      <label>From<input id="numFrom" type="number" inputmode="numeric" step="1" enterkeyhint="done"></label>
-      <span class="num-dash" aria-hidden="true">–</span>
-      <label>To<input id="numTo" type="number" inputmode="numeric" step="1" enterkeyhint="done"></label>
-    </div>
-    <div class="ranges-head">
-      <span>Saved ranges</span>
-      <button type="button" class="link-btn" id="editRanges">Edit</button>
-    </div>
-    <div class="presets" id="ranges"></div>
-  </div>
+  <form id="addRange" class="add-range number-only">
+    <input id="numFrom" type="number" inputmode="numeric" step="1" placeholder="From" enterkeyhint="next" aria-label="From">
+    <span class="num-dash" aria-hidden="true">–</span>
+    <input id="numTo" type="number" inputmode="numeric" step="1" placeholder="To" enterkeyhint="done" aria-label="To">
+    <button class="btn" type="submit">Add</button>
+  </form>
+
+  <div id="rangeList" class="number-only"></div>
+
+  <p class="tip number-only">Tap a range to roll it. ✎ gives it a name, ✕ removes it.</p>
 
   <div class="list-card">
     <button class="set-btn" id="setBtn" type="button" aria-haspopup="dialog">
@@ -514,7 +491,7 @@
     </div>
   </details>
 
-  <p class="tip">Tap an option to leave it out of the draw. It stays in your list, so tap it again to bring it back. Only ✕ removes it.</p>
+  <p class="tip list-tip">Tap an option to leave it out of the draw. It stays in your list, so tap it again to bring it back. Only ✕ removes it.</p>
 
   <a class="support" id="support" href="https://paypal.me/neckfors" target="_blank" rel="noopener"><span class="heart">♥</span> Support the app</a>
 
@@ -1087,27 +1064,9 @@ function setMode(next) {
 $('modeLists').onclick = () => setMode('lists');
 $('modeNumber').onclick = () => setMode('number');
 
-// From/To are saved as soon as they are whole numbers; anything else waits
-// until it is fixed, and Roll! explains what is wrong.
-function readNumbers() {
-  const from = Number($('numFrom').value);
-  const to = Number($('numTo').value);
-  if ($('numFrom').value === '' || $('numTo').value === '' || !Number.isInteger(from) || !Number.isInteger(to)) return null;
-  return { from, to };
-}
-for (const id of ['numFrom', 'numTo']) {
-  $(id).addEventListener('input', () => {
-    const n = readNumbers();
-    if (n) { numbers = n; setPref(NUM_KEY, JSON.stringify(numbers)); }
-    if (result.classList.contains('hint')) result.textContent = hintText();
-    renderRanges();
-  });
-  $(id).addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); $('pick').click(); }
-  });
-}
-// ---------- Saved ranges ----------
-// Ranges people keep for later, each with an optional name such as "d6".
+// ---------- Ranges (Number mode) ----------
+// Number mode works like a list: one row per range, tap a row to roll it,
+// ✎ gives it an optional name such as "d6", ✕ removes it.
 const RANGES_KEY = 'whostarts.ranges';
 const DEFAULT_RANGES = [{ from: 1, to: 6, name: '' }, { from: 1, to: 10, name: '' }, { from: 1, to: 100, name: '' }];
 
@@ -1119,9 +1078,9 @@ function normalizeRanges(list) {
 }
 
 let ranges = (() => {
-  try { return normalizeRanges(JSON.parse(pref(RANGES_KEY, 'null'))) || DEFAULT_RANGES.slice(); } catch (e) { return DEFAULT_RANGES.slice(); }
+  try { return normalizeRanges(JSON.parse(pref(RANGES_KEY, 'null'))) || DEFAULT_RANGES.map(r => ({ ...r })); } catch (e) { return DEFAULT_RANGES.map(r => ({ ...r })); }
 })();
-let editingRanges = false;
+let freshRange = null;   // row that was just added
 
 function saveRanges() {
   setPref(RANGES_KEY, JSON.stringify(ranges));
@@ -1135,86 +1094,138 @@ function rangeText(r) {
   return `${Math.min(r.from, r.to).toLocaleString()}–${Math.max(r.from, r.to).toLocaleString()}`;
 }
 
+// The range Roll! uses; falls back to the first row if the chosen one is gone.
+function currentRange() {
+  return ranges.find(r => sameRange(r, numbers)) || ranges[0] || null;
+}
+
+function selectRange(r) {
+  numbers = { from: r.from, to: r.to };
+  setPref(NUM_KEY, JSON.stringify(numbers));
+}
+
 function renderRanges() {
-  const box = $('ranges');
+  const box = $('rangeList');
   box.innerHTML = '';
-  if (!ranges.length) editingRanges = false;
+  if (!ranges.length) {
+    box.innerHTML = '<div class="empty">No ranges yet. Add one above, like 1 to 6.</div>';
+    return;
+  }
+  const selected = currentRange();
+  const ul = document.createElement('ul');
   for (const r of ranges) {
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = 'range-chip'
-      + (!editingRanges && sameRange(r, numbers) ? ' on' : '')
-      + (editingRanges ? ' deleting' : '');
+    const li = document.createElement('li');
+    li.className = (r === selected ? 'in current-range' : '') + (r === freshRange ? ' fresh' : '');
+
+    const choose = document.createElement('button');
+    choose.className = 'toggle';
+    choose.setAttribute('aria-pressed', r === selected);
+    choose.innerHTML = '<span class="dot"></span><span class="label"></span>';
+    const label = choose.querySelector('.label');
     if (r.name) {
       const b = document.createElement('b');
       b.textContent = r.name;
       const small = document.createElement('small');
       small.textContent = rangeText(r);
-      chip.append(b, small);
+      label.append(b, small);
     } else {
-      chip.textContent = rangeText(r);
+      label.textContent = rangeText(r);
     }
-    chip.setAttribute('aria-label', editingRanges ? `Remove ${r.name || rangeText(r)}` : `Use ${r.name ? r.name + ', ' : ''}${rangeText(r)}`);
-    chip.onclick = () => {
-      if (rolling) return;
-      if (editingRanges) {
-        ranges = ranges.filter(x => x !== r);
-        saveRanges();
-        sfx.del();
-        renderRanges();
-        return;
-      }
-      numbers = { from: r.from, to: r.to };
-      setPref(NUM_KEY, JSON.stringify(numbers));
-      sfx.click();
+    choose.onclick = () => {
+      if (rolling || r === selected) return;
+      selectRange(r);
+      sfx.in();
       resetCard();
       render();
     };
-    box.append(chip);
+
+    const edit = document.createElement('button');
+    edit.className = 'set-edit';
+    edit.textContent = '✎';
+    edit.setAttribute('aria-label', `Name ${rangeText(r)}`);
+    edit.onclick = () => openRangeDialog(r);
+
+    const del = document.createElement('button');
+    del.className = 'del';
+    del.textContent = '✕';
+    del.setAttribute('aria-label', `Remove ${r.name || rangeText(r)}`);
+    del.onclick = () => {
+      if (rolling || li.classList.contains('leaving')) return;
+      sfx.del();
+      li.classList.add('leaving');
+      setTimeout(() => {
+        ranges = ranges.filter(x => x !== r);
+        saveRanges();
+        if (r === selected && ranges.length) selectRange(ranges[0]);
+        resetCard();
+        render();
+      }, reducedMotion ? 0 : 250);
+    };
+
+    li.append(choose, edit, del);
+    ul.append(li);
   }
-  if (!editingRanges) {
-    const save = document.createElement('button');
-    save.type = 'button';
-    save.className = 'range-chip save';
-    save.textContent = '☆ Save';
-    save.setAttribute('aria-label', 'Save this range');
-    save.onclick = openRangeDialog;
-    box.append(save);
-  }
-  $('editRanges').hidden = !ranges.length;
-  $('editRanges').textContent = editingRanges ? 'Done' : 'Edit';
+  box.append(ul);
+  freshRange = null;
 }
 
-$('editRanges').onclick = () => {
-  editingRanges = !editingRanges;
-  sfx.click();
-  renderRanges();
+// Adding a range works like adding an option; it becomes the range to roll.
+$('addRange').onsubmit = (e) => {
+  e.preventDefault();
+  const fromText = $('numFrom').value;
+  const toText = $('numTo').value;
+  const from = Number(fromText);
+  const to = Number(toText);
+  if (fromText === '' || toText === '' || !Number.isInteger(from) || !Number.isInteger(to)) {
+    sfx.out();
+    toast('Enter whole numbers in From and To');
+    return;
+  }
+  const r = { from: Math.min(from, to), to: Math.max(from, to), name: '' };
+  // randomInt works with 32-bit numbers, which covers any range people type
+  if (r.to - r.from >= 2 ** 32) { sfx.out(); toast('That range is too big'); return; }
+  const existing = ranges.find(x => sameRange(x, r));
+  if (existing) {
+    selectRange(existing);
+    sfx.in();
+  } else {
+    ranges.push(r);
+    saveRanges();
+    selectRange(r);
+    freshRange = r;
+    sfx.add();
+  }
+  $('numFrom').value = '';
+  $('numTo').value = '';
+  document.activeElement?.blur?.();
+  resetCard();
+  render();
 };
+// Enter in From moves on to To
+$('numFrom').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); $('numTo').focus(); }
+});
 
 const rangeDialog = $('rangeDialog');
 closeOnBackdrop(rangeDialog);
+let renaming = null;
 
-function openRangeDialog() {
+function openRangeDialog(r) {
   if (rolling) return;
-  const n = readNumbers();
-  if (!n) { sfx.out(); toast('Enter whole numbers in From and To'); return; }
-  const existing = ranges.find(r => sameRange(r, n));
-  $('rangeTitle').textContent = existing ? `Rename ${rangeText(n)}` : `Save ${rangeText(n)}`;
-  $('rangeName').value = existing ? existing.name : '';
+  renaming = r;
+  $('rangeTitle').textContent = `Name ${rangeText(r)}`;
+  $('rangeName').value = r.name;
   rangeDialog.showModal();
   $('rangeName').focus();
 }
 
 $('rangeForm').onsubmit = (e) => {
   e.preventDefault();
-  const n = readNumbers();
-  if (!n) { rangeDialog.close(); return; }
-  const name = $('rangeName').value.trim().replace(/\s+/g, ' ').slice(0, 20);
-  const existing = ranges.find(r => sameRange(r, n));
-  if (existing) existing.name = name;
-  else ranges.push({ from: Math.min(n.from, n.to), to: Math.max(n.from, n.to), name });
-  saveRanges();
-  sfx.add();
+  if (renaming) {
+    renaming.name = $('rangeName').value.trim().replace(/\s+/g, ' ').slice(0, 20);
+    saveRanges();
+    sfx.in();
+  }
   rangeDialog.close();
   render();
 };
@@ -1594,10 +1605,11 @@ function motionAllowedBefore() {
 function hintText() {
   const shaking = shakeOn && (listening || motionAllowedBefore());
   if (mode === 'number') {
-    const lo = Math.min(numbers.from, numbers.to).toLocaleString();
-    const hi = Math.max(numbers.from, numbers.to).toLocaleString();
-    const named = ranges.find(r => r.name && sameRange(r, numbers));
-    if (named) return shaking ? `Roll or shake to roll ${named.name} (${lo}–${hi}) 📳` : `Tap Roll! to roll ${named.name} (${lo}–${hi})`;
+    const r = currentRange();
+    if (!r) return 'Add a range, then tap Roll!';
+    const lo = r.from.toLocaleString();
+    const hi = r.to.toLocaleString();
+    if (r.name) return shaking ? `Roll or shake to roll ${r.name} (${lo}–${hi}) 📳` : `Tap Roll! to roll ${r.name} (${lo}–${hi})`;
     return shaking ? `Roll or shake for a number from ${lo} to ${hi} 📳` : `Tap Roll! for a number from ${lo} to ${hi}`;
   }
   if (!cur().items.length) return 'Add some options, then tap Pick!';
@@ -1673,11 +1685,8 @@ function render() {
   $('modeNumber').setAttribute('aria-selected', mode === 'number');
   if (mode === 'number') {
     $('count').textContent = '';
-    // don't overwrite a field while someone is typing in it
-    if (document.activeElement !== $('numFrom')) $('numFrom').value = numbers.from;
-    if (document.activeElement !== $('numTo')) $('numTo').value = numbers.to;
     delete $('pick').dataset.mode;
-    $('pick').disabled = rolling;
+    $('pick').disabled = rolling || !ranges.length;
     if (result.classList.contains('hint')) result.textContent = hintText();
     renderRanges();
     syncAddress();
@@ -1947,15 +1956,14 @@ function land(winner) {
 
 // ---------- Rolling a number ----------
 // Numbers from the range race past while a 🎲 tumbles, then it lands on a
-// number picked uniformly at random from From to To (both included).
+// number picked uniformly at random from the chosen range (both ends included).
 function rollNumber() {
   if (rolling) return;
-  const n = readNumbers();
-  if (!n) { sfx.out(); toast('Enter whole numbers in From and To'); return; }
-  const min = Math.min(n.from, n.to);
-  const max = Math.max(n.from, n.to);
-  // randomInt works with 32-bit numbers, which covers any range people type
-  if (max - min >= 2 ** 32) { sfx.out(); toast('That range is too big'); return; }
+  const range = currentRange();
+  if (!range) return;
+  selectRange(range);
+  const min = range.from;
+  const max = range.to;
   const roll = () => min + randomInt(max - min + 1);
   const number = roll();
 
