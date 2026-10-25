@@ -142,9 +142,8 @@
   body.number-mode .list-tip { display: none !important; }
   #rangeList li.current-range { background: var(--glow); }
   body.number-mode .add-range { display: flex !important; }
-  /* One row when it fits; on narrow phones or with large text, the name field
-     moves to a second line with Add so "Name (optional)" is never cut off. */
-  .add-range { flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+  /* Always one row; on narrow phones the name placeholder shortens instead (see fitNamePlaceholder) */
+  .add-range { gap: 6px; margin-bottom: 4px; }
   .add-range .btn { padding: 10px 12px; }
   .add-range input {
     min-width: 0;
@@ -155,10 +154,10 @@
     color: var(--text);
     font: inherit;
   }
-  .add-range input[type="number"] { flex: 1 0 3.9em; width: 3.9em; text-align: center; -moz-appearance: textfield; appearance: textfield; }
+  .add-range input[type="number"] { flex: 0 0 3.6em; width: 3.6em; text-align: center; -moz-appearance: textfield; appearance: textfield; }
   .add-range input[type="number"]::-webkit-outer-spin-button,
   .add-range input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  #numName { flex: 20 1 9.5em; }
+  #numName { flex: 1; }
   .btn:disabled, #addBtn:disabled, #addRangeBtn:disabled { opacity: .4; }
   #rangeList .label small { margin-left: 8px; color: var(--muted); font-size: .85rem; }
   #rangeList .label b { font-weight: 700; }
@@ -1441,6 +1440,19 @@ function updateAddRange() {
   $('addRangeBtn').disabled = !readNewRange();
 }
 for (const id of ['numFrom', 'numTo', 'numName']) $(id).addEventListener('input', updateAddRange);
+
+// The add row stays on one line; when "Name (optional)" would be cut off
+// (narrow phone, large text), the placeholder shortens to "Name".
+const measureCtx = document.createElement('canvas').getContext('2d');
+function fitNamePlaceholder() {
+  const field = $('numName');
+  if (!field.clientWidth) return; // hidden in Lists mode
+  const style = getComputedStyle(field);
+  measureCtx.font = `${style.fontSize} ${style.fontFamily}`;
+  const room = field.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+  field.placeholder = measureCtx.measureText('Name (optional)').width <= room ? 'Name (optional)' : 'Name';
+}
+addEventListener('resize', fitNamePlaceholder);
 // Enter in From moves on to To
 $('numFrom').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); $('numTo').focus(); }
@@ -1965,6 +1977,7 @@ function render() {
     pick.disabled = rolling || !ranges.length;
     if (result.classList.contains('hint')) result.textContent = hintText();
     renderRanges();
+    fitNamePlaceholder();
     syncAddress();
     return;
   }
