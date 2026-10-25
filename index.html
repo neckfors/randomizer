@@ -180,7 +180,6 @@
   #historyList li { justify-content: space-between; padding: 10px 14px; gap: 12px; }
   #historyList .h-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #historyList .h-time { flex: none; color: var(--muted); font-size: .85rem; }
-  #historyList li:first-child .h-name::before { content: "👑 "; }
   #clearHistory { margin-top: 8px; font-size: .85rem; padding: 6px 12px; }
 
   .support {
@@ -295,6 +294,7 @@
     background: var(--bg);
   }
   .emojis button.on { border: 2px solid var(--accent); background: var(--glow); }
+  dialog .emoji-input { margin-top: 10px; font-size: .95rem; padding: 10px 14px; }
 
   .seg { display: flex; gap: 8px; }
   .seg button { flex: 1; }
@@ -390,6 +390,7 @@
       <h2 id="setTitle">New list</h2>
       <input class="field" id="setName" placeholder="e.g. Movie night" autocomplete="off" enterkeyhint="done" maxlength="30">
       <div class="emojis" id="emojiPicker" role="radiogroup" aria-label="List icon"></div>
+      <input class="field emoji-input" id="emojiInput" placeholder="…or type any emoji 😀" autocomplete="off" enterkeyhint="done" aria-label="Type any emoji as the list icon">
       <button type="button" class="btn wide" id="setShare" style="margin-top: 16px">⤴ Share this list</button>
       <div class="dialog-row">
         <button type="button" class="btn danger" id="setDelete">Delete</button>
@@ -462,6 +463,17 @@ function newId() {
   return Date.now().toString(36) + randomInt(1e6).toString(36);
 }
 
+// The first character as a person sees it, so multi-part emojis like 👨‍👩‍👧 or 🇸🇪 stay whole.
+function firstGrapheme(text) {
+  const s = String(text || '').trim();
+  if (!s) return '';
+  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+    const first = new Intl.Segmenter().segment(s)[Symbol.iterator]().next().value;
+    return first ? first.segment : '';
+  }
+  return Array.from(s)[0];
+}
+
 function defaultEmoji(name) {
   const starter = STARTER_LISTS.find(([n]) => n === name);
   return starter ? starter[1] : '📋';
@@ -473,7 +485,7 @@ function normalizeSet(s) {
   return {
     id: s.id || newId(),
     name,
-    emoji: s.emoji || defaultEmoji(name),
+    emoji: firstGrapheme(s.emoji) || defaultEmoji(name),
     once: !!s.once,
     items: (Array.isArray(s.items) ? s.items : [])
       .filter(i => i && i.name)
@@ -792,7 +804,9 @@ function switchTo(id) {
 function renderEmojiPicker() {
   const box = $('emojiPicker');
   box.innerHTML = '';
-  for (const e of EMOJIS) {
+  // an emoji typed from the keyboard shows up first, selected
+  const choices = EMOJIS.includes(chosenEmoji) ? EMOJIS : [chosenEmoji, ...EMOJIS];
+  for (const e of choices) {
     const b = document.createElement('button');
     b.type = 'button';
     b.textContent = e;
@@ -814,6 +828,7 @@ function openSetDialog(id) {
   $('setShare').hidden = !set;
   $('setDelete').disabled = state.sets.length < 2;
   chosenEmoji = set ? set.emoji : '📋';
+  $('emojiInput').value = '';
   renderEmojiPicker();
   dialog.showModal();
   if (!set) $('setName').focus();
@@ -841,6 +856,20 @@ $('setForm').onsubmit = (e) => {
 };
 
 $('setCancel').onclick = () => dialog.close();
+
+// Any emoji (or character) typed here becomes the icon; only the first one counts.
+$('emojiInput').addEventListener('input', (e) => {
+  const g = firstGrapheme(e.target.value);
+  if (!g) return;
+  e.target.value = g;
+  chosenEmoji = g;
+  sfx.click();
+  renderEmojiPicker();
+});
+// Enter in the emoji field saves the list instead of doing nothing
+$('emojiInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); $('setForm').requestSubmit(); }
+});
 
 $('setDelete').onclick = () => {
   const set = state.sets.find(s => s.id === editId);

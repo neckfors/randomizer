@@ -41,7 +41,7 @@ Every pick is completely random. Each option in the draw has the same chance eve
 In the list panel:
 
 - **+ New list** makes a new list.
-- **✎** renames a list, gives it an emoji, shares it or deletes it.
+- **✎** renames a list, gives it an icon (pick one, or type any emoji from your keyboard), shares it or deletes it.
 - **Drag ⠿** to put your lists in the order you like.
 
 ### Sharing a list
@@ -80,7 +80,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v15` → `whostarts-v16`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v16` → `whostarts-v17`), otherwise installed copies keep showing the old version.
 
 ## Support
 
