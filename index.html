@@ -1179,8 +1179,7 @@ function list(players) {
     del.textContent = '✕';
     del.setAttribute('aria-label', `Delete ${p.name}`);
     del.onclick = () => {
-      if (rolling) return;
-      if (!confirm(`Remove ${p.name} from the list for good?`)) return;
+      if (rolling || li.classList.contains('leaving')) return;
       sfx.del();
       li.classList.add('leaving');
       setTimeout(() => {
