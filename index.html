@@ -103,13 +103,24 @@
   #crown { position: relative; height: 0; font-size: 2rem; line-height: 1; opacity: 0; }
   /* pulled up into the card's top padding, so the space above it matches the space under the badge */
   #crown.show { height: 2.2rem; margin-top: -12px; opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
-  /* a flat die face that spins around its own middle while a number rolls */
-  #die { position: relative; display: grid; place-items: center; width: 86px; height: 0; margin: 0 auto; opacity: 0; pointer-events: none; }
-  #die svg { display: block; width: 60px; height: 60px; filter: drop-shadow(0 0 6px rgba(0, 0, 0, .3)); }
-  #die.rolling { height: 86px; opacity: 1; animation: spin .45s linear infinite; } /* room for its corners at 45° */
-  .die-body { fill: #fff; stroke: rgba(0, 0, 0, .12); stroke-width: 1.5; }
-  #diePips circle { fill: #1d2321; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  /* a 3D die balanced on one corner (long diagonal straight up), spinning
+     around that upright axis while a number rolls */
+  #die { position: relative; display: grid; place-items: center; width: 86px; height: 0; margin: 0 auto; opacity: 0; pointer-events: none; perspective: 320px; }
+  #die.rolling { height: 86px; opacity: 1; }
+  .die-spin, .die-cube { width: 42px; height: 42px; transform-style: preserve-3d; }
+  #die.rolling .die-spin { animation: spin-upright .9s linear infinite; }
+  .die-cube { position: relative; transform: rotateX(-35.264deg) rotateZ(45deg); } /* corner up, corner down */
+  .die-side {
+    position: absolute; inset: 0;
+    display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 5px;
+    background: linear-gradient(135deg, #ffffff, #e4e6e3);
+    border: 1px solid rgba(0, 0, 0, .14); border-radius: 7px;
+  }
+  /* each pair of opposite sides has its own shade, so the edges read as 3D */
+  .die-side.shade-2 { background: linear-gradient(135deg, #f1f2f0, #d6d9d5); }
+  .die-side.shade-3 { background: linear-gradient(135deg, #e3e5e2, #c4c8c3); }
+  .die-side i { width: 7px; height: 7px; margin: auto; border-radius: 50%; background: #1d2321; }
+  @keyframes spin-upright { to { transform: rotateY(360deg); } }
 
   .mode-tabs {
     display: flex;
@@ -540,7 +551,7 @@
 
   <section class="starter" id="card">
     <div id="crown" aria-hidden="true">👑</div>
-    <div id="die" aria-hidden="true"><svg viewBox="0 0 60 60"><rect class="die-body" x="2" y="2" width="56" height="56" rx="12"/><g id="diePips"><circle cx="17" cy="17" r="5.5"/><circle cx="43" cy="17" r="5.5"/><circle cx="17" cy="30" r="5.5"/><circle cx="30" cy="30" r="5.5"/><circle cx="43" cy="30" r="5.5"/><circle cx="17" cy="43" r="5.5"/><circle cx="43" cy="43" r="5.5"/></g></svg></div>
+    <div id="die" aria-hidden="true"><div class="die-spin"><div class="die-cube" id="dieCube"></div></div></div>
     <div class="stage"><div id="result" class="hint">Add some options, then tap Pick!</div></div>
     <button id="pick" type="button">Pick!</button>
     <div class="shake-ask" id="shakeAsk" hidden>
@@ -2389,16 +2400,29 @@ function startOverRange() {
   render();
 }
 
-// The spinning die shows a new face (1–6 pips) on every tick. Pips, in order:
-// top left, top right, middle left, center, middle right, bottom left, bottom right.
-const DIE_FACES = [[3], [0, 6], [0, 3, 6], [0, 1, 5, 6], [0, 1, 3, 5, 6], [0, 1, 2, 4, 5, 6]];
-let dieFace = 0;
-function showDieFace() {
-  let next;
-  do { next = randomInt(6); } while (next === dieFace);
-  dieFace = next;
-  [...$('diePips').children].forEach((pip, i) => { pip.style.display = DIE_FACES[next].includes(i) ? '' : 'none'; });
-}
+// ---------- The 3D die ----------
+// Six sides with pips at [row, column] in a 3×3 grid; opposite sides add up
+// to 7 like a real die.
+const DIE_PIPS = {
+  1: [[2, 2]],
+  2: [[1, 1], [3, 3]],
+  3: [[1, 1], [2, 2], [3, 3]],
+  4: [[1, 1], [1, 3], [3, 1], [3, 3]],
+  5: [[1, 1], [1, 3], [2, 2], [3, 1], [3, 3]],
+  6: [[1, 1], [1, 3], [2, 1], [2, 3], [3, 1], [3, 3]],
+};
+[[1, 'rotateY(0deg)'], [6, 'rotateY(180deg)'], [2, 'rotateY(90deg)'],
+ [5, 'rotateY(-90deg)'], [3, 'rotateX(90deg)'], [4, 'rotateX(-90deg)']].forEach(([n, turn]) => {
+  const side = document.createElement('div');
+  side.className = 'die-side shade-' + (n === 1 || n === 6 ? 1 : n === 2 || n === 5 ? 2 : 3);
+  side.style.transform = `${turn} translateZ(21px)`;
+  for (const [row, col] of DIE_PIPS[n]) {
+    const pip = document.createElement('i');
+    pip.style.gridArea = `${row} / ${col}`;
+    side.append(pip);
+  }
+  $('dieCube').append(side);
+});
 
 // ---------- Rolling a number ----------
 // Numbers from the range race past while a die spins, then it lands on a
@@ -2431,7 +2455,6 @@ function rollNumber() {
   rolling = true;
   $('card').className = 'starter rolling';
   $('crown').className = '';
-  showDieFace();
   $('die').className = 'rolling';
   $('pick').textContent = 'Rolling…';
   $('pick').disabled = true;
@@ -2442,7 +2465,6 @@ function rollNumber() {
     tick++;
     if (tick < total) {
       showName(roll().toLocaleString());
-      showDieFace();
       const progress = tick / total;
       const delay = spinDelay(progress);
       sfx.tick(progress);
