@@ -1,5 +1,5 @@
 // Bump the version when you change any file so phones pick up the update.
-const CACHE = 'whostarts-v17';
+const CACHE = 'whostarts-v18';
 const FILES = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', (e) => {

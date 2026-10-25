@@ -265,6 +265,7 @@
   }
   dialog[open] { animation: slidein .25s cubic-bezier(.2, 1.4, .4, 1); }
   dialog::backdrop { background: rgba(0, 0, 0, .45); }
+  dialog:focus { outline: none; }
   dialog h2 { margin: 0 0 12px; font-size: 1.15rem; }
   dialog h3 { margin: 18px 0 6px; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
   dialog .field { width: 100%; background: var(--bg); }
@@ -385,7 +386,7 @@
     </div>
   </dialog>
 
-  <dialog id="setDialog">
+  <dialog id="setDialog" tabindex="-1">
     <form id="setForm">
       <h2 id="setTitle">New list</h2>
       <input class="field" id="setName" placeholder="e.g. Movie night" autocomplete="off" enterkeyhint="done" maxlength="30">
@@ -831,7 +832,10 @@ function openSetDialog(id) {
   $('emojiInput').value = '';
   renderEmojiPicker();
   dialog.showModal();
-  if (!set) $('setName').focus();
+  // showModal focuses the name field, which pops up the keyboard; when editing,
+  // move focus to the dialog itself so the keyboard only opens on a tap
+  if (set) dialog.focus();
+  else $('setName').focus();
 }
 
 $('setForm').onsubmit = (e) => {
