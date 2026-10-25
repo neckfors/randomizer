@@ -186,7 +186,7 @@
     border: 1px solid var(--line);
     border-radius: 14px;
     overflow: hidden;
-    margin-bottom: 4px;
+    margin-bottom: 12px;
   }
   .set-btn {
     display: flex;
@@ -289,6 +289,12 @@
     </div>
   </header>
 
+  <section class="starter" id="card">
+    <div id="crown" aria-hidden="true">👑</div>
+    <div class="stage"><div id="result" class="hint">Add some options, then tap Pick!</div></div>
+    <button id="pick" type="button">Pick!</button>
+  </section>
+
   <div class="list-card">
     <button class="set-btn" id="setBtn" type="button" aria-haspopup="dialog">
       <span class="set-icon" aria-hidden="true">📋</span>
@@ -302,12 +308,6 @@
       <span class="once-text">Pick each only once<small id="onceHint"></small></span>
     </label>
   </div>
-
-  <section class="starter" id="card">
-    <div id="crown" aria-hidden="true">👑</div>
-    <div class="stage"><div id="result" class="hint">Add some options, then tap Pick!</div></div>
-    <button id="pick" type="button">Pick!</button>
-  </section>
 
   <form id="add">
     <input id="name" placeholder="Add an option" autocomplete="off" enterkeyhint="done" maxlength="40">
