@@ -1299,16 +1299,23 @@ async function enableShake() {
   return false;
 }
 
+// Motion was allowed in an earlier visit. The phone may still want one tap
+// after a reload before it delivers motion, but there is nothing to ask again.
+function motionAllowedBefore() {
+  return pref(MOTION_OK_KEY, '0') === '1';
+}
+
 // The text in the card before a pick; it mentions shaking once that works.
 function hintText() {
   if (!cur().items.length) return 'Add some options, then tap Pick!';
-  return shakeOn && listening ? 'Tap Pick! or shake your phone 📳' : 'Tap Pick! to choose one';
+  const shaking = shakeOn && (listening || motionAllowedBefore());
+  return shaking ? 'Tap Pick! or shake your phone 📳' : 'Tap Pick! to choose one';
 }
 
-// On iPhone, before motion is allowed, a button under Pick! asks for it,
-// with "No thanks" to switch shaking off and hide the question for good.
+// On iPhone, before motion has ever been allowed, a button under Pick! asks for
+// it, with "No thanks" to switch shaking off and hide the question for good.
 function renderShakeTip() {
-  $('shakeAsk').hidden = !shakeOn || listening;
+  $('shakeAsk').hidden = !shakeOn || listening || motionAllowedBefore();
   if (result.classList.contains('hint')) result.textContent = hintText();
 }
 
@@ -1323,7 +1330,6 @@ $('shakeNo').onclick = () => {
 $('shakeTip').onclick = async () => {
   if (await enableShake()) {
     sfx.in();
-    toast('Shake your phone to pick!');
   } else {
     shakeOn = false;
     setPref(SHAKE_KEY, '0');
@@ -1342,7 +1348,6 @@ $('shakeToggle').onchange = async (e) => {
     }
     shakeOn = true;
     sfx.in();
-    toast('Shake your phone to pick!');
   } else {
     shakeOn = false;
     sfx.out();
@@ -1354,8 +1359,12 @@ $('shakeToggle').onchange = async (e) => {
 if (shakeOn) {
   if (!needsMotionPermission) {
     listenForShakes();
-  } else if (pref(MOTION_OK_KEY, '0') === '1') {
-    // allowed before, so the first tap anywhere turns it back on without asking
+  } else if (motionAllowedBefore()) {
+    // Allowed before: some phones turn it back on straight away, others need a
+    // tap first, so try now and again on the first tap anywhere.
+    DeviceMotionEvent.requestPermission()
+      .then(answer => { if (answer === 'granted') { listenForShakes(); renderShakeTip(); } })
+      .catch(() => {});
     document.addEventListener('click', async () => {
       if (shakeOn && !listening) { await enableShake(); renderShakeTip(); }
     }, { once: true, capture: true });
