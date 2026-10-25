@@ -285,6 +285,21 @@
   li.current .set-name::after { content: " ✓"; color: var(--accent); }
   .set-count { color: var(--muted); font-size: .85rem; }
   .set-edit { width: 48px; height: 50px; color: var(--muted); font-size: 1.1rem; }
+  .sheet-head { display: flex; align-items: baseline; justify-content: space-between; }
+  .link-btn { background: none; border: 0; font: inherit; color: var(--accent); font-weight: 600; padding: 4px 2px; }
+  .dialog-row[hidden] { display: none; }
+  .btn.danger:not(:disabled) { border-color: var(--danger); }
+  .tick {
+    flex: none; align-self: center;
+    width: 22px; height: 22px; margin: 0 7px;
+    border-radius: 50%;
+    border: 2px solid var(--muted);
+    display: grid; place-items: center;
+    font-size: .8rem; color: #fff;
+  }
+  #setList li.selected { background: rgba(179, 65, 46, .12); }
+  #setList li.selected .tick { background: var(--danger); border-color: var(--danger); }
+  #setList li.selected .tick::after { content: "✓"; }
 
   .emojis { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
   .emojis button {
@@ -371,18 +386,26 @@
     <button type="button" class="btn" id="clearHistory">Clear history</button>
   </details>
 
-  <p class="tip">Tap an option to leave it out for now. Add several at once with commas.</p>
+  <p class="tip">Tap an option to leave it out for now.</p>
 
   <a class="support" id="support" href="https://paypal.me/neckfors" target="_blank" rel="noopener"><span class="heart">♥</span> Support the app</a>
 
   <dialog id="listsDialog">
-    <h2>Your lists</h2>
+    <div class="sheet-head">
+      <h2>Your lists</h2>
+      <button type="button" class="link-btn" id="selectBtn">Select</button>
+    </div>
     <ul id="setList"></ul>
-    <p class="hint-text">Drag ⠿ to reorder.</p>
-    <div class="dialog-row">
+    <p class="hint-text" id="sheetHint"></p>
+    <div class="dialog-row" id="sheetNormal">
       <button type="button" class="btn" id="newList">+ New list</button>
       <span class="spacer"></span>
       <button type="button" class="btn primary" id="sheetClose">Done</button>
+    </div>
+    <div class="dialog-row" id="sheetSelect" hidden>
+      <button type="button" class="btn" id="selectCancel">Cancel</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn danger" id="deleteSelected">Delete</button>
     </div>
   </dialog>
 
@@ -691,6 +714,10 @@ function renderSets() {
   if (sheet.open) renderSheet();
 }
 
+// In select mode, tapping rows ticks them and Delete removes them all at once.
+let selecting = false;
+let selected = new Set();
+
 function renderSheet() {
   const ul = $('setList');
   ul.innerHTML = '';
@@ -698,13 +725,20 @@ function renderSheet() {
     const li = document.createElement('li');
     li.dataset.id = s.id;
     const on = s.id === cur().id;
-    if (on) li.className = 'current';
+    li.className = (on && !selecting ? 'current' : '') + (selected.has(s.id) ? ' selected' : '');
 
-    const handle = document.createElement('span');
-    handle.className = 'drag';
-    handle.textContent = '⠿';
-    handle.setAttribute('aria-hidden', 'true');
-    makeDraggable(handle, li);
+    let lead;
+    if (selecting) {
+      lead = document.createElement('span');
+      lead.className = 'tick';
+      lead.setAttribute('aria-hidden', 'true');
+    } else {
+      lead = document.createElement('span');
+      lead.className = 'drag';
+      lead.textContent = '⠿';
+      lead.setAttribute('aria-hidden', 'true');
+      makeDraggable(lead, li);
+    }
 
     const pick = document.createElement('button');
     pick.type = 'button';
@@ -713,22 +747,73 @@ function renderSheet() {
     pick.querySelector('.set-emoji').textContent = s.emoji;
     pick.querySelector('.set-name').textContent = s.name;
     pick.querySelector('.set-count').textContent = s.items.length;
-    pick.onclick = () => {
-      sheet.close();
-      if (!on) switchTo(s.id);
-    };
+    if (selecting) {
+      pick.setAttribute('aria-pressed', selected.has(s.id));
+      pick.onclick = () => {
+        selected.has(s.id) ? selected.delete(s.id) : selected.add(s.id);
+        sfx.click();
+        renderSheet();
+      };
+    } else {
+      pick.onclick = () => {
+        sheet.close();
+        if (!on) switchTo(s.id);
+      };
+    }
+    li.append(lead, pick);
 
-    const edit = document.createElement('button');
-    edit.type = 'button';
-    edit.className = 'set-edit';
-    edit.textContent = '✎';
-    edit.setAttribute('aria-label', `Edit, share or delete ${s.name}`);
-    edit.onclick = () => openSetDialog(s.id);
-
-    li.append(handle, pick, edit);
+    if (!selecting) {
+      const edit = document.createElement('button');
+      edit.type = 'button';
+      edit.className = 'set-edit';
+      edit.textContent = '✎';
+      edit.setAttribute('aria-label', `Edit, share or delete ${s.name}`);
+      edit.onclick = () => openSetDialog(s.id);
+      li.append(edit);
+    }
     ul.append(li);
   }
+
+  $('selectBtn').hidden = selecting || state.sets.length < 2;
+  $('sheetNormal').hidden = selecting;
+  $('sheetSelect').hidden = !selecting;
+  const n = selected.size;
+  const all = n > 0 && n >= state.sets.length;
+  const del = $('deleteSelected');
+  del.disabled = n === 0 || all;
+  del.textContent = n ? `Delete ${n}` : 'Delete';
+  $('sheetHint').textContent = !selecting ? 'Drag ⠿ to reorder.'
+    : all ? 'Keep at least one list.'
+    : 'Tap the lists you want to delete.';
 }
+
+function setSelecting(on) {
+  selecting = on;
+  selected = new Set();
+  renderSheet();
+}
+
+$('selectBtn').onclick = () => { setSelecting(true); sfx.click(); };
+$('selectCancel').onclick = () => setSelecting(false);
+
+$('deleteSelected').onclick = () => {
+  const doomed = state.sets.filter(s => selected.has(s.id));
+  if (!doomed.length || doomed.length >= state.sets.length) return;
+  const question = doomed.length === 1
+    ? `Delete the list "${doomed[0].name}" and everything in it?`
+    : `Delete these ${doomed.length} lists and everything in them?\n\n${doomed.map(s => `${s.emoji} ${s.name}`).join('\n')}`;
+  if (!confirm(question)) return;
+  state.sets = state.sets.filter(s => !selected.has(s.id));
+  if (!state.sets.some(s => s.id === state.current)) {
+    state.current = state.sets[0].id;
+    resetCard();
+  }
+  sfx.del();
+  selecting = false;
+  selected = new Set();
+  save(); render();
+  toast(doomed.length === 1 ? `Deleted "${doomed[0].name}"` : `Deleted ${doomed.length} lists`);
+};
 
 // Drag a row by its ⠿ handle; it swaps places with a neighbour once it has
 // moved past half of that neighbour's height.
@@ -776,6 +861,8 @@ function makeDraggable(handle, li) {
 
 $('setBtn').onclick = () => {
   if (rolling) return;
+  selecting = false;
+  selected = new Set();
   renderSheet();
   sheet.showModal();
   sfx.swap();

@@ -43,6 +43,7 @@ In the list panel:
 - **+ New list** makes a new list.
 - **✎** renames a list, gives it an icon (pick one, or type any emoji from your keyboard), shares it or deletes it.
 - **Drag ⠿** to put your lists in the order you like.
+- **Select** lets you tick one or more lists and delete them all at once (it asks first, and always keeps at least one list).
 
 ### Sharing a list
 
@@ -80,7 +81,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v18` → `whostarts-v19`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v19` → `whostarts-v20`), otherwise installed copies keep showing the old version.
 
 ## Support
 
