@@ -142,7 +142,9 @@
   body.number-mode .list-tip { display: none !important; }
   #rangeList li.current-range { background: var(--glow); }
   body.number-mode .add-range { display: flex !important; }
-  .add-range { gap: 6px; margin-bottom: 4px; }
+  /* One row when it fits; on narrow phones or with large text, the name field
+     moves to a second line with Add so "Name (optional)" is never cut off. */
+  .add-range { flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
   .add-range .btn { padding: 10px 12px; }
   .add-range input {
     min-width: 0;
@@ -153,10 +155,10 @@
     color: var(--text);
     font: inherit;
   }
-  .add-range input[type="number"] { flex: 0 0 3.9em; width: 3.9em; text-align: center; -moz-appearance: textfield; appearance: textfield; }
+  .add-range input[type="number"] { flex: 1 0 3.9em; width: 3.9em; text-align: center; -moz-appearance: textfield; appearance: textfield; }
   .add-range input[type="number"]::-webkit-outer-spin-button,
   .add-range input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  #numName { flex: 1; }
+  #numName { flex: 20 1 9.5em; }
   .btn:disabled, #addBtn:disabled, #addRangeBtn:disabled { opacity: .4; }
   #rangeList .label small { margin-left: 8px; color: var(--muted); font-size: .85rem; }
   #rangeList .label b { font-weight: 700; }
@@ -327,7 +329,19 @@
   }
   .set-btn:active { transform: scale(.98); }
   #setLabel { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .set-btn .caret { color: var(--muted); }
+  /* a round, tinted chevron so it is clear the list can be switched */
+  .set-btn .caret {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--glow);
+    color: var(--accent);
+  }
+  .set-btn .caret svg { width: 16px; height: 16px; }
+  .set-btn:hover .caret { background: var(--accent); color: var(--accent-text); }
 
   .once, .switch-row { display: flex; align-items: center; gap: 12px; cursor: pointer; }
   .once { padding: 10px 14px 12px; border-top: 1px solid var(--line); }
@@ -534,7 +548,7 @@
     <button class="set-btn" id="setBtn" type="button" aria-haspopup="dialog">
       <span class="set-emoji" id="setEmoji" aria-hidden="true"></span>
       <span id="setLabel"></span>
-      <span class="caret" aria-hidden="true">▾</span>
+      <span class="caret" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6 8 10.5 12.5 6"/></svg></span>
     </button>
 
     <label class="once">
