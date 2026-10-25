@@ -103,9 +103,12 @@
   #crown { position: relative; height: 0; font-size: 2rem; line-height: 1; opacity: 0; }
   /* pulled up into the card's top padding, so the space above it matches the space under the badge */
   #crown.show { height: 2.2rem; margin-top: -12px; opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
-  /* a square box around the 🎲, so it spins around its own middle */
-  #die { position: relative; width: 1.2em; height: 0; margin: 0 auto; font-size: 3.6rem; line-height: 1.2em; text-align: center; opacity: 0; }
-  #die.rolling { height: 1.2em; opacity: 1; animation: spin .45s linear infinite; }
+  /* a flat die face that spins around its own middle while a number rolls */
+  #die { position: relative; display: grid; place-items: center; width: 86px; height: 0; margin: 0 auto; opacity: 0; pointer-events: none; }
+  #die svg { display: block; width: 60px; height: 60px; filter: drop-shadow(0 0 6px rgba(0, 0, 0, .3)); }
+  #die.rolling { height: 86px; opacity: 1; animation: spin .45s linear infinite; } /* room for its corners at 45° */
+  .die-body { fill: #fff; stroke: rgba(0, 0, 0, .12); stroke-width: 1.5; }
+  #diePips circle { fill: #1d2321; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .mode-tabs {
@@ -537,7 +540,7 @@
 
   <section class="starter" id="card">
     <div id="crown" aria-hidden="true">👑</div>
-    <div id="die" aria-hidden="true">🎲</div>
+    <div id="die" aria-hidden="true"><svg viewBox="0 0 60 60"><rect class="die-body" x="2" y="2" width="56" height="56" rx="12"/><g id="diePips"><circle cx="17" cy="17" r="5.5"/><circle cx="43" cy="17" r="5.5"/><circle cx="17" cy="30" r="5.5"/><circle cx="30" cy="30" r="5.5"/><circle cx="43" cy="30" r="5.5"/><circle cx="17" cy="43" r="5.5"/><circle cx="43" cy="43" r="5.5"/></g></svg></div>
     <div class="stage"><div id="result" class="hint">Add some options, then tap Pick!</div></div>
     <button id="pick" type="button">Pick!</button>
     <div class="shake-ask" id="shakeAsk" hidden>
@@ -2386,8 +2389,19 @@ function startOverRange() {
   render();
 }
 
+// The spinning die shows a new face (1–6 pips) on every tick. Pips, in order:
+// top left, top right, middle left, center, middle right, bottom left, bottom right.
+const DIE_FACES = [[3], [0, 6], [0, 3, 6], [0, 1, 5, 6], [0, 1, 3, 5, 6], [0, 1, 2, 4, 5, 6]];
+let dieFace = 0;
+function showDieFace() {
+  let next;
+  do { next = randomInt(6); } while (next === dieFace);
+  dieFace = next;
+  [...$('diePips').children].forEach((pip, i) => { pip.style.display = DIE_FACES[next].includes(i) ? '' : 'none'; });
+}
+
 // ---------- Rolling a number ----------
-// Numbers from the range race past while a 🎲 spins, then it lands on a
+// Numbers from the range race past while a die spins, then it lands on a
 // number picked uniformly at random from the chosen range (both ends included).
 // With "roll each number only once", it picks uniformly among the numbers not
 // rolled yet: the k-th free number is found by stepping past the used ones.
@@ -2417,6 +2431,7 @@ function rollNumber() {
   rolling = true;
   $('card').className = 'starter rolling';
   $('crown').className = '';
+  showDieFace();
   $('die').className = 'rolling';
   $('pick').textContent = 'Rolling…';
   $('pick').disabled = true;
@@ -2427,6 +2442,7 @@ function rollNumber() {
     tick++;
     if (tick < total) {
       showName(roll().toLocaleString());
+      showDieFace();
       const progress = tick / total;
       const delay = spinDelay(progress);
       sfx.tick(progress);
