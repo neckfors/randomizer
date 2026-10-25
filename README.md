@@ -1,4 +1,4 @@
-# 🎲 Pick One
+# 🎡 Pick One
 
 A tiny web app that picks one thing at random from a list, with a slot-machine spin, confetti and sound effects.
 
@@ -58,4 +58,8 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v7` → `whostarts-v8`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v8` → `whostarts-v9`), otherwise installed copies keep showing the old version.
+
+## Support
+
+If you like the app, you can support it on [PayPal](https://paypal.me/neckfors). Thank you!
