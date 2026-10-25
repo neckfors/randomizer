@@ -1,8 +1,8 @@
-# Who Starts
+# Pick One
 
-A tiny installable web app that randomly picks who starts the game.
+A tiny installable web app that picks one thing at random: who starts the game, where to eat, what to watch, anything.
 
-Add the people you play with, tap a name to sit them out for a round, and hit **Who starts?**
+Add options to the list, tap one to leave it out for now, and hit **Pick!**
 
 Live at https://neckfors.github.io/who-starts/. Open it on your phone and use *Add to Home Screen* (Safari) or *Install app* (Chrome).
 

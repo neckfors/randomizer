@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Who Starts</title>
+<title>Pick One</title>
 <meta name="theme-color" content="#1f6f54">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Who Starts">
+<meta name="apple-mobile-web-app-title" content="Pick One">
 <style>
   :root {
     --bg: #f4f5f2;
@@ -166,7 +166,7 @@
 </head>
 <body>
   <header>
-    <h1>Who Starts</h1>
+    <h1>Pick One</h1>
     <div class="right">
       <span id="count"></span>
       <button id="mute" type="button"></button>
@@ -174,19 +174,19 @@
   </header>
 
   <section class="starter" id="card">
-    <div class="stage"><div id="result" class="hint">Tap the button to pick a starter</div></div>
+    <div class="stage"><div id="result" class="hint">Add some options, then tap Pick!</div></div>
     <div id="sub"></div>
-    <button id="pick" type="button">Who starts?</button>
+    <button id="pick" type="button">Pick!</button>
   </section>
 
   <form id="add">
-    <input id="name" placeholder="Add a name" autocomplete="off" enterkeyhint="done" maxlength="40">
+    <input id="name" placeholder="Add an option" autocomplete="off" enterkeyhint="done" maxlength="40">
     <button class="btn" type="submit">Add</button>
   </form>
 
   <div id="lists"></div>
 
-  <p class="tip">Tap a name to sit them out for a round.</p>
+  <p class="tip">Tap an option to leave it out for now.</p>
 
   <canvas id="confetti"></canvas>
 
@@ -340,14 +340,14 @@ function drawConfetti() {
 // ---------- List ----------
 function render() {
   const playing = state.players.filter(p => p.playing).length;
-  $('count').textContent = state.players.length ? `${playing} of ${state.players.length} playing` : '';
+  $('count').textContent = state.players.length ? `${playing} of ${state.players.length} in the draw` : '';
   $('pick').disabled = playing === 0 || rolling;
 
   const lists = $('lists');
   lists.innerHTML = '';
 
   if (!state.players.length) {
-    lists.innerHTML = '<div class="empty">No names yet. Add the people you play with.</div>';
+    lists.innerHTML = '<div class="empty">Nothing here yet. Add people, places, food, movies, anything.</div>';
     return;
   }
   lists.append(list([...state.players].sort(byName)));
@@ -433,8 +433,8 @@ function highlightRow(id) {
   if (li) li.classList.add('hot');
 }
 
-// Picks a starter uniformly at random from everyone playing, then plays the
-// slot-machine spin that lands on them.
+// Picks one option uniformly at random from those in the draw, then plays the
+// slot-machine spin that lands on it.
 $('pick').onclick = () => {
   const playing = state.players.filter(p => p.playing);
   if (!playing.length || rolling) return;
@@ -446,7 +446,7 @@ $('pick').onclick = () => {
   $('card').className = 'starter rolling';
   $('sub').className = '';
   $('sub').textContent = '';
-  $('pick').textContent = 'Rolling…';
+  $('pick').textContent = 'Picking…';
   sfx.start();
 
   const total = playing.length > 1 && !reducedMotion ? 26 : 1;
@@ -479,7 +479,7 @@ function land(winner) {
   void result.offsetWidth;
   result.className = 'won';
   result.textContent = winner.name;
-  $('sub').textContent = '🎉 starts the game! 🎉';
+  $('sub').textContent = '🎉 The winner! 🎉';
   $('sub').className = 'show';
   $('card').className = 'starter winner';
   $('pick').textContent = 'Pick again';
