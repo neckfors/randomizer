@@ -88,6 +88,8 @@ Tap ✎ on a list, then **⤴ Share this list**. You get a link to send to anyon
 
 > On iPhone, the silent switch also mutes the sound effects.
 
+**Updates:** the app checks for a new version whenever you open it or come back to it. When one has downloaded, a bar with **✨ New version available · Update** appears at the top; tap **Update** to switch to it. Your lists and ranges are kept.
+
 ## Tech
 
 Plain HTML, CSS and JavaScript, with no build step or dependencies.
@@ -108,7 +110,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v44` → `whostarts-v45`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v45` → `whostarts-v46`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
