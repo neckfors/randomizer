@@ -97,29 +97,15 @@
   /* takes no room until a pick lands, so the card has no empty gap at the top */
   #crown { position: relative; height: 0; font-size: 2rem; line-height: 1; opacity: 0; }
   #crown.show { height: 2.2rem; opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
-  /* the 🎲 rolls in while a number rolls (moved from JS) */
-  #die { position: relative; height: 0; opacity: 0; transition: height .3s ease; }
-  #die.rolling, #die.thud { height: 4.6rem; opacity: 1; }
-  #dieFace {
-    position: absolute; left: 50%; bottom: 10px;
-    width: 1.2em; margin-left: -.6em;
-    font-size: 3.6rem; line-height: 1; text-align: center;
-    filter: drop-shadow(0 3px 2px rgba(0, 0, 0, .25));
+  #die { position: relative; height: 0; font-size: 3.6rem; line-height: 1; opacity: 0; }
+  #die.rolling { height: 4.2rem; opacity: 1; animation: tumble .45s linear infinite; }
+  @keyframes tumble {
+    0% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-12px) rotate(90deg); }
+    50% { transform: translateY(0) rotate(180deg); }
+    75% { transform: translateY(-12px) rotate(270deg); }
+    100% { transform: translateY(0) rotate(360deg); }
   }
-  #dieShadow {
-    position: absolute; left: 50%; bottom: 4px;
-    width: 52px; height: 10px; margin-left: -26px;
-    border-radius: 50%; background: rgba(0, 0, 0, .3); filter: blur(3px);
-  }
-  #die.thud #dieFace { animation: thud .7s ease-out forwards; }
-  #die.thud #dieShadow { animation: fade .7s ease-in forwards; }
-  @keyframes thud {
-    0% { transform: scale(1.08, .92); }
-    25% { transform: none; opacity: 1; }
-    60% { transform: none; opacity: 1; }
-    100% { transform: scale(.85) translateY(6px); opacity: 0; }
-  }
-  @keyframes fade { to { opacity: 0; } }
 
   .mode-tabs {
     display: flex;
@@ -550,7 +536,7 @@
 
   <section class="starter" id="card">
     <div id="crown" aria-hidden="true">👑</div>
-    <div id="die" aria-hidden="true"><span id="dieShadow"></span><span id="dieFace">🎲</span></div>
+    <div id="die" aria-hidden="true">🎲</div>
     <div class="stage"><div id="result" class="hint">Add some options, then tap Pick!</div></div>
     <button id="pick" type="button">Pick!</button>
     <div class="shake-ask" id="shakeAsk" hidden>
@@ -965,12 +951,6 @@ const sfx = {
     lastTick = now;
     tone(900 + randomInt(300) - p * 400, { dur: 0.035, type: 'square', vol: 0.04 });
   },
-  // the die touching down on a wooden table: a soft, low knock (later ones quieter)
-  knock(at, strength) {
-    tone(210 + randomInt(40), { at, dur: 0.07, type: 'sine', vol: 0.12 * strength, slide: 150 });
-    tone(900 + randomInt(200), { at, dur: 0.025, vol: 0.025 * strength });
-  },
-  thud()   { tone(190, { dur: 0.3, slide: 110, type: 'sine', vol: 0.16 }); },
   win() {
     [523, 659, 784].forEach((f, i) => tone(f, { at: i * 0.1, dur: 0.14, vol: 0.14 }));
     [1046, 1318, 1568].forEach(f => tone(f, { at: 0.32, dur: 0.8, vol: 0.07 }));
@@ -1223,7 +1203,7 @@ function resetCard() {
   winnerId = null;
   result.className = 'hint';
   $('crown').className = '';
-  resetDie();
+  $('die').className = '';
   $('card').className = 'starter';
   $('pick').textContent = mode === 'number' ? 'Roll!' : 'Pick!';
   delete $('pick').dataset.mode;
@@ -2405,59 +2385,8 @@ function startOverRange() {
   render();
 }
 
-// ---------- The rolling die ----------
-// The 🎲 rolls in from the side in one smooth, slowing tumble, with a few
-// small bounces that die down, settles upright in the middle and lands with a
-// soft knock as the number shows.
-function stopDieMoves() {
-  [$('dieFace'), $('dieShadow')].forEach(el => el.getAnimations().forEach(a => a.cancel()));
-}
-
-function resetDie() {
-  clearTimeout(resetDie.timer);
-  stopDieMoves();
-  $('die').className = '';
-}
-
-// [when (0–1), how far along (0–1), height in px, turn in degrees]
-const DIE_PATH = [
-  [0,    0,    0,  0],
-  [0.18, 0.38, 18, 260],
-  [0.38, 0.68, 0,  470],
-  [0.52, 0.82, 8,  580],
-  [0.66, 0.93, 0,  650],
-  [0.76, 0.97, 3,  690],
-  [0.86, 1,    0,  716],
-  [1,    1,    0,  720],
-];
-const DIE_KNOCKS = [0.38, 0.66, 0.86]; // when it touches down again
-
-function dieRoll(ms) {
-  const from = -Math.max(0, Math.min(100, $('card').clientWidth / 2 - 50)) * (Math.random() < 0.5 ? 1 : -1);
-  const turn = from < 0 ? 1 : -1; // rolls the way it travels
-  const frames = (make) => DIE_PATH.map(([offset, along, h, r], i) => ({
-    offset,
-    // up goes slow at the top, down speeds up into the table
-    easing: DIE_PATH[i + 1] && DIE_PATH[i + 1][2] > h ? 'ease-out' : 'ease-in',
-    ...make(from * (1 - along), h, r * turn),
-  }));
-  stopDieMoves();
-  $('dieFace').animate(frames((x, h, r) => ({ transform: `translate(${x}px, ${-h}px) rotate(${r}deg)` })),
-    { duration: ms, fill: 'forwards' });
-  $('dieShadow').animate(frames((x, h) => ({ transform: `translateX(${x}px) scale(${1 - h / 50})`, opacity: 1 - h / 40 })),
-    { duration: ms, fill: 'forwards' });
-  DIE_KNOCKS.forEach((at, i) => sfx.knock(at * ms / 1000, 1 - i * 0.3));
-}
-
-function dieLand() {
-  stopDieMoves();
-  $('die').className = 'thud';
-  sfx.thud();
-  resetDie.timer = setTimeout(() => { $('die').className = ''; }, 700);
-}
-
 // ---------- Rolling a number ----------
-// Numbers from the range race past while the 🎲 hops around, then it lands on a
+// Numbers from the range race past while a 🎲 tumbles, then it lands on a
 // number picked uniformly at random from the chosen range (both ends included).
 // With "roll each number only once", it picks uniformly among the numbers not
 // rolled yet: the k-th free number is found by stepping past the used ones.
@@ -2487,13 +2416,7 @@ function rollNumber() {
   rolling = true;
   $('card').className = 'starter rolling';
   $('crown').className = '';
-  if (total > 1) {
-    resetDie();
-    $('die').className = 'rolling';
-    let rollMs = 0;
-    for (let t = 1; t < total; t++) rollMs += spinDelay(t / total);
-    dieRoll(rollMs);
-  }
+  $('die').className = 'rolling';
   $('pick').textContent = 'Rolling…';
   $('pick').disabled = true;
   sfx.start();
@@ -2516,7 +2439,7 @@ function rollNumber() {
       saveRanges();
     }
     const shown = number.toLocaleString();
-    if (total > 1) dieLand();
+    $('die').className = '';
     result.className = '';
     void result.offsetWidth;
     result.className = 'won' + (shown.length > 14 ? ' long' : '');
