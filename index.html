@@ -289,9 +289,10 @@
   .link-btn { background: none; border: 0; font: inherit; color: var(--accent); font-weight: 600; padding: 4px 2px; }
   .dialog-row[hidden] { display: none; }
   .btn.danger:not(:disabled) { border-color: var(--danger); }
+  #setList li.selecting .set-pick { padding: 14px 18px 14px 12px; }
   .tick {
-    flex: none; align-self: center;
-    width: 22px; height: 22px; margin: 0 7px;
+    flex: none;
+    width: 22px; height: 22px;
     border-radius: 50%;
     border: 2px solid var(--muted);
     display: grid; place-items: center;
@@ -725,20 +726,7 @@ function renderSheet() {
     const li = document.createElement('li');
     li.dataset.id = s.id;
     const on = s.id === cur().id;
-    li.className = (on && !selecting ? 'current' : '') + (selected.has(s.id) ? ' selected' : '');
-
-    let lead;
-    if (selecting) {
-      lead = document.createElement('span');
-      lead.className = 'tick';
-      lead.setAttribute('aria-hidden', 'true');
-    } else {
-      lead = document.createElement('span');
-      lead.className = 'drag';
-      lead.textContent = '⠿';
-      lead.setAttribute('aria-hidden', 'true');
-      makeDraggable(lead, li);
-    }
+    li.className = (on && !selecting ? 'current' : '') + (selecting ? ' selecting' : '') + (selected.has(s.id) ? ' selected' : '');
 
     const pick = document.createElement('button');
     pick.type = 'button';
@@ -748,19 +736,30 @@ function renderSheet() {
     pick.querySelector('.set-name').textContent = s.name;
     pick.querySelector('.set-count').textContent = s.items.length;
     if (selecting) {
+      // the tick sits inside the button, so tapping anywhere on the row selects it
+      const tick = document.createElement('span');
+      tick.className = 'tick';
+      tick.setAttribute('aria-hidden', 'true');
+      pick.prepend(tick);
       pick.setAttribute('aria-pressed', selected.has(s.id));
       pick.onclick = () => {
         selected.has(s.id) ? selected.delete(s.id) : selected.add(s.id);
         sfx.click();
         renderSheet();
       };
+      li.append(pick);
     } else {
+      const handle = document.createElement('span');
+      handle.className = 'drag';
+      handle.textContent = '⠿';
+      handle.setAttribute('aria-hidden', 'true');
+      makeDraggable(handle, li);
       pick.onclick = () => {
         sheet.close();
         if (!on) switchTo(s.id);
       };
+      li.append(handle, pick);
     }
-    li.append(lead, pick);
 
     if (!selecting) {
       const edit = document.createElement('button');
