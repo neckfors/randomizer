@@ -16,7 +16,7 @@ Anything where you need a fair, random pick:
 - 🧹 **Who does the chore:** dishes, taking out the trash, walking the dog
 - 🚗 **Who drives** or who picks the music in the car
 - 🏫 **Who answers next:** pick a student, or who presents first in a meeting
-- 🎁 **Giveaways and raffles:** pick a winner from the participants
+- 🎁 **Giveaways and raffles:** pick from the participants
 - 🍳 **What's for dinner:** add the meals you know how to cook
 - 📚 **What to read or play next** from your backlog
 - 🏃 **Which workout today:** run, gym, yoga, rest day…
@@ -26,10 +26,10 @@ Anything where you need a fair, random pick:
 
 1. **Add options** using the field at the top.
 2. **Tap an option** to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
-3. **Tap Pick!** and watch it spin. The winner gets confetti and a 👑.
+3. **Tap Pick!** and watch it spin. The pick gets confetti and a 👑.
 4. Remove an option for good with **✕**.
 
-Every pick is completely random. Each option in the draw has the same chance every time, even if it won last time.
+Every pick is completely random. Each option in the draw has the same chance every time, even if it was picked last time.
 
 Use 🔊 in the top corner to turn the sounds on or off.
 
@@ -58,4 +58,4 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v5` → `whostarts-v6`), otherwise installed copies keep showing the old version.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v6` → `whostarts-v7`), otherwise installed copies keep showing the old version.
