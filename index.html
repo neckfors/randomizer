@@ -100,7 +100,7 @@
     #result.won { text-box: trim-both cap alphabetic; padding: .32em .6em; }
   }
   /* takes no room until a pick lands, so the card has no empty gap at the top */
-  #crown { position: relative; height: 0; font-size: 2rem; line-height: 1; opacity: 0; }
+  #crown { position: relative; height: 0; font-size: 2rem; line-height: 1; opacity: 0; transition: height .3s ease, margin-top .3s ease; }
   /* pulled up into the card's top padding, so the space above it matches the space under the badge */
   #crown.show { height: 2.2rem; margin-top: -12px; opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
   /* a 3D die balanced on one corner (long diagonal straight up), spinning
@@ -108,7 +108,9 @@
   #die { position: relative; display: grid; place-items: center; width: 86px; height: 0; margin: 0 auto; opacity: 0; pointer-events: none; perspective: 320px; }
   #die.rolling { height: 86px; opacity: 1; }
   .die-spin, .die-cube { width: 42px; height: 42px; transform-style: preserve-3d; }
-  #die.rolling .die-spin { animation: spin-upright .6s linear infinite; }
+  #die.rolling .die-spin, #die.landing .die-spin { animation: spin-upright .6s linear infinite; }
+  /* when the number lands: the slowed die shrinks away while the crown takes its place */
+  #die.landing { height: 0; opacity: 0; transform: scale(.4); transition: height .3s ease, opacity .3s ease, transform .3s ease-in; }
   .die-cube { position: relative; transform: rotateX(-35.264deg) rotateZ(45deg); } /* corner up, corner down */
   .die-side {
     position: absolute; inset: 0;
@@ -2424,6 +2426,12 @@ const DIE_PIPS = {
   $('dieCube').append(side);
 });
 
+// The die slows down along with the numbers: full speed at first, about a
+// quarter by the end. Then it shrinks away as the number lands.
+let dieTimer;
+const dieSpin = () => document.querySelector('.die-spin').getAnimations()[0];
+const dieSpeed = (progress) => (spinPause(0) / spinPause(progress)) ** 0.7;
+
 // ---------- Rolling a number ----------
 // Numbers from the range race past while a die spins, then it lands on a
 // number picked uniformly at random from the chosen range (both ends included).
@@ -2455,6 +2463,9 @@ function rollNumber() {
   rolling = true;
   $('card').className = 'starter rolling';
   $('crown').className = '';
+  clearTimeout(dieTimer);
+  $('die').className = '';
+  void $('die').offsetWidth; // restarts the spin at full speed
   $('die').className = 'rolling';
   $('pick').textContent = 'Rolling…';
   $('pick').disabled = true;
@@ -2468,6 +2479,7 @@ function rollNumber() {
       const progress = tick / total;
       const delay = spinDelay(progress);
       sfx.tick(progress);
+      dieSpin()?.updatePlaybackRate(dieSpeed(progress));
       if (navigator.vibrate) navigator.vibrate(5);
       setTimeout(spin, delay);
       return;
@@ -2478,7 +2490,8 @@ function rollNumber() {
       saveRanges();
     }
     const shown = number.toLocaleString();
-    $('die').className = '';
+    $('die').className = 'landing';
+    dieTimer = setTimeout(() => { $('die').className = ''; }, 300);
     result.className = '';
     void result.offsetWidth;
     result.className = 'won' + (shown.length > 14 ? ' long' : '');
