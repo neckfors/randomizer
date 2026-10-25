@@ -112,7 +112,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v56` → `whostarts-v57`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v57` → `whostarts-v58`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
