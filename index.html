@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Who Starts</title>
+<meta name="theme-color" content="#1f6f54">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Who Starts">
+<style>
+  :root {
+    --bg: #f4f5f2;
+    --card: #ffffff;
+    --text: #1d2321;
+    --muted: #6b7571;
+    --line: #e2e5e1;
+    --accent: #1f6f54;
+    --accent-text: #ffffff;
+    --glow: rgba(31, 111, 84, .35);
+    --gold: #e0a400;
+    --danger: #b3412e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121614;
+      --card: #1c2220;
+      --text: #e8ece9;
+      --muted: #8d9893;
+      --line: #2c3431;
+      --accent: #3fa57f;
+      --accent-text: #0d1311;
+      --glow: rgba(63, 165, 127, .45);
+      --gold: #f2c230;
+      --danger: #e2735f;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom));
+    max-width: 520px;
+    margin: 0 auto;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 16px 0 8px; }
+  h1 { font-size: 1.5rem; margin: 0; }
+  .right { display: flex; align-items: center; gap: 6px; }
+  #count { color: var(--muted); font-size: .95rem; }
+  #mute { background: none; border: 0; font-size: 1.3rem; width: 40px; height: 40px; border-radius: 50%; }
+
+  .starter {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 20px 16px;
+    text-align: center;
+    margin: 8px 0 16px;
+    overflow: hidden;
+    transition: box-shadow .2s, border-color .2s;
+  }
+  .starter.rolling { border-color: var(--accent); animation: pulse .5s ease-in-out infinite alternate; }
+  .starter.winner { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(224, 164, 0, .25); }
+  .starter.winner::before {
+    content: "";
+    position: absolute; inset: -50%;
+    background: conic-gradient(from 0deg, transparent 0 10deg, rgba(224,164,0,.14) 10deg 20deg, transparent 20deg 30deg);
+    background-size: 100% 100%;
+    animation: rays 6s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes pulse { from { box-shadow: 0 0 0 0 var(--glow); } to { box-shadow: 0 0 0 8px var(--glow); } }
+  @keyframes rays { to { transform: rotate(360deg); } }
+
+  .stage { position: relative; height: 3.2rem; display: grid; place-items: center; }
+  #result {
+    font-size: 2rem;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+    line-height: 1.1;
+  }
+  #result.hint { font-size: 1rem; font-weight: 400; color: var(--muted); }
+  #result.flip { animation: flip .09s ease-out; color: var(--muted); }
+  #result.won { color: var(--text); animation: pop .7s cubic-bezier(.2, 1.6, .4, 1); }
+  #sub { position: relative; min-height: 1.4rem; color: var(--gold); font-weight: 700; letter-spacing: .02em; }
+  #sub.show { animation: rise .5s .2s both ease-out; }
+  @keyframes flip { from { transform: translateY(-60%) scaleY(.6); opacity: .2; filter: blur(2px); } to { transform: none; opacity: 1; filter: none; } }
+  @keyframes pop { 0% { transform: scale(.3) rotate(-8deg); } 60% { transform: scale(1.25) rotate(3deg); } 100% { transform: none; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  #pick {
+    position: relative;
+    margin-top: 12px;
+    width: 100%;
+    font: inherit;
+    font-size: 1.15rem;
+    font-weight: 600;
+    padding: 14px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--accent);
+    color: var(--accent-text);
+    transition: transform .1s;
+  }
+  #pick:active { transform: scale(.97); }
+  #pick:disabled { opacity: .45; }
+
+  form { display: flex; gap: 8px; margin-bottom: 16px; }
+  #name {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+  }
+  .btn {
+    font: inherit;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    transition: transform .1s;
+  }
+  .btn:active { transform: scale(.96); }
+
+  ul { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  li { display: flex; align-items: center; border-top: 1px solid var(--line); transition: background .08s; }
+  li:first-child { border-top: 0; }
+  li button { background: none; border: 0; font: inherit; color: inherit; }
+  li.hot { background: var(--glow); }
+  li.crowned { animation: shine 1.2s ease-out; background: rgba(224, 164, 0, .14); }
+  li.crowned .label::after { content: " 👑"; }
+  li.fresh { animation: slidein .35s cubic-bezier(.2, 1.4, .4, 1); }
+  li.leaving { animation: leave .25s ease-in forwards; }
+  @keyframes shine { 0% { background: rgba(224, 164, 0, .6); } 100% { background: rgba(224, 164, 0, .14); } }
+  @keyframes slidein { from { transform: translateX(-30px) scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes leave { to { transform: translateX(60px); opacity: 0; } }
+
+  .toggle { flex: 1; text-align: left; padding: 14px 4px 14px 14px; display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .toggle .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dot { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--accent); display: grid; place-items: center; font-size: .8rem; color: var(--accent-text); }
+  li.in .dot { background: var(--accent); }
+  li.in .dot::after { content: "✓"; }
+  li.out .label { color: var(--muted); text-decoration: line-through; }
+  li.out .dot { border-color: var(--muted); }
+  li.bounce .dot { animation: bounce .3s cubic-bezier(.2, 1.8, .4, 1); }
+  @keyframes bounce { 0% { transform: scale(.5); } 100% { transform: none; } }
+  .del { width: 48px; height: 52px; color: var(--muted); font-size: 1.2rem; }
+  .empty { color: var(--muted); text-align: center; padding: 24px 8px; }
+  .tip { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 20px; }
+
+  #confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Who Starts</h1>
+    <div class="right">
+      <span id="count"></span>
+      <button id="mute" type="button"></button>
+    </div>
+  </header>
+
+  <section class="starter" id="card">
+    <div class="stage"><div id="result" class="hint">Tap the button to pick a starter</div></div>
+    <div id="sub"></div>
+    <button id="pick" type="button">Who starts?</button>
+  </section>
+
+  <form id="add">
+    <input id="name" placeholder="Add a name" autocomplete="off" enterkeyhint="done" maxlength="40">
+    <button class="btn" type="submit">Add</button>
+  </form>
+
+  <div id="lists"></div>
+
+  <p class="tip">Tap a name to sit them out for a round.</p>
+
+  <canvas id="confetti"></canvas>
+
+<script>
+const KEY = 'whostarts.v1';
+const MUTE_KEY = 'whostarts.muted';
+
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (s && Array.isArray(s.players)) return s;
+  } catch (e) {}
+  return { players: [] };
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+let state = load();
+let rolling = false;
+let winnerId = null;   // crowned row, until the next pick
+let freshId = null;    // row that just got added
+let bounceId = null;   // row that was just toggled
+
+const $ = (id) => document.getElementById(id);
+const result = $('result');
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function randomInt(n) {
+  const a = new Uint32Array(1);
+  crypto.getRandomValues(a);
+  return a[0] % n;
+}
+
+function byName(a, b) {
+  return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+}
+
+// ---------- Sound (synthesized with Web Audio, no files needed) ----------
+let muted = false;
+try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch (e) {}
+let actx = null;
+
+function audio() {
+  if (!actx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    actx = new AC();
+  }
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
+
+function tone(freq, { at = 0, dur = 0.1, type = 'triangle', vol = 0.15, slide = null } = {}) {
+  if (muted) return;
+  const a = audio();
+  if (!a) return;
+  const t = a.currentTime + at;
+  const o = a.createOscillator();
+  const g = a.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, t);
+  if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(a.destination);
+  o.start(t);
+  o.stop(t + dur + 0.05);
+}
+
+const sfx = {
+  add()    { tone(520, { dur: 0.09, slide: 880 }); tone(1046, { at: 0.08, dur: 0.1, vol: 0.1 }); },
+  in()     { tone(440, { dur: 0.1, slide: 700 }); },
+  out()    { tone(440, { dur: 0.13, slide: 240 }); },
+  del()    { tone(380, { dur: 0.3, slide: 70, type: 'sawtooth', vol: 0.07 }); },
+  start()  { tone(200, { dur: 0.25, slide: 600, type: 'sawtooth', vol: 0.05 }); },
+  tick(p)  { tone(900 + randomInt(300) - p * 400, { dur: 0.035, type: 'square', vol: 0.04 }); },
+  win() {
+    [523, 659, 784].forEach((f, i) => tone(f, { at: i * 0.1, dur: 0.14, vol: 0.14 }));
+    [1046, 1318, 1568].forEach(f => tone(f, { at: 0.32, dur: 0.8, vol: 0.07 }));
+    for (let i = 0; i < 8; i++) tone(2000 + randomInt(2000), { at: 0.35 + i * 0.07, dur: 0.05, type: 'sine', vol: 0.03 });
+  },
+  toggleSound() { tone(660, { dur: 0.08 }); tone(990, { at: 0.07, dur: 0.1 }); },
+};
+
+function renderMute() {
+  $('mute').textContent = muted ? '🔇' : '🔊';
+  $('mute').setAttribute('aria-label', muted ? 'Turn sound on' : 'Turn sound off');
+}
+$('mute').onclick = () => {
+  muted = !muted;
+  try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch (e) {}
+  renderMute();
+  sfx.toggleSound();
+};
+
+// ---------- Confetti ----------
+const canvas = $('confetti');
+const cctx = canvas.getContext('2d');
+let pieces = [];
+let confettiRunning = false;
+const COLORS = ['#e0a400', '#3fa57f', '#e2735f', '#5b8def', '#c86bd6', '#f2c230'];
+
+function burst(x, y) {
+  if (reducedMotion) return;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = innerWidth * dpr;
+  canvas.height = innerHeight * dpr;
+  cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for (let i = 0; i < 140; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 4 + Math.random() * 9;
+    pieces.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 6,
+      w: 6 + Math.random() * 6,
+      h: 3 + Math.random() * 5,
+      rot: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.4,
+      color: COLORS[i % COLORS.length],
+      life: 0,
+    });
+  }
+  if (!confettiRunning) { confettiRunning = true; requestAnimationFrame(drawConfetti); }
+}
+
+function drawConfetti() {
+  cctx.clearRect(0, 0, innerWidth, innerHeight);
+  pieces = pieces.filter(p => p.life < 180 && p.y < innerHeight + 20);
+  for (const p of pieces) {
+    p.life++;
+    p.vy += 0.3;
+    p.vx *= 0.985;
+    p.x += p.vx;
+    p.y += p.vy;
+    p.rot += p.vr;
+    cctx.save();
+    cctx.translate(p.x, p.y);
+    cctx.rotate(p.rot);
+    cctx.globalAlpha = Math.min(1, (180 - p.life) / 40);
+    cctx.fillStyle = p.color;
+    cctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.life * 0.15)));
+    cctx.restore();
+  }
+  if (pieces.length) requestAnimationFrame(drawConfetti);
+  else { confettiRunning = false; cctx.clearRect(0, 0, innerWidth, innerHeight); }
+}
+
+// ---------- List ----------
+function render() {
+  const playing = state.players.filter(p => p.playing).length;
+  $('count').textContent = state.players.length ? `${playing} of ${state.players.length} playing` : '';
+  $('pick').disabled = playing === 0 || rolling;
+
+  const lists = $('lists');
+  lists.innerHTML = '';
+
+  if (!state.players.length) {
+    lists.innerHTML = '<div class="empty">No names yet. Add the people you play with.</div>';
+    return;
+  }
+  lists.append(list([...state.players].sort(byName)));
+  freshId = bounceId = null;
+}
+
+function list(players) {
+  const ul = document.createElement('ul');
+  for (const p of players) {
+    const li = document.createElement('li');
+    li.dataset.id = p.id;
+    li.className = (p.playing ? 'in' : 'out')
+      + (p.id === winnerId ? ' crowned' : '')
+      + (p.id === freshId ? ' fresh' : '')
+      + (p.id === bounceId ? ' bounce' : '');
+
+    const toggle = document.createElement('button');
+    toggle.className = 'toggle';
+    toggle.setAttribute('aria-pressed', p.playing);
+    toggle.innerHTML = '<span class="dot"></span><span class="label"></span>';
+    toggle.querySelector('.label').textContent = p.name;
+    toggle.onclick = () => {
+      if (rolling) return;
+      p.playing = !p.playing;
+      p.playing ? sfx.in() : sfx.out();
+      bounceId = p.id;
+      save(); render();
+    };
+
+    const del = document.createElement('button');
+    del.className = 'del';
+    del.textContent = '✕';
+    del.setAttribute('aria-label', `Delete ${p.name}`);
+    del.onclick = () => {
+      if (rolling) return;
+      if (!confirm(`Remove ${p.name} from the list for good?`)) return;
+      sfx.del();
+      li.classList.add('leaving');
+      setTimeout(() => {
+        state.players = state.players.filter(x => x.id !== p.id);
+        if (winnerId === p.id) winnerId = null;
+        save(); render();
+      }, reducedMotion ? 0 : 250);
+    };
+
+    li.append(toggle, del);
+    ul.append(li);
+  }
+  return ul;
+}
+
+$('add').onsubmit = (e) => {
+  e.preventDefault();
+  const input = $('name');
+  const name = input.value.trim().replace(/\s+/g, ' ');
+  if (!name) return;
+  const existing = state.players.find(p => p.name.toLowerCase() === name.toLowerCase());
+  if (existing) {
+    existing.playing = true;
+    bounceId = existing.id;
+    sfx.in();
+  } else {
+    const id = Date.now().toString(36) + randomInt(1e6).toString(36);
+    state.players.push({ id, name, playing: true });
+    freshId = id;
+    sfx.add();
+  }
+  input.value = '';
+  save(); render();
+};
+
+// ---------- Picking ----------
+function showName(name) {
+  result.className = '';
+  void result.offsetWidth; // restart the flip animation
+  result.className = 'flip';
+  result.textContent = name;
+}
+
+function highlightRow(id) {
+  document.querySelectorAll('li.hot').forEach(li => li.classList.remove('hot'));
+  const li = document.querySelector(`li[data-id="${id}"]`);
+  if (li) li.classList.add('hot');
+}
+
+// Picks a starter uniformly at random from everyone playing, then plays the
+// slot-machine spin that lands on them.
+$('pick').onclick = () => {
+  const playing = state.players.filter(p => p.playing);
+  if (!playing.length || rolling) return;
+  const winner = playing[randomInt(playing.length)];
+
+  rolling = true;
+  winnerId = null;
+  render();
+  $('card').className = 'starter rolling';
+  $('sub').className = '';
+  $('sub').textContent = '';
+  $('pick').textContent = 'Rolling…';
+  sfx.start();
+
+  const total = playing.length > 1 && !reducedMotion ? 26 : 1;
+  let tick = 0;
+  let current = null;
+
+  (function spin() {
+    tick++;
+    if (tick < total) {
+      // a different name than the one showing, so every tick visibly changes
+      let next;
+      do { next = playing[randomInt(playing.length)]; } while (playing.length > 1 && next === current);
+      current = next;
+      showName(next.name);
+      highlightRow(next.id);
+      const progress = tick / total;
+      sfx.tick(progress);
+      if (navigator.vibrate) navigator.vibrate(5);
+      setTimeout(spin, 45 + 330 * progress ** 3);
+      return;
+    }
+    land(winner);
+  })();
+};
+
+function land(winner) {
+  rolling = false;
+  winnerId = winner.id;
+  result.className = '';
+  void result.offsetWidth;
+  result.className = 'won';
+  result.textContent = winner.name;
+  $('sub').textContent = '🎉 starts the game! 🎉';
+  $('sub').className = 'show';
+  $('card').className = 'starter winner';
+  $('pick').textContent = 'Pick again';
+  render();
+  sfx.win();
+  if (navigator.vibrate) navigator.vibrate([40, 60, 40, 60, 120]);
+  const r = result.getBoundingClientRect();
+  burst(r.left + r.width / 2, r.top + r.height / 2);
+}
+
+renderMute();
+render();
+
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
