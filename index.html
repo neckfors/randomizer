@@ -414,11 +414,11 @@
   }
   .empty { color: var(--muted); text-align: center; padding: 24px 8px; }
   /* the tips sit right under the list (or ranges) they explain, above Recent */
-  .tip { color: var(--muted); font-size: .85rem; text-align: center; margin: 10px 4px 18px; }
+  .tip { color: var(--muted); font-size: .85rem; text-align: center; margin: 10px 4px 4px; }
 
-  .history { margin-top: 16px; }
+  .history { margin-top: 0; }
   .history[hidden] { display: none; }
-  .history summary { cursor: pointer; color: var(--muted); font-size: .95rem; padding: 6px 4px; list-style: none; }
+  .history summary { cursor: pointer; color: var(--muted); font-size: .95rem; padding: 6px 4px; list-style: none; text-align: center; }
   .history summary::-webkit-details-marker { display: none; }
   .history summary::before { content: "▸ "; display: inline-block; transition: transform .15s; }
   .history[open] summary::before { transform: rotate(90deg); }
@@ -432,13 +432,13 @@
     font-weight: 800; text-align: center; font-variant-numeric: tabular-nums;
   }
   #historyList .h-from { color: var(--muted); font-size: .9rem; }
-  .history-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .history-actions { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
   .history-actions .btn { font-size: .85rem; padding: 6px 12px; }
 
   .support {
     display: block;
     width: fit-content;
-    margin: 4px auto 0;
+    margin: 24px auto 0;
     padding: 10px 18px;
     border: 1px solid var(--line);
     border-radius: 999px;
@@ -718,8 +718,8 @@
   </form>
 
   <div id="lists"></div>
-  <p class="tip number-only">Tap a range to choose it, then tap Roll! After rolling several dice, tap a die to roll just that one again. ✎ changes a range’s numbers or name, and ✕ removes it.</p>
-  <p class="tip list-tip">Tap an option to leave it out of the draw. It stays in your list, so tap it again to bring it back. ✎ renames it, and only ✕ removes it.</p>
+  <p class="tip number-only">Tap a range to choose it. ✎ edits it, ✕ removes it.</p>
+  <p class="tip list-tip">Tap an option to leave it out, and again to bring it back. ✎ renames it, ✕ removes it.</p>
 
   <details class="history" id="history" hidden>
     <summary>🕘 Recent picks</summary>
