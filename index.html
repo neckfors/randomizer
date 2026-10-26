@@ -2635,8 +2635,7 @@ renderPickStyle();
 // The reel: a strip of names in random order with the pick at the end, turning
 // behind a window. Like the dice, it's planned before it starts: fast at first,
 // slowing down (slowDown) so it stops with the pick exactly in the middle, a
-// click for each name that passes, and the list row of the name in the middle
-// lighting up as it goes.
+// click for each name that passes (the list below stays still).
 const REEL_ROW = 50;     // height of one name on the reel (see .reel-item)
 const REEL_SPEED = 16;   // names per second at the start of a 3-second spin
 function spinReel(playing, winner) {
@@ -2720,7 +2719,6 @@ function spinReel(playing, winner) {
       if (items[lastRow]) items[lastRow].classList.remove('hot');
       items[row].classList.add('hot');
       lastRow = row;
-      highlightRow(names[row].id);
       if (navigator.vibrate) navigator.vibrate(4);
     }
     if (x < 1) requestAnimationFrame(frame);
