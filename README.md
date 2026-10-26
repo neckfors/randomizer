@@ -11,7 +11,7 @@ It installs on your phone like a normal app, works offline, and remembers your l
   <img src="screenshots/picked.png" alt="One option has been picked, shown in a gold badge with a crown" width="160">
   <img src="screenshots/dice.png" alt="Dice mode after rolling 2d6: two 3D dice showing 4 and 1, and the total 5 in a gold badge" width="160">
   <img src="screenshots/magic.png" alt="The purple magic d20 after rolling a 1 to 100 raffle ticket, with the number in a gold badge" width="160">
-  <img src="screenshots/coin.png" alt="Coin mode after a flip, with the result in a gold badge and the heads and tails tally" width="160">
+  <img src="screenshots/coin.png" alt="Coin mode after a flip: a 3D gold coin with an embossed crown, Heads in a gold badge, and the heads and tails tally" width="160">
 </p>
 
 ## What can it be used for?
@@ -91,9 +91,21 @@ Like real dice, opposite faces add up to the same total (1 and 6, 2 and 5, 3 and
 
 **Several dice** are each rolled on their own and added up, just like real dice. So with 2d6, a 7 (six ways to make it) comes up six times as often as a 2 or a 12 (one way each). Each die lands on its own number, shown under the total, like *4 + 5*.
 
+**Sounds.** Each die knocks on the table every quarter turn as it tumbles: quick at first, then further apart and softer as it slows, with a deeper knock when it comes to rest. The magic die twinkles instead.
+
 ## Flipping a coin 🪙
 
-Switch to **🪙 Coin** at the top and tap **Flip!** (or shake your phone). The gold coin is tossed toward you, flipping end over end, then drops back down, wobbles to a stop with a clink and a glint, and lands on **H** or **T**. The result shows as *Heads* or *Tails*. Each side comes up half the time. Under the card, a tally counts how many heads and tails you've flipped; **Reset** starts it over. `https://neckfors.github.io/randomizer/#coin` opens straight in Coin mode.
+Switch to **🪙 Coin** at the top and tap **Flip!** (or shake your phone). The result shows as *Heads* or *Tails*, and each side comes up half the time. Under the card, a tally counts how many heads and tails you've flipped; **Reset** starts it over. `https://neckfors.github.io/randomizer/#coin` opens straight in Coin mode.
+
+**The coin** is a 3D gold coin seen from above, lying on a table. It has a raised rim and a ridged edge, an embossed **crown** on heads and a **star** in a ring of dots on tails. Its metal catches the light as it turns.
+
+**How a flip works.** Like the dice, the side is picked first (with secure random numbers), and the whole flip is worked out to end on it:
+
+1. With a whoosh, the coin is tossed toward you, getting bigger while its shadow shrinks and fades. It turns end over end at a steady speed, with a faint shimmer each time a face catches the light.
+2. It comes down tilted on its edge with a clink and bounces once.
+3. Then it wobbles down like a coin spinning out on a table: rocking around its edge faster and faster with a quickening rattle, while the tilt dies away, until it lies flat with the picked side up.
+
+It never turns over at the end to show the right side; the toss is planned so it lands that way.
 
 ## Managing lists
 
@@ -148,13 +160,13 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 - Shared lists are encoded in the link after `#list=`, which never reaches the server.
 - The sounds are generated with the Web Audio API, so there are no audio files.
 - The random pick uses `crypto.getRandomValues`.
-- The 3D dice are drawn on a `<canvas>` by a small built-in 3D renderer. Each die shape is only its corner points, and the faces are worked out from them.
+- The 3D dice and the coin are drawn on a `<canvas>` by a small built-in 3D renderer. Each die shape is only its corner points, and the faces are worked out from them. The knocks, clinks, rattles and whooshes are filtered noise, also generated on the fly.
 - The earlier dice look (spinning cubes with sliding dots that shrink away) is kept as the git tag [`classic-dice`](https://github.com/neckfors/randomizer/tree/classic-dice).
 
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v70` → `whostarts-v71`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v71` → `whostarts-v72`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
