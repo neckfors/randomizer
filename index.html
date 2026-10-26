@@ -3129,6 +3129,7 @@ function rollDice(range, values, ms, only = null) {
   // at the start a die turns about once per TURN_MS; slowDown spreads that out
   const turns = Math.max(1, Math.round(ms / TURN_MS / 3));
   const now = performance.now();
+  const spinning = []; // the axes of the dice rolled so far in this throw
   dice.forEach((d, i) => {
     if (d.canvas.hidden || (only && !only.includes(i))) return;
     d.start = now;
@@ -3150,14 +3151,17 @@ function rollDice(range, values, ms, only = null) {
     // one upright face to another is a quarter or half turn about x or y), so
     // then it turns about an axis leaning away from them instead, and the small
     // turn still needed to land on the face is spread evenly over the whole
-    // roll (never saved up for the end).
-    if (!d.axis || Math.max(...d.axis.map(Math.abs)) > 0.94) {
-      d.axis = leanAxis(d.axis);
+    // roll (never saved up for the end). The same goes when another die in this
+    // throw already turns about (nearly) the same axis, so every die spins its own way.
+    const alike = (a) => spinning.some(b => Math.abs(dot(a, b)) > 0.9);
+    if (!d.axis || Math.max(...d.axis.map(Math.abs)) > 0.94 || alike(d.axis)) {
+      d.axis = leanAxis(d.axis, alike);
       let [dw, dx, dy, dz] = qMul(turn1, qAxis(d.axis, -d.total));
       if (dw < 0) [dw, dx, dy, dz] = [-dw, -dx, -dy, -dz];
       const dHalf = Math.acos(Math.min(1, dw));
       if (Math.sin(dHalf) > 1e-6) d.drift = { axis: unit([dx, dy, dz]), angle: 2 * dHalf };
     }
+    spinning.push(d.axis);
     // a knock on the table every quarter turn: quick at first, further apart
     // and softer as it slows (slowDown run backwards gives when each happens);
     // a magic die twinkles instead (see rollNumber)
@@ -3173,13 +3177,14 @@ function rollDice(range, values, ms, only = null) {
 }
 
 // An axis that leans 25–37° away from the x, y and z axes: near the given
-// axis when there is one (so the roll keeps its direction), or anywhere.
-function leanAxis(near) {
-  for (;;) {
+// axis when there is one (so the roll keeps its direction), or anywhere, and
+// not alike another die's (when it can't find one, it gives that up).
+function leanAxis(near, alike = () => false) {
+  for (let tries = 0; ; tries++) {
     const r = unit([Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5]);
     const a = near ? unit(add(mul(near, Math.cos(0.5)), mul(unit(cross(near, r)), Math.sin(0.5)))) : r;
     const most = Math.max(...a.map(Math.abs));
-    if (most < Math.cos(25 * Math.PI / 180) && (near || most > 0.6)) return a;
+    if (most < Math.cos(25 * Math.PI / 180) && (near || most > 0.6) && (tries > 500 || !alike(a))) return a;
   }
 }
 

@@ -89,7 +89,7 @@ Like real dice, opposite faces add up to the same total (1 and 6, 2 and 5, 3 and
 
 **The magic die ✨** is a purple, glowing d20 for ranges no real die can roll. Symbols swap on its faces while it tumbles, and it lands on a face just like the other dice, then its number flies out into the gold badge. The sparkles around it keep twinkling as long as it is on screen.
 
-**How a roll works.** The number is chosen first, completely at random. Every number in the range has the same chance, using the browser's secure random numbers (`crypto.getRandomValues`). The die's tumble is then worked out to fit: from exactly where the die rests, it turns about one axis, a few whole turns plus the turn that brings up that face, and slows down until it stops with the face pointing straight at you. That axis always leans at an angle, never straight sideways or up and down, so the die tumbles at a slant instead of just rolling forward. When the turn to the face would be straight (as it always is for a d6), the die spins about a leaning axis instead. The small extra turn it still needs is spread evenly over the whole roll, so the tumble drifts a little but never turns toward the number at the end. It simply rolls to a stop, like a real die. When a number is on a die twice, one of its faces is picked at random. The animation only shows the result; it never decides it.
+**How a roll works.** The number is chosen first, completely at random. Every number in the range has the same chance, using the browser's secure random numbers (`crypto.getRandomValues`). The die's tumble is then worked out to fit: from exactly where the die rests, it turns about one axis, a few whole turns plus the turn that brings up that face, and slows down until it stops with the face pointing straight at you. That axis always leans at an angle, never straight sideways or up and down, so the die tumbles at a slant instead of just rolling forward. When the turn to the face would be straight (as it always is for a d6), the die spins about a leaning axis instead. The small extra turn it still needs is spread evenly over the whole roll, so the tumble drifts a little but never turns toward the number at the end. It simply rolls to a stop, like a real die. With several dice, each one spins about its own axis, at least 26° away from every other die's, so no two tumble alike. When a number is on a die twice, one of its faces is picked at random. The animation only shows the result; it never decides it.
 
 **Several dice** are each rolled on their own and added up, just like real dice. So with 2d6, a 7 (six ways to make it) comes up six times as often as a 2 or a 12 (one way each). Each die lands on its own number, shown under the total, like *4 + 5*.
 
@@ -181,7 +181,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v94` → `whostarts-v95`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v95` → `whostarts-v96`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
