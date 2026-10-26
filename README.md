@@ -38,7 +38,7 @@ Anything where you need a fair, random pick:
 1. **Choose a list:** tap the list button under the Pick! area to see all your lists (*🎲 Game night*, *🍳 Who makes dinner*, *🍕 Where to eat*, …) and tap one to switch. Each list keeps its own options, so the names in one list never show up in another.
 2. **Add options** using the field under the list (the **Add** button lights up once you type something). Add several at once by separating them with commas (`Sam, Ben`), or paste a list with one option per line.
 3. **Tap an option** to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
-4. **Tap Pick!** Your options spin past on a slot-machine reel, big and blurred at speed, then slow down with clicks until the pick stops in the glowing gold band. Two gold pointers at its sides get flicked by every name that passes, like the flapper on a prize wheel, and the band flashes when the pick lands. It turns into a gold badge, with a 👑 and confetti. Like the dice, the reel is planned to stop exactly on the pick, which was chosen before it started. (Prefer the classic flashing names? Switch to them in Settings.)
+4. **Tap Pick!** Your options spin past on a slot-machine reel, big and blurred at speed, then slow down with clicks until the pick stops in the glowing gold band. Gold pointers mark it on both sides, and the band flashes when the pick lands. It turns into a gold badge, with a 👑 and confetti. Like the dice, the reel is planned to stop exactly on the pick, which was chosen before it started. (Prefer the classic flashing names? Switch to them in Settings.)
 5. **Rename an option** with its **✎**: the row turns into a field with a green **Save** button. Type the new name and tap Save or press Enter (Esc cancels). Tapping somewhere else saves too.
 6. Remove an option for good with **✕**: it turns into a red **Delete** button in the same spot, with **Cancel** next to it. Tap Delete to remove it, or Cancel (or anywhere else) to keep it.
 
@@ -178,7 +178,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v79` → `whostarts-v80`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v80` → `whostarts-v81`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 

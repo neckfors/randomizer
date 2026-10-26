@@ -147,8 +147,8 @@
   #reel { justify-self: stretch; }
   #reel.done { height: 0; transition: height .35s ease; }
   #reel.done > * { opacity: 0; transition: opacity .25s; }
-  /* the window: a glowing gold band behind the middle name, and two gold
-     pointers that each passing name flicks, like the flapper on a prize wheel */
+  /* the window: a glowing gold band behind the middle name, with a gold
+     pointer on each side of it */
   .reel-band {
     position: absolute; left: 9%; right: 9%; top: 52px; height: 46px; border-radius: 14px;
     background: linear-gradient(90deg, transparent, rgba(242, 194, 48, .2) 22%, rgba(242, 194, 48, .2) 78%, transparent);
@@ -159,8 +159,8 @@
     border-top: 14px solid transparent; border-bottom: 14px solid transparent;
     filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .4));
   }
-  .reel-pointer.left { left: 2%; border-left: 20px solid #f2c230; transform-origin: 0 50%; }
-  .reel-pointer.right { right: 2%; border-right: 20px solid #f2c230; transform-origin: 100% 50%; }
+  .reel-pointer.left { left: 2%; border-left: 20px solid #f2c230; }
+  .reel-pointer.right { right: 2%; border-right: 20px solid #f2c230; }
   .reel-strip { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
   .reel-item {
     height: 50px; display: flex; align-items: center; justify-content: center; padding: 0 12px;
@@ -2630,16 +2630,6 @@ renderPickStyle();
 // slowing down (slowDown) so it stops with the pick exactly in the middle, a
 // click for each name that passes, and the list row of the name in the middle
 // lighting up as it goes.
-// Each name passing the middle flicks the two pointers outward, and they
-// spring back, like the flapper on a prize wheel.
-function flickPointers() {
-  for (const p of document.querySelectorAll('.reel-pointer')) {
-    const out = p.classList.contains('left') ? -28 : 28;
-    p.animate([{ transform: 'rotate(0)' }, { transform: `rotate(${out}deg)`, offset: 0.3 }, { transform: 'rotate(0)' }],
-      { duration: 160, easing: 'ease-out' });
-  }
-}
-
 const REEL_ROW = 50;     // height of one name on the reel (see .reel-item)
 const REEL_SPEED = 16;   // names per second at the start of a 3-second spin
 function spinReel(playing, winner) {
@@ -2713,7 +2703,6 @@ function spinReel(playing, winner) {
     if (row !== lastRow) {
       lastRow = row;
       highlightRow(names[row].id);
-      flickPointers();
       if (navigator.vibrate) navigator.vibrate(4);
     }
     if (x < 1) requestAnimationFrame(frame);
