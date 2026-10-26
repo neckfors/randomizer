@@ -46,7 +46,7 @@ Every pick is completely random. Each option in the draw has the same chance eve
 
 **Pick each only once:** switch this on for a list when you want to go round instead, like taking turns on chores. Whatever gets picked sits out automatically, and when everything has been picked, the button turns into **↺ Start over** to put everything back. The setting is saved per list, so *Game night* can allow repeats while *Who makes dinner* takes turns.
 
-**Recent picks:** under the options, *🕘 Recent picks* keeps the last 100 picks for each list, handy for "who did the dishes last time?". It shows the newest 10; tap *Show all* to see the rest.
+**Recent picks:** under the options and the short tip about them, *🕘 Recent picks* keeps the last 100 picks for each list, handy for "who did the dishes last time?". It shows the newest 10; tap *Show all* to see the rest.
 
 ## Rolling dice 🎲
 
@@ -60,7 +60,7 @@ Switch to **🎲 Dice** at the top to roll dice, or any random number, instead o
 
 **Roll each number only once:** switch this on for a range when the same number must not come up twice, like drawing raffle tickets. Numbers already rolled sit out, the switch shows how many have been rolled, and when every number has been rolled the button turns into **↺ Start over**. The setting is saved per range, and works with one die.
 
-**Recent rolls:** under the ranges, *🕘 Recent rolls* keeps your last 100 rolls across all ranges. Each result shows in a small gold badge, with what was rolled next to it, like *2d6: 4 + 5* or *10 to 30*. It shows the newest 10; tap *Show all* to see the rest.
+**Recent rolls:** under the ranges and the short tip about them, *🕘 Recent rolls* keeps your last 100 rolls across all ranges. Each result shows in a small gold badge, with what was rolled next to it, like *2d6: 4 + 5* or *10 to 30*. It shows the newest 10; tap *Show all* to see the rest.
 
 Your ranges are remembered and included in backups. `https://neckfors.github.io/randomizer/#dice` opens straight in Dice mode (older `#number` links still work).
 
@@ -181,7 +181,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v98` → `whostarts-v99`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v99` → `whostarts-v100`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
