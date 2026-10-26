@@ -12,7 +12,7 @@ It installs on your phone like a normal app, works offline, and remembers your l
   <img src="screenshots/dice.png" alt="Dice mode after rolling 2d6: two 3D dice showing 4 and 1, and the total 5 in a gold badge" width="160">
   <img src="screenshots/magic.png" alt="The purple magic d20 after rolling a 1 to 1,000 raffle ticket, with the number in a gold badge" width="160">
   <img src="screenshots/coin.png" alt="Coin mode after a flip: a 3D gold coin with an embossed crown, Heads in a gold badge, and the heads and tails tally" width="160">
-<img src="screenshots/focus.png" alt="Focus mode: only the pick card in the middle of the screen, with a close button in the corner" width="160">
+  <img src="screenshots/focus.png" alt="Focus mode: only the pick card in the middle of the screen, with a close button in the corner" width="160">
 </p>
 
 ## What can it be used for?
