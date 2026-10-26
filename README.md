@@ -9,7 +9,7 @@ It installs on your phone like a normal app, works offline, and remembers your l
 <p align="center">
   <img src="screenshots/lists.png" alt="A list of options: Ben, Sam, Alex, Mia and Noah (left out)" width="160">
   <img src="screenshots/picked.png" alt="One option has been picked, shown in a gold badge with a crown" width="160">
-  <img src="screenshots/dice.png" alt="Dice mode after rolling 2d6: two 3D dice showing 4 and 1, and the total 5 in a gold badge" width="160">
+  <img src="screenshots/dice.png" alt="Dice mode after rolling 2d6: two 3D dice showing 1 and 2, the total 3 in a gold badge, and the hint Tap a die to reroll it" width="160">
   <img src="screenshots/magic.png" alt="The purple magic d20 after rolling a 1 to 1,000 raffle ticket, with the number in a gold badge" width="160">
   <img src="screenshots/coin.png" alt="Coin mode after a flip: a big 3D silver coin with a raised star in a ring of dots, Tails in a gold badge, and the heads and tails tally" width="160">
   <img src="screenshots/focus.png" alt="Focus mode: only the pick card in the middle of the screen, with a close button in the corner" width="160">
@@ -95,7 +95,7 @@ Like real dice, opposite faces add up to the same total (1 and 6, 2 and 5, 3 and
 
 **Percentile dice** are how real players roll 1 to 100: two d10s, one with 00, 10, 20 … 90 for the tens and one with 0 to 9 for the ones, added up. 70 and 4 make 74, and 00 and 0 make 100 (on a 0 to 99 range they make 0).
 
-**Reroll one die.** After rolling several dice, tap a die to roll just that one again and keep the others, like in Yahtzee-style dice games. The total, the dice under it and Recent rolls update. (A percentile pair rerolls together; with one die, tapping it is just a new roll.)
+**Reroll one die.** After rolling several dice, tap a die to roll just that one again and keep the others, like in Yahtzee-style dice games. The total, the dice under it and Recent rolls update. A small *Tap a die to reroll it* under the total reminds you, until you have rerolled a die three times. (A percentile pair rerolls together; with one die, tapping it is just a new roll.)
 
 **Sounds.** Each die knocks on the table every quarter turn as it tumbles: quick at first, then further apart and softer as it slows, with a deeper knock when it comes to rest. The magic die twinkles instead.
 
@@ -108,7 +108,7 @@ Switch to **🪙 Coin** at the top and tap **Flip!** (or shake your phone). The 
 **How a flip works.** Like the dice, the side is picked first (with secure random numbers), and the whole flip is worked out to end on it:
 
 1. A thumb flicks it: the coin dips a little with a short *tick*.
-2. With a whoosh, it flies up out of the card and comes back down, getting bigger as it comes toward you. Its shadow stays on the table, shrinking and fading as the coin rises. It turns end over end at a steady speed, leaning a little so you see its edge, with a faint shimmer each time a face catches the light. It's blurred while it's fast and sharp again as it comes down.
+2. With a whoosh, it flies up out of the card and comes back down, getting bigger as it comes toward you. Its shadow stays on the table, shrinking and fading as the coin rises. It turns end over end at a steady speed, leaning a little so you see its edge, with a faint shimmer each time a face catches the light. While it's fast it leaves a faint smear behind (a quick motion blur that stays smooth on phones), and it's sharp again as it comes down.
 3. It lands flat with the picked side up, with a clink, and bounces once.
 
 It never turns over at the end to show the right side; the toss is planned so it lands that way.
@@ -179,7 +179,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v89` → `whostarts-v90`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v90` → `whostarts-v91`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 

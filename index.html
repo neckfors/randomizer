@@ -178,15 +178,19 @@
   .reel-strip { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
   .reel-item {
     height: 50px; display: flex; align-items: center; justify-content: center; padding: 0 12px;
-    font-size: 1.9rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-size: 1.9rem; font-weight: 800; white-space: nowrap;
+    /* not clipped, so the badge's gold ring shows above and below the name too (the name itself is cut off in its span) */
   }
   .reel-item.long { font-size: 1.35rem; }
   /* the name in the middle wears the gold badge; the others shrink and fade with distance (set as it turns) */
-  .reel-item span { padding: .04em .6em .2em; border-radius: 14px; overflow: hidden; text-overflow: ellipsis; }
+  .reel-item span { max-width: 100%; padding: .04em .6em .2em; border-radius: 14px; overflow: hidden; text-overflow: ellipsis; }
   .reel-item.hot span { background: var(--gold); color: #1d2321; box-shadow: 0 0 0 4px rgba(224, 164, 0, .3), 0 0 22px rgba(224, 164, 0, .5); }
   /* with several dice, the dice that were rolled show under the total */
   #resultParts { color: var(--muted); font-size: .95rem; margin-top: 8px; font-variant-numeric: tabular-nums; }
   #resultParts[hidden] { display: none; }
+  /* after a roll with several dice, until you have rerolled a die a few times */
+  #rerollHint { grid-area: 3 / 1; color: var(--muted); font-size: .8rem; margin-top: 4px; }
+  #rerollHint[hidden] { display: none; }
 
   /* the coin, drawn in 3D on a canvas (see "Flipping a coin" in the script); seen
      from above, lying on a table. The canvas reaches far above the coin, so a
@@ -658,7 +662,7 @@
     <div id="die" aria-hidden="true"></div>
     <div class="coin-box coin-only" aria-hidden="true"><canvas id="coinCanvas"></canvas></div>
 
-    <div class="stage"><div id="reel" aria-hidden="true"><div class="reel-strip" id="reelStrip"></div><div class="reel-pointer left"></div><div class="reel-pointer right"></div></div><div id="result" class="hint">Add some options, then tap Pick!</div><div id="resultParts" hidden></div></div>
+    <div class="stage"><div id="reel" aria-hidden="true"><div class="reel-strip" id="reelStrip"></div><div class="reel-pointer left"></div><div class="reel-pointer right"></div></div><div id="result" class="hint">Add some options, then tap Pick!</div><div id="resultParts" hidden></div><div id="rerollHint" hidden>Tap a die to reroll it</div></div>
     <button id="pick" type="button">Pick!</button>
     <div class="shake-ask" id="shakeAsk" hidden>
       <button type="button" class="shake-tip" id="shakeTip">📳 Tap to turn on shake to pick</button>
@@ -827,6 +831,7 @@ const KEY = 'whostarts.v1';
 const MUTE_KEY = 'whostarts.muted';
 const SHAKE_KEY = 'whostarts.shake';
 const SPIN_KEY = 'whostarts.spin';
+const REROLLS_KEY = 'whostarts.rerolls'; // how many times a single die was rerolled (its hint goes after 3)
 const MODE_KEY = 'whostarts.mode';
 const NUM_KEY = 'whostarts.numbers';
 
@@ -1457,6 +1462,7 @@ function resetCard() {
   $('card').className = 'starter';
   $('pick').textContent = idleLabel();
   $('resultParts').hidden = true;
+  $('rerollHint').hidden = true;
   delete $('pick').dataset.mode;
 }
 
@@ -3241,6 +3247,7 @@ function rollNumber() {
   $('card').className = 'starter rolling';
   $('crown').className = '';
   $('resultParts').hidden = true;
+  $('rerollHint').hidden = true;
   // the dice make their own sounds as they tumble (see rollDice)
   rollDice(range, values, rollLength(total));
   const magic = dieFor(range).magic;
@@ -3285,6 +3292,8 @@ function showRolled(range, values, celebrate) {
   result.textContent = shown;
   $('resultParts').textContent = parts;
   $('resultParts').hidden = !parts;
+  // tells you a die can be rerolled, until you have done it a few times
+  $('rerollHint').hidden = !parts || Number(pref(REROLLS_KEY, '0')) >= 3;
   announce(parts ? `Rolled ${shown}: ${parts}` : `Rolled ${shown}`);
   $('card').className = 'starter winner';
   $('pick').textContent = 'Roll again';
@@ -3311,6 +3320,8 @@ $('die').addEventListener('click', (e) => {
   values[which] = range.from + randomInt(range.to - range.from + 1);
   rolling = true;
   $('pick').disabled = true;
+  setPref(REROLLS_KEY, String(Number(pref(REROLLS_KEY, '0')) + 1));
+  $('rerollHint').hidden = true;
   const ms = Math.round(rollLength(spinTicks(true)) * 0.6);
   rollDice(range, values, ms, look.percentile ? [which * 2, which * 2 + 1] : [i]);
   if (navigator.vibrate) navigator.vibrate(10);
@@ -3340,7 +3351,7 @@ const HEADS_UP = [1, 0, 0, 0];
 const TAILS_UP = qAxis([1, 0, 0], Math.PI);
 const coinCanvas = $('coinCanvas');
 const coinCtx = coinCanvas.getContext('2d');
-let coin = { q: HEADS_UP, z: 0, blur: 0 };  // how it lies, how high above the table, and its motion blur
+let coin = { q: HEADS_UP, z: 0, blur: 0, ghost: null };  // how it lies, how high above the table, and its motion blur (how strong, and the copy's pose)
 let coinAnim = null;
 
 // the two metals: color, the color of its shine, and the dark and light edges of raised shapes
@@ -3365,18 +3376,21 @@ function metal(n, ridge = 1, m = GOLD) {
 const rgb = (c, a = 1) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${a})`;
 const shadeBy = (c, k) => c.map(v => Math.min(255, Math.round(v * k)));
 
+// Kept light for phones: at most 2× resolution (sharp enough at this size),
+// and each frame only clears and redraws the area the coin and its shadow
+// were in, not the whole tall canvas.
+let coinDirty = null; // [x, y, w, h] drawn last frame, in canvas pixels
 function drawCoin() {
-  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
   const W = Math.round(COIN_W * dpr), H = Math.round(COIN_H * dpr);
-  if (coinCanvas.width !== W) { coinCanvas.width = W; coinCanvas.height = H; }
+  if (coinCanvas.width !== W) { coinCanvas.width = W; coinCanvas.height = H; coinDirty = null; }
   const ctx = coinCtx;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, W, H);
-  const size = COIN_R * dpr, D = 6, mx = W / 2, my = COIN_Y * dpr;
+  if (coinDirty) ctx.clearRect(...coinDirty);
+  else ctx.clearRect(0, 0, W, H);
+  const size = COIN_R * dpr, mx = W / 2, my = COIN_Y * dpr;
   const lift = coin.z * COIN_RISE * dpr; // higher in the air is further up the screen
-  const R = qMatrix(coin.q);
-  const at = (p) => { const w = turn(R, p); const f = D / (D - w[2] - coin.z); return [mx + w[0] * size * f, my - lift - w[1] * size * f]; };
-  const top = turn(R, [0, 0, 1]);
+  const top = turn(qMatrix(coin.q), [0, 0, 1]);
 
   // the shadow stays on the table where it will land: smaller and fainter the higher the coin is
   const high = Math.max(0, coin.z);
@@ -3390,9 +3404,28 @@ function drawCoin() {
   ctx.arc(sx, sy, sr * 1.15, 0, Math.PI * 2);
   ctx.fill();
 
-  // motion blur while it spins fast (where the browser can blur a canvas)
-  if (coin.blur > 0.05 && 'filter' in ctx) ctx.filter = `blur(${(coin.blur * dpr).toFixed(2)}px)`;
+  // motion blur, faked cheaply: a faint copy of the coin a little behind in
+  // its turn (plain, without the relief), under the coin itself
+  if (coin.ghost) {
+    ctx.globalAlpha = coin.blur;
+    drawCoinBody(coin.ghost, size, mx, my - lift, true);
+    ctx.globalAlpha = 1;
+  }
+  drawCoinBody(coin.q, size, mx, my - lift, false);
 
+  // what to clear next time: the coin (up to 1.5× bigger in the air) and the shadow
+  const cr = size * 1.6, cy = my - lift;
+  const x0 = Math.floor(Math.min(mx - cr, sx - sr * 1.2)), x1 = Math.ceil(Math.max(mx + cr, sx + sr * 1.2));
+  const y0 = Math.floor(Math.min(cy - cr, sy - sr * 1.2)), y1 = Math.ceil(Math.max(cy + cr, sy + sr * 1.2));
+  coinDirty = [x0, y0, x1 - x0, y1 - y0];
+}
+
+// The coin itself, turned by q, with its middle at (mx, my). plain leaves out
+// the sheen and the relief (for the motion-blur copy).
+function drawCoinBody(q, size, mx, my, plain) {
+  const ctx = coinCtx, D = 6;
+  const R = qMatrix(q);
+  const at = (p) => { const w = turn(R, p); const f = D / (D - w[2] - coin.z); return [mx + w[0] * size * f, my - w[1] * size * f]; };
   const facing = (n, c) => dot(turn(R, n), sub([0, 0, D - coin.z], turn(R, c))) > 0;
   // the ridged edge: one thin side per segment, alternately lighter and darker,
   // gold on the heads half of its thickness and silver on the tails half
@@ -3421,6 +3454,7 @@ function drawCoin() {
     ctx.beginPath();
     ring.forEach((p, t) => (t ? ctx.lineTo : ctx.moveTo).call(ctx, ...p));
     ctx.closePath();
+    if (plain) { ctx.fillStyle = rgb(base); ctx.fill(); continue; }
     // a soft sheen across the face that moves as the coin turns
     const p1 = at([-0.9, 0.9 * side, c[2]]), p2 = at([0.9, -0.9 * side, c[2]]);
     const sheen = ctx.createLinearGradient(p1[0], p1[1], p2[0], p2[1]);
@@ -3465,7 +3499,6 @@ function drawCoin() {
     raised((color) => { ctx.fillStyle = color; rimDots(); ctx.fill(); }, relief);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
-  ctx.filter = 'none';
 }
 
 // heads: a crown with three points and a band (in coin radii, y down)
@@ -3541,19 +3574,20 @@ function coinFrame(now) {
     const dip = Math.sin(Math.PI * x / FLICK);
     coin.q = qMul(qAxis([1, 0, 0], -0.22 * dip), a.from);
     coin.z = -0.12 * dip;
-    coin.blur = 0;
+    coin.ghost = null;
   } else if (x < FLY) {
     const u = (x - FLICK) / (FLY - FLICK);
-    const spin = qMul(qAxis([1, 0, 0], a.total * u), a.from);
-    coin.q = qMul(qAxis([0, 1, 0], a.lean * Math.sin(Math.PI * u)), spin);
+    const pose = (u) => qMul(qAxis([0, 1, 0], a.lean * Math.sin(Math.PI * u)), qMul(qAxis([1, 0, 0], a.total * u), a.from));
+    coin.q = pose(u);
     coin.z = 1.7 * 4 * u * (1 - u);
     // blurred at the start, sharp by the time it comes down, so you can read the side
-    coin.blur = 2.4 * Math.min(1, u / 0.06) * Math.max(0, 1 - u / 0.7);
+    coin.blur = 0.45 * Math.min(1, u / 0.06) * Math.max(0, 1 - u / 0.7);
+    coin.ghost = coin.blur > 0.02 ? pose(Math.max(0, u - 0.5 / a.total)) : null;
   } else {
     const w = Math.min(1, (x - FLY) / (BOUNCE - FLY));
     coin.q = a.end;
     coin.z = 0.2 * 4 * w * (1 - w); // one small hop, flat
-    coin.blur = 0;
+    coin.ghost = null;
   }
   drawCoin();
   if (x < 1) requestAnimationFrame(coinFrame);
