@@ -105,10 +105,9 @@
   /* Dice mode shows the dice of the chosen range (1–4 of them), drawn in 3D on
      canvases: real shapes (d4, d6, d8, d10, d12, d20) when the range fits one,
      or a purple "magic" d20 otherwise. They rest on the face they last landed on. */
-  #die { display: flex; justify-content: center; gap: 4px; height: 0; opacity: 0; pointer-events: none; transition: height .3s ease, opacity .3s ease; }
-  body.number-mode #die { height: 90px; opacity: 1; margin-top: -6px; }
-  #die canvas { display: block; width: 90px; height: 90px; flex: none; }
-  #die.many canvas { width: 74px; height: 74px; margin-top: 8px; } /* three or four fit side by side */
+  #die { display: flex; justify-content: center; align-items: center; gap: 4px; height: 0; opacity: 0; pointer-events: none; transition: height .3s ease, opacity .3s ease; }
+  body.number-mode #die { height: 112px; opacity: 1; margin-top: -10px; }
+  #die canvas { display: block; flex: none; } /* sized from JS: smaller with more dice, so they fit side by side */
   #die canvas[hidden] { display: none; }
   body.number-mode #crown { display: none !important; } /* the dice are the result */
   /* a magic die's number flies out of it into the badge */
@@ -2725,15 +2724,15 @@ const upright = (d, angle) => qMul(qAxis([0, 1, 0], angle), qFromTo(d.shape.v[0]
 function setupDice(range) {
   const look = dieFor(range);
   const size = range.to - range.from + 1;
-  const cssSize = range.dice > 2 ? 74 : 90;
+  const cssSize = range.dice > 3 ? 74 : range.dice > 2 ? 100 : 112;
   const dpr = Math.min(3, window.devicePixelRatio || 1);
   const key = `${look.sides}:${look.magic}:${range.from}:${range.to}`;
-  $('die').classList.toggle('many', range.dice > 2);
   dice.forEach((d, i) => {
     d.canvas.hidden = i >= range.dice;
     if (d.canvas.hidden) return;
     const px = Math.round(cssSize * dpr);
     if (d.canvas.width !== px) d.canvas.width = d.canvas.height = px;
+    d.canvas.style.width = d.canvas.style.height = `${cssSize}px`;
     if (d.key === key) return;
     d.key = key;
     Object.assign(d, look, { shape: SHAPES[look.sides], target: null });
@@ -2764,7 +2763,7 @@ function drawDie(d, now) {
   const { ctx, canvas, shape } = d;
   const W = canvas.width;
   const R = qMatrix(d.q);
-  const scale = W * 0.36, D = 5, mid = W / 2;
+  const scale = W * 0.46, D = 5, mid = W / 2; // fills the canvas; corners reach at most 0.94 of the way to its edge as it turns
   const proj = (w) => { const f = D / (D - w[2]); return [mid + w[0] * scale * f, mid - w[1] * scale * f]; };
   const corners = shape.v.map(p => proj(turn(R, p)));
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -2834,7 +2833,7 @@ function drawSparkles(ctx, W, now, d) {
   ctx.fillStyle = 'rgba(232, 214, 255, .9)';
   for (let i = 0; i < 6; i++) {
     const a = i * 1.05 + (d.seed || 0);
-    const x = W / 2 + Math.cos(a) * W * 0.43, y = W / 2 + Math.sin(a) * W * 0.43;
+    const x = W / 2 + Math.cos(a) * W * 0.47, y = W / 2 + Math.sin(a) * W * 0.47;
     const s = W * 0.035 * (0.55 + 0.45 * Math.sin(now / 230 + i * 1.7));
     ctx.beginPath();
     ctx.moveTo(x, y - s * 2); ctx.lineTo(x + s * 0.5, y - s * 0.5); ctx.lineTo(x + s * 2, y); ctx.lineTo(x + s * 0.5, y + s * 0.5);
