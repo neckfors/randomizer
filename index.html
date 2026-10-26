@@ -2676,22 +2676,11 @@ function qFromMatrix(m) {
   const s = Math.sqrt(1 + m[2][2] - m[0][0] - m[1][1]) * 2;
   return [(m[1][0] - m[0][1]) / s, (m[0][2] + m[2][0]) / s, (m[1][2] + m[2][1]) / s, s / 4];
 }
-function qSlerp(a, b, t) {
-  let d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
-  if (d < 0) { b = b.map(c => -c); d = -d; }
-  if (d > 0.9995) { const q = a.map((c, i) => c + (b[i] - c) * t); const l = Math.hypot(...q); return q.map(c => c / l); }
-  const th = Math.acos(d), s = Math.sin(th);
-  return a.map((c, i) => (c * Math.sin((1 - t) * th) + b[i] * Math.sin(t * th)) / s);
-}
 const turn = (m, p) => [dot(m[0], p), dot(m[1], p), dot(m[2], p)];
-const ease = (t) => t * t * (3 - 2 * t);
 
-// Resting pose showing a face: the face toward you, its number upright, tipped
-// back a little so the faces around it show too (a d4 more, or it looks flat).
-const REST_TILT = qMul(qAxis([0, 1, 0], 0.22), qAxis([1, 0, 0], 0.36));
-const REST_TILT_D4 = qMul(qAxis([0, 1, 0], 0.35), qAxis([1, 0, 0], 0.75));
-function restPose(face, sides) {
-  return qMul(sides === 4 ? REST_TILT_D4 : REST_TILT, qFromMatrix([face.right, face.up, face.n]));
+// Resting pose showing a face: the face straight toward you, its number upright.
+function restPose(face) {
+  return qFromMatrix([face.right, face.up, face.n]);
 }
 
 // ----- the dice on screen -----
@@ -2729,7 +2718,7 @@ function setupDice(range) {
     // at rest a real die shows its highest number; a magic die stands on a corner
     const top = d.shape.faces.reduce((a, f) => f.num > a.num ? f : a);
     d.angle = 0.5;
-    d.q = look.magic ? upright(d, d.angle) : restPose(top, look.sides);
+    d.q = look.magic ? upright(d, d.angle) : restPose(top);
   });
 }
 
@@ -2832,29 +2821,34 @@ function drawSparkles(ctx, W, now, d) {
   }
 }
 
-// Rolls the dice for ms. A real die tumbles about one fixed axis and slows to a
-// stop: the tumbling is worked out backwards from the face it lands on, so it
-// simply rolls to a stop there, with no turning toward it at the end. A magic
-// die spins upright on a corner and slows to a stop wherever it is.
+// Rolls the dice for ms. Each die turns about one fixed axis the whole time,
+// from exactly where it rests: a real die by the single turn that takes it to
+// its rolled face, plus a few whole turns, so it slows to a stop on that face
+// without changing direction. A magic die spins upright on a corner and slows
+// to a stop wherever it is.
 function rollDice(range, values, ms) {
   setupDice(range);
   // at the start a die turns about once per TURN_MS; slowDown spreads that out
-  const turns = ms / TURN_MS / 3;
+  const turns = Math.max(1, Math.round(ms / TURN_MS / 3));
   dice.forEach((d, i) => {
     if (d.canvas.hidden) return;
     d.from = d.q;
     d.seed = Math.random() * 6;
-    d.total = Math.PI * 2 * Math.max(1, turns) * (0.9 + Math.random() * 0.2);
     if (d.magic) {
-      d.angle0 = d.angle;
-      d.angle = d.angle0 + d.total;
+      d.axis = [0, 1, 0];
+      d.total = Math.PI * 2 * turns * (0.9 + Math.random() * 0.2);
+      d.angle += d.total;
       d.target = upright(d, d.angle);
       return;
     }
     const faces = d.shape.faces.map((f, fi) => fi).filter(fi => d.labels[fi] === String(values[i]));
-    d.target = restPose(d.shape.faces[faces[randomInt(faces.length)]], d.sides);
-    // mostly forward over its top, a little to the side, different for each die
-    d.axis = unit([1, (Math.random() - 0.5) * 0.8, (Math.random() - 0.5) * 0.6]);
+    d.target = restPose(d.shape.faces[faces[randomInt(faces.length)]]);
+    // the one turn from here to the target: its axis and angle
+    let [w, x, y, z] = qMul(d.target, [d.from[0], -d.from[1], -d.from[2], -d.from[3]]);
+    if (w < 0) [w, x, y, z] = [-w, -x, -y, -z];
+    const half = Math.acos(Math.min(1, w));
+    d.axis = Math.sin(half) > 1e-6 ? unit([x, y, z]) : unit([1, Math.random() - 0.5, Math.random() - 0.5]);
+    d.total = 2 * half + Math.PI * 2 * turns;
   });
   if (ms <= 0) { landDice(); return; }
   diceAnim = { start: performance.now(), ms };
@@ -2867,11 +2861,7 @@ function diceFrame(now) {
   const done = slowDown(Math.min(1, e / diceAnim.ms));
   for (const d of dice) {
     if (d.canvas.hidden || !d.target) continue;
-    let q = d.magic
-      ? upright(d, d.angle0 + d.total * done)
-      : qMul(qAxis(d.axis, d.total * (1 - done)), d.target); // the turning still to go, ending at the face
-    if (e < 220) q = qSlerp(d.from, q, ease(e / 220)); // from rest into the roll
-    d.q = q;
+    d.q = qMul(qAxis(d.axis, d.total * done), d.from);
   }
   drawDice(now);
   if (e < diceAnim.ms) requestAnimationFrame(diceFrame);

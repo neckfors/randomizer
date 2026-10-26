@@ -87,7 +87,7 @@ Like real dice, opposite faces add up to the same total (1 and 6, 2 and 5, 3 and
 
 **The magic die ✨** is a purple, glowing d20 for ranges no real die can roll. Twinkling symbols swap on its faces while it spins upright on a corner, it slows to a stop, and its number flies out into the gold badge.
 
-**How a roll works.** The number is chosen first, completely at random. Every number in the range has the same chance, using the browser's secure random numbers (`crypto.getRandomValues`). The die's tumble is then worked out backwards from the face showing that number. It turns about one fixed axis and slows down so that it comes to rest exactly on that face, like a real die rolling to a stop, without turning toward the number at the end. When a number is on a die twice, one of its faces is picked at random. The animation only shows the result; it never decides it.
+**How a roll works.** The number is chosen first, completely at random. Every number in the range has the same chance, using the browser's secure random numbers (`crypto.getRandomValues`). The die's tumble is then worked out to fit: from exactly where the die rests, it turns about one fixed axis, a few whole turns plus the turn that brings up that face, and slows down until it stops with the face pointing straight at you. It never changes direction or turns toward the number at the end; it simply rolls to a stop, like a real die. When a number is on a die twice, one of its faces is picked at random. The animation only shows the result; it never decides it.
 
 **Several dice** are each rolled on their own and added up, just like real dice. So with 2d6, a 7 (six ways to make it) comes up six times as often as a 2 or a 12 (one way each). Each die lands on its own number, shown under the total, like *4 + 5*.
 
@@ -154,7 +154,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v69` → `whostarts-v70`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v70` → `whostarts-v71`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
