@@ -198,6 +198,8 @@
   .coin-box { position: relative; height: 140px; margin: -10px 0 0; }
   .coin-box canvas { position: absolute; left: 50%; top: -190px; width: 300px; height: 400px; margin-left: -150px; pointer-events: none; z-index: 5; }
   body.coin-mode .starter.rolling { overflow: visible; }
+  /* tap the coin, or the picked name or side, to go again (see tapToGoAgain) */
+  .coin-box, body:not(.number-mode) #result.won { cursor: pointer; }
   .coin-tally { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
   .coin-tally .spacer { flex: 1; }
   .coin-tally b { font-variant-numeric: tabular-nums; }
@@ -2622,6 +2624,17 @@ function startOver() {
   sfx.swap();
   changed();
 }
+
+// Tapping the picked name (Lists) or the coin or its result (Coin) goes again,
+// like tapping Pick again or Flip again; not when the button says Start over.
+const tapToGoAgain = () => {
+  if (rolling || $('pick').disabled || $('pick').dataset.mode === 'reset') return;
+  $('pick').click();
+};
+result.addEventListener('click', () => {
+  if (mode !== 'number' && result.classList.contains('won')) tapToGoAgain();
+});
+document.querySelector('.coin-box').addEventListener('click', () => { if (mode === 'coin') tapToGoAgain(); });
 
 // Picks one option uniformly at random from those in the draw, then plays the
 // slot-machine spin that lands on it.
