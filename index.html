@@ -2662,8 +2662,22 @@ function spinReel(playing, winner) {
   }
   const start = performance.now();
   let lastRow = -1, lastMoved = 0, lastTime = start;
+  let landed = false;
+  const finish = () => {
+    if (landed) return;
+    landed = true;
+    at(steps);
+    strip.style.filter = '';
+    $('reel').className = 'done';
+    land(winner);
+  };
+  // the pick always lands when the time is up, even if a frame went wrong
+  setTimeout(finish, ms + 400);
   (function frame(now) {
-    const x = Math.min(1, (now - start) / ms);
+    if (landed) return;
+    // a frame can be stamped a little before the spin started (phones do this
+    // right after a tap), so never go below the start
+    const x = Math.min(1, Math.max(0, (now - start) / ms));
     const moved = steps * slowDown(x);
     at(moved);
     // blur while it's fast
@@ -2671,16 +2685,14 @@ function spinReel(playing, winner) {
     strip.style.filter = speed > 6 ? `blur(${Math.min(3, (speed - 6) / 4).toFixed(1)}px)` : '';
     lastMoved = moved;
     lastTime = now;
-    const row = Math.round(moved);
+    const row = Math.min(names.length - 1, Math.max(0, Math.round(moved)));
     if (row !== lastRow) {
       lastRow = row;
       highlightRow(names[row].id);
       if (navigator.vibrate) navigator.vibrate(4);
     }
-    if (x < 1) { requestAnimationFrame(frame); return; }
-    strip.style.filter = '';
-    $('reel').className = 'done';
-    land(winner);
+    if (x < 1) requestAnimationFrame(frame);
+    else finish();
   })(start);
 }
 
