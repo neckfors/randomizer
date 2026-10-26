@@ -103,7 +103,7 @@ Like real dice, opposite faces add up to the same total (1 and 6, 2 and 5, 3 and
 
 ## Flipping a coin 🪙
 
-Switch to **🪙 Coin** at the top and tap **Flip!** (or shake your phone, or tap the coin itself). To flip again, tap **Flip again**, the coin, or the *Heads* or *Tails* badge. The result shows as *Heads* or *Tails*, and each side comes up half the time. Under the card, a tally counts how many heads and tails you've flipped; **Reset** starts it over. `https://neckfors.github.io/randomizer/#coin` opens straight in Coin mode.
+Switch to **🪙 Coin** at the top and tap **Flip!** (or shake your phone, tap the coin itself, or swipe across it). To flip again, tap **Flip again**, the coin, or the *Heads* or *Tails* badge. The result shows as *Heads* or *Tails*, and each side comes up half the time. Under the card, a tally counts how many heads and tails you've flipped; **Reset** starts it over. `https://neckfors.github.io/randomizer/#coin` opens straight in Coin mode.
 
 **The coin** is a big 3D coin seen from above, lying on a table: **gold on heads** with a raised **crown**, and **silver on tails** with a raised **star**, so you can tell the sides apart at a glance, even mid-flip. Each side has a raised rim around a slightly sunken middle, with a ring of raised dots, and the ridged edge is half gold, half silver. The raised parts are lit on one side and shadowed on the other, and the metal catches the light as it turns.
 
@@ -181,7 +181,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v93` → `whostarts-v94`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v94` → `whostarts-v95`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
