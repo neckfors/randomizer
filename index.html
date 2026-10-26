@@ -2640,29 +2640,10 @@ $('pick').onclick = () => {
 // behind a window. Like the dice, it's planned before it starts: fast at first,
 // slowing down (slowDown) so it stops with the pick exactly in the middle, a
 // click for each name that passes (the list below stays still).
-// The reel is a wheel: each list gets one random order of its names that
-// repeats round and round, so every name shows once before any comes back.
-// The order stays the same from spin to spin (a new name goes in at a random
-// spot, a removed or sitting-out one just isn't on it), and each spin starts
-// where the last one stopped. The pick (decided already, at random) only sets
-// how far the wheel turns.
-const WHEELS_KEY = 'whostarts.wheels';
-// list id -> { ids, at } (at: the id the wheel last stopped on), kept on the device
-const wheels = new Map((() => { try { return Object.entries(JSON.parse(pref(WHEELS_KEY, '{}'))); } catch (e) { return []; } })());
-const saveWheels = () => setPref(WHEELS_KEY, JSON.stringify(Object.fromEntries(wheels)));
-function wheelFor(playing) {
-  let w = wheels.get(cur().id);
-  if (!w) wheels.set(cur().id, w = { ids: [], at: null });
-  const playingId = (id) => playing.some(p => p.id === id);
-  // where it stopped, or (if that name sits out now) the next name on the wheel
-  let at = w.ids.indexOf(w.at);
-  for (let k = 0; at >= 0 && k < w.ids.length && !playingId(w.ids[at]); k++) at = (at + 1) % w.ids.length;
-  const startId = at >= 0 ? w.ids[at] : null;
-  const ids = w.ids.filter(playingId);
-  for (const p of playing) if (!ids.includes(p.id)) ids.splice(randomInt(ids.length + 1), 0, p.id);
-  w.ids = ids;
-  return { ids, from: Math.max(0, ids.indexOf(startId)) };
-}
+// The reel is a wheel: each spin shuffles the names into a new random order
+// that repeats round and round, so every name shows once before any comes
+// back. The pick (decided already, at random) only sets how far it turns.
+try { localStorage.removeItem('whostarts.wheels'); } catch (e) {} // the saved orders of version 87
 
 const REEL_ROW = 50;     // height of one name on the reel (see .reel-item)
 const REEL_SPEED = 16;   // names per second at the start of a 3-second spin
@@ -2672,16 +2653,14 @@ function spinReel(playing, winner) {
   if (ms <= 0) { land(winner); return; }
   // how many names pass: slowDown starts 3 times faster than its average,
   // then nudged (by up to half a turn) so the wheel stops on the pick
-  const { ids, from } = wheelFor(playing);
-  const order = ids.map(id => playing.find(p => p.id === id));
+  const order = playing.slice();
+  for (let i = order.length - 1; i > 0; i--) { const j = randomInt(i + 1); [order[i], order[j]] = [order[j], order[i]]; }
   const n = order.length;
   const base = Math.max(6, Math.round(REEL_SPEED * ms / 1000 / 3));
-  let steps = base + ((order.indexOf(winner) - from - base) % n + n) % n;
+  let steps = base + ((order.indexOf(winner) - base) % n + n) % n;
   if (steps - base > n / 2 && steps - n >= 6) steps -= n;
-  wheels.get(cur().id).at = winner.id;
-  saveWheels();
   // the wheel from one name above the start to one name below the pick, so the window is never empty
-  const names = Array.from({ length: steps + 3 }, (_, k) => order[((from + k - 1) % n + n) % n]);
+  const names = Array.from({ length: steps + 3 }, (_, k) => order[(k - 1 + n) % n]);
 
   const strip = $('reelStrip');
   strip.innerHTML = '';

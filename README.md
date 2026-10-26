@@ -38,7 +38,7 @@ Anything where you need a fair, random pick:
 1. **Choose a list:** tap the list button under the Pick! area to see all your lists (*🎲 Game night*, *🍳 Who makes dinner*, *🍕 Where to eat*, …) and tap one to switch. Each list keeps its own options, so the names in one list never show up in another.
 2. **Add options** using the field under the list (the **Add** button lights up once you type something). Add several at once by separating them with commas (`Sam, Ben`), or paste a list with one option per line.
 3. **Tap an option** to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
-4. **Tap Pick!** Your options spin past on a slot-machine reel, big and blurred at speed, then slow down with clicks. The name in the middle, between two gold pointers, wears the gold badge, and the names around it shrink and fade like on a turning drum. When it stops, that badge is the pick, with a 👑 and confetti. The reel works like a wheel: each list gets one random order of its names that goes round and round, so every name shows once before any comes back. The order stays the same from spin to spin (a new name goes in at a random spot), and each spin starts where the last one stopped. Like the dice, the pick is chosen first and the wheel just turns far enough to stop on it, so the result is still completely random.
+4. **Tap Pick!** Your options spin past on a slot-machine reel, big and blurred at speed, then slow down with clicks. The name in the middle, between two gold pointers, wears the gold badge, and the names around it shrink and fade like on a turning drum. When it stops, that badge is the pick, with a 👑 and confetti. The reel works like a wheel: each spin shuffles your names into a new random order that goes round and round, so every name shows once before any comes back. Like the dice, the pick is chosen first and the wheel just turns far enough to stop on it, so the result is still completely random.
 5. **Rename an option** with its **✎**: the row turns into a field with a green **Save** button. Type the new name and tap Save or press Enter (Esc cancels). Tapping somewhere else saves too.
 6. Remove an option for good with **✕**: it turns into a red **Delete** button in the same spot, with **Cancel** next to it. Tap Delete to remove it, or Cancel (or anywhere else) to keep it.
 
@@ -178,7 +178,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v87` → `whostarts-v88`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v88` → `whostarts-v89`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
