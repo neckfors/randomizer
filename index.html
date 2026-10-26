@@ -22,7 +22,6 @@
     --accent-text: #ffffff;
     --glow: rgba(31, 111, 84, .35);
     --gold: #e0a400;
-    --gold-text: #8f6100; /* gold that reads on a light gold background */
     --danger: #b3412e;
   }
   @media (prefers-color-scheme: dark) {
@@ -36,7 +35,6 @@
       --accent-text: #0d1311;
       --glow: rgba(63, 165, 127, .45);
       --gold: #f2c230;
-      --gold-text: #f2c230;
       --danger: #e2735f;
     }
   }
@@ -149,16 +147,8 @@
   #reel { justify-self: stretch; }
   #reel.done { height: 0; transition: height .35s ease; }
   #reel.done > * { opacity: 0; transition: opacity .25s; }
-  /* the window: a glowing gold band behind the middle name, with a gold
-     pointer on each side of it */
-  .reel-band {
-    position: absolute; left: 9%; right: 9%; top: 52px; height: 46px; border-radius: 14px;
-    /* glassy gold: a shine across the top, a deeper gold below */
-    background:
-      linear-gradient(180deg, rgba(255, 244, 200, .32), rgba(255, 244, 200, 0) 45%),
-      linear-gradient(90deg, rgba(242, 194, 48, .12), rgba(242, 194, 48, .34) 30%, rgba(242, 194, 48, .34) 70%, rgba(242, 194, 48, .12));
-    box-shadow: inset 0 0 0 2px #f2c230, 0 0 22px rgba(242, 194, 48, .45), 0 0 4px rgba(242, 194, 48, .6);
-  }
+  /* a gold pointer on each side of the middle row; the name in the middle
+     wears the same gold badge as the result, so when it stops it simply is the result */
   .reel-pointer {
     position: absolute; top: 61px; width: 0; height: 0; z-index: 1;
     border-top: 14px solid transparent; border-bottom: 14px solid transparent;
@@ -172,8 +162,9 @@
     font-size: 1.9rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .reel-item.long { font-size: 1.35rem; }
-  /* the name in the middle shines gold; the others shrink and fade with distance (set as it turns) */
-  .reel-item.hot { color: var(--gold-text); text-shadow: 0 0 14px rgba(242, 194, 48, .55), 0 1px 0 rgba(0, 0, 0, .25); }
+  /* the name in the middle wears the gold badge; the others shrink and fade with distance (set as it turns) */
+  .reel-item span { padding: .04em .6em .2em; border-radius: 14px; overflow: hidden; text-overflow: ellipsis; }
+  .reel-item.hot span { background: var(--gold); color: #1d2321; box-shadow: 0 0 0 4px rgba(224, 164, 0, .3), 0 0 22px rgba(224, 164, 0, .5); }
   /* with several dice, the dice that were rolled show under the total */
   #resultParts { color: var(--muted); font-size: .95rem; margin-top: 8px; font-variant-numeric: tabular-nums; }
   #resultParts[hidden] { display: none; }
@@ -646,7 +637,7 @@
     <div id="die" aria-hidden="true"></div>
     <div class="coin-box coin-only" aria-hidden="true"><canvas id="coinCanvas"></canvas></div>
 
-    <div class="stage"><div id="reel" aria-hidden="true"><div class="reel-band" id="reelBand"></div><div class="reel-strip" id="reelStrip"></div><div class="reel-pointer left"></div><div class="reel-pointer right"></div></div><div id="result" class="hint">Add some options, then tap Pick!</div><div id="resultParts" hidden></div></div>
+    <div class="stage"><div id="reel" aria-hidden="true"><div class="reel-strip" id="reelStrip"></div><div class="reel-pointer left"></div><div class="reel-pointer right"></div></div><div id="result" class="hint">Add some options, then tap Pick!</div><div id="resultParts" hidden></div></div>
     <button id="pick" type="button">Pick!</button>
     <div class="shake-ask" id="shakeAsk" hidden>
       <button type="button" class="shake-tip" id="shakeTip">📳 Tap to turn on shake to pick</button>
@@ -2599,6 +2590,48 @@ $('pick').onclick = () => {
 // behind a window. Like the dice, it's planned before it starts: fast at first,
 // slowing down (slowDown) so it stops with the pick exactly in the middle, a
 // click for each name that passes (the list below stays still).
+// The order of names on the reel, from the top: in rounds where every name
+// shows once (in random order) before any name comes back, never the same
+// name twice in a row, and the pick (decided already) at position steps,
+// with one more name after it. steps + 2 names in all.
+function reelOrder(playing, winner, steps) {
+  const n = playing.length;
+  const length = steps + 2;
+  if (n === 2) {
+    // two names can only take turns; the pick lands on its turn
+    const other = playing.find(p => p !== winner);
+    return Array.from({ length }, (_, i) => (steps - i) % 2 === 0 ? winner : other);
+  }
+  const shuffled = () => {
+    const a = playing.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = randomInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  };
+  // whole rounds, each starting with a different name than the last one ended with
+  const seq = [];
+  while (seq.length < length + n) {
+    let round = shuffled();
+    while (seq.length && round[0] === seq[seq.length - 1]) round = shuffled();
+    seq.push(...round);
+  }
+  // within the pick's round, swap the pick into place (the round keeps every name once)
+  const start = steps - steps % n;
+  const at = seq.indexOf(winner, start);
+  [seq[at], seq[steps]] = [seq[steps], seq[at]];
+  // that may put the same name twice in a row where this round meets its
+  // neighbours; swap the neighbour's edge name with one from inside that round
+  const fix = (edge, from, to) => {
+    const inside = [];
+    for (let k = from; k <= to; k++) if (k !== edge) inside.push(k);
+    const k = inside[randomInt(inside.length)];
+    [seq[edge], seq[k]] = [seq[k], seq[edge]];
+  };
+  if (start > 0 && seq[start - 1] === seq[start]) fix(start - 1, start - n + 1, start - 2);
+  const end = start + n - 1;
+  if (seq[end + 1] === seq[end]) fix(end + 1, end + 2, end + n - 1);
+  return seq.slice(0, length);
+}
+
 const REEL_ROW = 50;     // height of one name on the reel (see .reel-item)
 const REEL_SPEED = 16;   // names per second at the start of a 3-second spin
 function spinReel(playing, winner) {
@@ -2607,22 +2640,15 @@ function spinReel(playing, winner) {
   if (ms <= 0) { land(winner); return; }
   // how many names pass: slowDown starts 3 times faster than its average
   const steps = Math.max(6, Math.round(REEL_SPEED * ms / 1000 / 3));
-  const names = [];
-  for (let k = 0; k < steps; k++) {
-    let next;
-    do { next = playing[randomInt(playing.length)]; } while (playing.length > 1 && next === names[k - 1]);
-    names.push(next);
-  }
-  // the pick lands in the middle, with a name above and below it to show too
-  if (playing.length > 1 && names[steps - 1] === winner) names[steps - 1] = playing.find(p => p !== winner);
-  names.push(winner, playing[randomInt(playing.length)]);
+  const names = reelOrder(playing, winner, steps);
 
   const strip = $('reelStrip');
   strip.innerHTML = '';
   for (const p of names) {
     const item = document.createElement('div');
     item.className = 'reel-item' + (p.name.length > 12 ? ' long' : '');
-    item.textContent = p.name;
+    item.append(document.createElement('span'));
+    item.firstChild.textContent = p.name; // in a span, so the middle one can wear the badge
     strip.append(item);
   }
   const items = [...strip.children];
@@ -2645,11 +2671,9 @@ function spinReel(playing, winner) {
     landed = true;
     at(steps);
     strip.style.filter = '';
-    // the band flashes as the pick lands, then the reel folds into the badge
-    $('reelBand').animate([
-      { boxShadow: 'inset 0 0 0 2px rgba(242, 194, 48, .6), 0 0 20px rgba(242, 194, 48, .3)' },
-      { boxShadow: 'inset 0 0 0 3px #f2c230, 0 0 34px rgba(242, 194, 48, .9)', background: 'rgba(242, 194, 48, .45)' },
-    ], { duration: 220 });
+    // the pick's badge gives a little pop as it lands, then the reel folds away around it
+    items[steps].firstChild.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }],
+      { duration: 220, easing: 'ease-out' });
     setTimeout(() => {
       $('reel').className = 'done';
       land(winner);
