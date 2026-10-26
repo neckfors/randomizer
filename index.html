@@ -188,7 +188,7 @@
   /* with several dice, the dice that were rolled show under the total */
   #resultParts { color: var(--muted); font-size: .95rem; margin-top: 8px; font-variant-numeric: tabular-nums; }
   #resultParts[hidden] { display: none; }
-  /* after a roll with several dice, until you have rerolled a die a few times */
+  /* after a roll with several dice */
   #rerollHint { grid-area: 3 / 1; color: var(--muted); font-size: .8rem; margin-top: 4px; }
   #rerollHint[hidden] { display: none; }
 
@@ -831,7 +831,7 @@ const KEY = 'whostarts.v1';
 const MUTE_KEY = 'whostarts.muted';
 const SHAKE_KEY = 'whostarts.shake';
 const SPIN_KEY = 'whostarts.spin';
-const REROLLS_KEY = 'whostarts.rerolls'; // how many times a single die was rerolled (its hint goes after 3)
+try { localStorage.removeItem('whostarts.rerolls'); } catch (e) {} // a reroll count kept by version 90
 const MODE_KEY = 'whostarts.mode';
 const NUM_KEY = 'whostarts.numbers';
 
@@ -3292,8 +3292,8 @@ function showRolled(range, values, celebrate) {
   result.textContent = shown;
   $('resultParts').textContent = parts;
   $('resultParts').hidden = !parts;
-  // tells you a die can be rerolled, until you have done it a few times
-  $('rerollHint').hidden = !parts || Number(pref(REROLLS_KEY, '0')) >= 3;
+  // tells you a die can be rerolled
+  $('rerollHint').hidden = !parts;
   announce(parts ? `Rolled ${shown}: ${parts}` : `Rolled ${shown}`);
   $('card').className = 'starter winner';
   $('pick').textContent = 'Roll again';
@@ -3320,8 +3320,6 @@ $('die').addEventListener('click', (e) => {
   values[which] = range.from + randomInt(range.to - range.from + 1);
   rolling = true;
   $('pick').disabled = true;
-  setPref(REROLLS_KEY, String(Number(pref(REROLLS_KEY, '0')) + 1));
-  $('rerollHint').hidden = true;
   const ms = Math.round(rollLength(spinTicks(true)) * 0.6);
   rollDice(range, values, ms, look.percentile ? [which * 2, which * 2 + 1] : [i]);
   if (navigator.vibrate) navigator.vibrate(10);
