@@ -137,9 +137,9 @@
     100% { transform: none; filter: none; }
   }
   /* Picking from a list with a reel: the names, at full size, on a reel that
-     spins behind a window, blurs at speed and slows to a stop on the pick
-     (Settings can switch back to the flashing names). The window shows three
-     names; the middle one, in the gold band between the pointers, is the one that counts. */
+     spins behind a window, blurs at speed and slows to a stop on the pick.
+     The window shows three names; the middle one, in the gold band between
+     the pointers, is the one that counts. */
   #reel {
     position: relative; height: 0; overflow: hidden; transition: height .3s ease;
     -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
@@ -357,7 +357,6 @@
   li { display: flex; align-items: center; border-top: 1px solid var(--line); transition: background .08s; }
   li:first-child { border-top: 0; }
   li button { background: none; border: 0; font: inherit; color: inherit; }
-  li.hot { background: var(--glow); }
   li.crowned { animation: shine 1.2s ease-out; background: rgba(224, 164, 0, .14); }
   .crown-mark { flex: none; margin-left: 6px; }
   li.fresh { animation: slidein .35s cubic-bezier(.2, 1.4, .4, 1); }
@@ -769,11 +768,6 @@
       <span class="spin-value" id="spinValue"></span>
     </label>
     <input type="range" id="spinTime" min="0" max="3" step="0.5" aria-label="Spin time in seconds">
-    <div class="spin-row"><span class="once-text">Picking from a list<small>How a pick from a list is shown</small></span></div>
-    <div class="seg" id="pickStyle" role="group" aria-label="How a pick from a list is shown">
-      <button type="button" class="btn" data-style="reel">🎰 Reel</button>
-      <button type="button" class="btn" data-style="names">✨ Flashing names</button>
-    </div>
 
     <h3>Backup</h3>
     <div class="seg">
@@ -1112,20 +1106,12 @@ function noise({ at = 0, dur = 0.04, vol = 0.2, freq = 2000, to = null, q = 1.5,
   src.stop(t + dur + 0.05);
 }
 
-let lastTick = 0;
 const sfx = {
   add()    { tone(520, { dur: 0.09, slide: 880 }); tone(1046, { at: 0.08, dur: 0.1, vol: 0.1 }); },
   addMany(n) { for (let i = 0; i < Math.min(n, 6); i++) tone(520 + i * 90, { at: i * 0.05, dur: 0.08, vol: 0.1 }); },
   in()     { tone(440, { dur: 0.1, slide: 700 }); },
   out()    { tone(440, { dur: 0.13, slide: 240 }); },
   del()    { tone(380, { dur: 0.3, slide: 70, type: 'sawtooth', vol: 0.07 }); },
-  start()  { tone(200, { dur: 0.25, slide: 600, type: 'sawtooth', vol: 0.05 }); },
-  tick(p) {
-    const now = performance.now();
-    if (now - lastTick < 28) return;
-    lastTick = now;
-    tone(900 + randomInt(300) - p * 400, { dur: 0.035, type: 'square', vol: 0.04 });
-  },
   // a coin landing on the table: two bright metal rings (softer for a bounce)
   clink(at = 0, strength = 1) {
     tone(2500, { at, dur: 0.12, type: 'sine', vol: 0.08 * strength });
@@ -2572,12 +2558,6 @@ function showName(name) {
   result.textContent = name;
 }
 
-function highlightRow(id) {
-  document.querySelectorAll('#lists li.hot').forEach(li => li.classList.remove('hot'));
-  const li = document.querySelector(`#lists li[data-id="${id}"]`);
-  if (li) li.classList.add('hot');
-}
-
 $('onceToggle').onchange = (e) => {
   if (rolling) { e.target.checked = !!cur().once; return; }
   cur().once = e.target.checked;
@@ -2612,25 +2592,8 @@ $('pick').onclick = () => {
   $('card').className = 'starter rolling';
   $('crown').className = '';
   $('pick').textContent = 'Picking…';
-  if (pickStyle === 'reel') spinReel(playing, winner);
-  else { sfx.start(); spinSlots(playing, winner); }
+  spinReel(playing, winner);
 };
-
-// How a pick from a list is shown: the reel (the default) or flashing names.
-const PICK_STYLE_KEY = 'whostarts.pickStyle';
-let pickStyle = pref(PICK_STYLE_KEY, 'reel') === 'names' ? 'names' : 'reel';
-function renderPickStyle() {
-  for (const b of $('pickStyle').children) b.classList.toggle('on', b.dataset.style === pickStyle);
-}
-$('pickStyle').onclick = (e) => {
-  const style = e.target.closest('button')?.dataset.style;
-  if (!style || style === pickStyle) return;
-  pickStyle = style;
-  setPref(PICK_STYLE_KEY, pickStyle);
-  renderPickStyle();
-  sfx.click();
-};
-renderPickStyle();
 
 // The reel: a strip of names in random order with the pick at the end, turning
 // behind a window. Like the dice, it's planned before it starts: fast at first,
@@ -2724,30 +2687,6 @@ function spinReel(playing, winner) {
     if (x < 1) requestAnimationFrame(frame);
     else finish();
   })(start);
-}
-
-function spinSlots(playing, winner) {
-  const total = spinTicks(playing.length > 1);
-  let tick = 0;
-  let current = null;
-
-  (function spin() {
-    tick++;
-    if (tick < total) {
-      // a different name than the one showing, so every tick visibly changes
-      let next;
-      do { next = playing[randomInt(playing.length)]; } while (playing.length > 1 && next === current);
-      current = next;
-      showName(next.name);
-      highlightRow(next.id);
-      const progress = tick / total;
-      sfx.tick(progress);
-      if (navigator.vibrate) navigator.vibrate(5);
-      setTimeout(spin, spinDelay(progress));
-      return;
-    }
-    land(winner);
-  })();
 }
 
 function land(winner) {
