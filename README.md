@@ -38,7 +38,7 @@ Anything where you need a fair, random pick:
 1. **Choose a list:** tap the list button under the Pick! area to see all your lists (*🎲 Game night*, *🍳 Who makes dinner*, *🍕 Where to eat*, …) and tap one to switch. Each list keeps its own options, so the names in one list never show up in another.
 2. **Add options** using the field under the list (the **Add** button lights up once you type something). Add several at once by separating them with commas (`Sam, Ben`), or paste a list with one option per line.
 3. **Tap an option** to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
-4. **Tap Pick!** Your options spin past on a slot-machine reel, big and blurred at speed, then slow down with clicks. The name in the middle, between two gold pointers, wears the gold badge, and the names around it shrink and fade like on a turning drum. When it stops, that badge is the pick, with a 👑 and confetti. The reel works like a wheel: each spin shuffles your names into a new random order that goes round and round, so every name shows once before any comes back. Like the dice, the pick is chosen first and the wheel just turns far enough to stop on it, so the result is still completely random. Tap the picked name to pick again.
+4. **Tap Pick!** Your options spin past on a slot-machine reel, big and blurred at speed, then slow down with clicks. The name in the middle, between two gold pointers, wears the gold badge, and the names around it shrink and fade like on a turning drum. When it stops, that badge is the pick, with a 👑 and confetti. The reel works like a wheel: each spin shuffles your names into a new random order that goes round and round, so every name shows once before any comes back. Like the dice, the pick is chosen first and the wheel just turns far enough to stop on it, so the result is still completely random. Tap the picked name, or swipe across the name area, to pick again.
 5. **Rename an option** with its **✎**: the row turns into a field with a green **Save** button. Type the new name and tap Save or press Enter (Esc cancels). Tapping somewhere else saves too.
 6. Remove an option for good with **✕**: it turns into a red **Delete** button in the same spot, with **Cancel** next to it. Tap Delete to remove it, or Cancel (or anywhere else) to keep it.
 
@@ -95,7 +95,7 @@ Like real dice, opposite faces add up to the same total (1 and 6, 2 and 5, 3 and
 
 **Percentile dice** are how real players roll 1 to 100: two d10s, one with 00, 10, 20 … 90 for the tens and one with 0 to 9 for the ones, added up. 70 and 4 make 74, and 00 and 0 make 100 (on a 0 to 99 range they make 0).
 
-**Reroll one die.** After rolling several dice, tap a die to roll just that one again and keep the others, like in Yahtzee-style dice games. The total, the dice under it and Recent rolls update. A small *Tap a die to reroll it* under the total reminds you. (A percentile pair rerolls together; with one die, tapping it is just a new roll.)
+**Reroll one die.** After rolling several dice, tap a die to roll just that one again and keep the others, like in Yahtzee-style dice games. The total, the dice under it and Recent rolls update. A small *Tap a die to reroll it* under the total reminds you. To roll them all again, tap **Roll again** or swipe across the dice. (A percentile pair rerolls together; with one die, tapping it is just a new roll.)
 
 **Fitting the screen.** The more dice you roll, the smaller they are, so up to five fit side by side. On a narrow phone, or with the phone's display zoom turned up, they shrink a little more to fit, and they resize when you turn the phone.
 
@@ -181,7 +181,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v95` → `whostarts-v96`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v96` → `whostarts-v97`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 

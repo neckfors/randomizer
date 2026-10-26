@@ -200,8 +200,8 @@
   body.coin-mode .starter.rolling { overflow: visible; }
   /* tap the coin, or the picked name or side, to go again (see tapToGoAgain) */
   .coin-box, body:not(.number-mode) #result.won { cursor: pointer; }
-  /* a swipe on the coin tosses it instead of scrolling the page */
-  .coin-box { touch-action: none; }
+  /* a swipe on the coin, the dice or the name in Lists goes instead of scrolling the page */
+  .coin-box, body.number-mode #die, body:not(.number-mode):not(.coin-mode) .stage { touch-action: none; }
   .coin-tally { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
   .coin-tally .spacer { flex: 1; }
   .coin-tally b { font-variant-numeric: tabular-nums; }
@@ -2637,16 +2637,26 @@ result.addEventListener('click', () => {
   if (mode !== 'number' && result.classList.contains('won')) tapToGoAgain();
 });
 document.querySelector('.coin-box').addEventListener('click', () => { if (mode === 'coin') tapToGoAgain(); });
-// a quick swipe across the coin, in any direction, tosses it too
-let coinSwipe = null;
-document.querySelector('.coin-box').addEventListener('pointerdown', (e) => { coinSwipe = { x: e.clientX, y: e.clientY, at: e.timeStamp }; });
-document.querySelector('.coin-box').addEventListener('pointerup', (e) => {
-  const s = coinSwipe;
-  coinSwipe = null;
-  if (!s || mode !== 'coin' || e.timeStamp - s.at > 700) return;
-  if (Math.hypot(e.clientX - s.x, e.clientY - s.y) > 25) tapToGoAgain();
-});
-document.querySelector('.coin-box').addEventListener('pointercancel', () => { coinSwipe = null; });
+// A quick swipe in any direction (over 25 px in under 0.7 s) on el calls go.
+// Returns when the last swipe was, so a click that follows it can be ignored.
+function onSwipe(el, go) {
+  let start = null, last = -1e9;
+  el.addEventListener('pointerdown', (e) => { start = { x: e.clientX, y: e.clientY, at: e.timeStamp }; });
+  el.addEventListener('pointercancel', () => { start = null; });
+  el.addEventListener('pointerup', (e) => {
+    const s = start;
+    start = null;
+    if (!s || e.timeStamp - s.at > 700 || Math.hypot(e.clientX - s.x, e.clientY - s.y) <= 25) return;
+    last = e.timeStamp;
+    go();
+  });
+  return () => last;
+}
+// swiping across the coin tosses it, across the dice rolls them all, and
+// across the name (where the reel spins) in Lists picks
+onSwipe(document.querySelector('.coin-box'), () => { if (mode === 'coin') tapToGoAgain(); });
+onSwipe(document.querySelector('.stage'), () => { if (mode === 'lists') tapToGoAgain(); });
+const lastDiceSwipe = onSwipe($('die'), () => { if (mode === 'number') tapToGoAgain(); });
 
 // Picks one option uniformly at random from those in the draw, then plays the
 // slot-machine spin that lands on it.
@@ -3345,6 +3355,7 @@ function showRolled(range, values, celebrate) {
 // With one die (or "roll each number only once"), tapping it is a new roll.
 $('die').addEventListener('click', (e) => {
   if (mode !== 'number' || rolling) return;
+  if (e.timeStamp - lastDiceSwipe() < 500) return; // the end of a swipe, which rolled them all
   const i = dice.findIndex(d => d.canvas === e.target);
   const range = currentRange();
   if (i < 0 || !range) return;
