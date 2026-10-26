@@ -217,7 +217,6 @@
   body.number-mode .list-card,
   body.number-mode #add,
   body.number-mode #lists,
-  body.number-mode #history,
   body.number-mode .list-tip { display: none !important; }
   #rangeList li.current-range { background: var(--glow); }
   body.number-mode .add-range { display: flex !important; }
@@ -647,7 +646,6 @@
 
   <div id="rangeList" class="number-only"></div>
 
-  <p class="tip number-only">Tap a range to roll it. ✎ changes its numbers or name, ✕ removes it.</p>
 
   <div class="list-card">
     <button class="set-btn" id="setBtn" type="button" aria-haspopup="dialog">
@@ -679,6 +677,7 @@
     </div>
   </details>
 
+  <p class="tip number-only">Tap a range to choose it, then tap Roll! ✎ changes its numbers or name, and ✕ removes it.</p>
   <p class="tip list-tip">Tap an option to leave it out of the draw. It stays in your list, so tap it again to bring it back. ✎ renames it, and only ✕ removes it.</p>
 
   <a class="support" id="support" href="https://paypal.me/neckfors" target="_blank" rel="noopener"><span class="heart">♥</span> Support the app</a>
@@ -727,7 +726,7 @@
     <label class="switch-row">
       <input type="checkbox" id="shakeToggle">
       <span class="switch" aria-hidden="true"></span>
-      <span class="once-text">Shake to pick<small id="shakeHint">Give your phone two quick shakes instead of tapping Pick!</small></span>
+      <span class="once-text">Shake to pick<small id="shakeHint">Give your phone two quick shakes instead of tapping Pick!, Roll! or Flip!</small></span>
     </label>
     <label class="switch-row">
       <input type="checkbox" id="soundToggle">
@@ -735,7 +734,7 @@
       <span class="once-text">Sound effects<small>On iPhone, the silent switch also mutes them</small></span>
     </label>
     <label class="spin-row">
-      <span class="once-text">Spin time<small>How long a pick or roll spins before it lands</small></span>
+      <span class="once-text">Spin time<small>How long a pick, roll or flip spins before it lands</small></span>
       <span class="spin-value" id="spinValue"></span>
     </label>
     <input type="range" id="spinTime" min="0" max="3" step="0.5" aria-label="Spin time in seconds">
@@ -894,6 +893,19 @@ let rolling = false;
 // "lists" picks an option from the current list; "number" rolls a number From–To
 // (with up to 4 dice added up); "coin" flips a coin
 let mode = ['number', 'coin'].includes(pref(MODE_KEY, 'lists')) ? pref(MODE_KEY, 'lists') : 'lists';
+// the last MAX_HISTORY dice rolls, newest first, for all ranges together:
+// { name: "9 · 2d6 (4 + 5)", at }, shown as Recent rolls in Dice mode
+const ROLLS_KEY = 'whostarts.rolls';
+let rolls = (() => {
+  try {
+    const r = JSON.parse(pref(ROLLS_KEY, '[]'));
+    if (Array.isArray(r)) return r.filter(e => e && typeof e.name === 'string' && Number.isFinite(e.at)).slice(0, MAX_HISTORY);
+  } catch (e) {}
+  return [];
+})();
+function saveRolls() {
+  setPref(ROLLS_KEY, JSON.stringify(rolls));
+}
 // how many heads and tails have come up, until Reset
 const COIN_KEY = 'whostarts.coin';
 let coinTally = (() => {
@@ -1239,7 +1251,7 @@ $('deleteSelected').onclick = () => {
   selecting = false;
   selected = new Set();
   save(); render();
-  toast(doomed.length === 1 ? `Deleted "${doomed[0].name}"` : `Deleted ${doomed.length} lists`);
+  toast(doomed.length === 1 ? `Deleted “${doomed[0].name}”` : `Deleted ${doomed.length} lists`);
 };
 
 // Drag a row by its ⠿ handle; it swaps places with a neighbour once it has
@@ -1797,7 +1809,7 @@ function checkSharedLink() {
     if (!d || typeof d.n !== 'string' || !Array.isArray(d.i)) throw new Error('bad link');
     pendingImport = normalizeSet({ name: d.n, emoji: d.e, once: !!d.o, items: d.i.map(name => ({ name })) });
   } catch (e) {
-    toast('That share link looks broken.');
+    toast('That share link looks broken');
     return;
   }
   $('importText').textContent = `${pendingImport.emoji} ${pendingImport.name}, with ${pendingImport.items.length} option${pendingImport.items.length === 1 ? '' : 's'}:`;
@@ -1954,7 +1966,7 @@ $('importFile').onchange = async (e) => {
     toast(`Restored ${lists}`);
   } catch (err) {
     sfx.out();
-    toast('That file is not a Randomizer backup.');
+    toast('That file is not a Randomizer backup');
   }
 };
 
@@ -2038,9 +2050,11 @@ function hintText() {
     if (!r) return 'Add a range, then tap Roll!';
     const lo = r.from.toLocaleString();
     const hi = r.to.toLocaleString();
-    if (r.name) return shaking ? `Roll or shake to roll ${r.name} (${rangeText(r)})` : `Tap Roll! to roll ${r.name} (${rangeText(r)})`;
-    if (r.dice > 1) return shaking ? `Roll or shake to roll ${r.dice} dice of ${lo}–${hi}` : `Tap Roll! to roll ${r.dice} dice of ${lo}–${hi}`;
-    return shaking ? `Roll or shake for a number from ${lo} to ${hi}` : `Tap Roll! for a number from ${lo} to ${hi}`;
+    // same pattern as the other tabs: "Tap Roll! (or shake) to roll …"
+    const what = r.name ? `${r.name} (${rangeText(r)})`
+      : r.dice > 1 ? `${r.dice} dice of ${lo}–${hi}`
+      : `a number from ${lo} to ${hi}`;
+    return shaking ? `Tap Roll! or shake to roll ${what}` : `Tap Roll! to roll ${what}`;
   }
   if (!cur().items.length) return 'Add some options, then tap Pick!';
   return shaking ? 'Tap Pick! or shake your phone' : 'Tap Pick! to choose one';
@@ -2156,6 +2170,7 @@ function render() {
     pick.disabled = rolling || !ranges.length;
     if (result.classList.contains('hint')) result.textContent = hintText();
     renderRanges();
+    renderHistory();
     fitNamePlaceholder();
     syncAddress();
     return;
@@ -2354,8 +2369,10 @@ function ago(ts) {
 
 let historyExpanded = false;
 
+// Lists show the recent picks of the current list; Dice shows the recent rolls.
 function renderHistory() {
-  const h = cur().history;
+  const h = mode === 'number' ? rolls : cur().history;
+  $('history').querySelector('summary').textContent = mode === 'number' ? '🕘 Recent rolls' : '🕘 Recent picks';
   $('history').hidden = !h.length;
   const more = $('moreHistory');
   more.hidden = h.length <= HISTORY_SHOWN;
@@ -2378,10 +2395,17 @@ $('moreHistory').onclick = () => {
 };
 
 $('clearHistory').onclick = () => {
-  if (!confirm(`Clear the recent picks for "${cur().name}"?`)) return;
-  cur().history = [];
+  if (mode === 'number') {
+    if (!confirm('Clear the recent rolls?')) return;
+    rolls = [];
+    saveRolls();
+  } else {
+    if (!confirm(`Clear the recent picks for “${cur().name}”?`)) return;
+    cur().history = [];
+    save();
+  }
   sfx.del();
-  save(); render();
+  render();
 };
 $('history').addEventListener('toggle', () => { if ($('history').open) renderHistory(); });
 
@@ -2678,6 +2702,11 @@ function rollNumber() {
       saveRanges();
     }
     const shown = number.toLocaleString();
+    // Recent rolls: "9 · 2d6 (4 + 5)", "4 · d6" or "17 · 1–20"
+    const detail = parts.length > 1 ? ` (${parts.map(p => p.toLocaleString()).join(' + ')})` : '';
+    rolls.unshift({ name: `${shown} · ${range.name || rangeText(range)}${detail}`, at: Date.now() });
+    rolls.length = Math.min(rolls.length, MAX_HISTORY);
+    saveRolls();
     $('die').className = 'landing';
     dieTimer = setTimeout(() => { $('die').className = ''; }, 300);
     result.className = '';
