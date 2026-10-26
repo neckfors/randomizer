@@ -97,6 +97,8 @@ Like real dice, opposite faces add up to the same total (1 and 6, 2 and 5, 3 and
 
 **Reroll one die.** After rolling several dice, tap a die to roll just that one again and keep the others, like in Yahtzee-style dice games. The total, the dice under it and Recent rolls update. A small *Tap a die to reroll it* under the total reminds you. (A percentile pair rerolls together; with one die, tapping it is just a new roll.)
 
+**Fitting the screen.** The more dice you roll, the smaller they are, so up to five fit side by side. On a narrow phone, or with the phone's display zoom turned up, they shrink a little more to fit, and they resize when you turn the phone.
+
 **Sounds.** Each die knocks on the table every quarter turn as it tumbles: quick at first, then further apart and softer as it slows, with a deeper knock when it comes to rest. The magic die twinkles instead.
 
 ## Flipping a coin 🪙
@@ -179,7 +181,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v92` → `whostarts-v93`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v93` → `whostarts-v94`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 

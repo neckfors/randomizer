@@ -2961,7 +2961,10 @@ function setupDice(range) {
   const look = dieFor(range);
   const size = range.to - range.from + 1;
   const count = range.dice * (look.percentile ? 2 : 1);
-  const cssSize = count > 4 ? 58 : count > 3 ? 74 : count > 2 ? 100 : 112;
+  // smaller with more dice, and never wider together than the space there is
+  // (narrow phones, or a phone with its display zoom turned up)
+  const room = ($('die').clientWidth || 300) - 4 * (count - 1);
+  const cssSize = Math.min(count > 4 ? 58 : count > 3 ? 74 : count > 2 ? 100 : 112, Math.floor(room / count));
   const dpr = Math.min(3, window.devicePixelRatio || 1);
   dice.forEach((d, i) => {
     d.canvas.hidden = i >= count;
@@ -3006,6 +3009,8 @@ function keepSparkling() {
   });
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) keepSparkling(); });
+// the dice fit the screen again after it changes size (turning the phone)
+addEventListener('resize', () => { if (mode === 'number' && currentRange()) showIdleDice(currentRange()); });
 
 function drawDice(now = performance.now()) {
   for (const d of dice) if (!d.canvas.hidden && d.shape) drawDie(d, now);

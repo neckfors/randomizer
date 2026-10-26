@@ -1,5 +1,5 @@
 // Bump the version when you change any file so phones pick up the update.
-const CACHE = 'whostarts-v92';
+const CACHE = 'whostarts-v93';
 const FILES = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 // 'reload' skips the browser's own HTTP cache, so a new version really gets
