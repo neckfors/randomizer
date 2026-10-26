@@ -237,8 +237,10 @@
   .add-range input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   #numName { flex: 1; }
   .btn:disabled, #addBtn:disabled, #addRangeBtn:disabled { opacity: .4; }
-  #rangeList .label small { margin-left: 8px; color: var(--muted); font-size: .85rem; }
-  #rangeList .label b { font-weight: 700; }
+  /* a long name plus "2 dice, each 5 to 9" wraps onto a second line instead of being cut off */
+  #rangeList .label { white-space: normal; line-height: 1.3; }
+  #rangeList .label small { display: inline-block; color: var(--muted); font-size: .85rem; white-space: nowrap; }
+  #rangeList .label b { font-weight: 700; margin-right: 8px; }
   #rangeList li:not(.current-range) .dot { border-color: var(--muted); }
   /* ✎ on each row; tapping it opens that row for editing with a Save button */
   .row-edit { flex: none; width: 40px; height: 52px; color: var(--muted); font-size: 1.05rem; }
@@ -1406,10 +1408,10 @@ function sameRange(a, b) {
     && (a.dice || 1) === (b.dice || 1);
 }
 
-// "1–6", or "2 × 1–6" for two dice
+// "1 to 6", or "2 dice, each 1 to 6": words, so it can't be read as a sum
 function rangeText(r) {
-  const span = `${Math.min(r.from, r.to).toLocaleString()}–${Math.max(r.from, r.to).toLocaleString()}`;
-  return (r.dice || 1) > 1 ? `${r.dice} × ${span}` : span;
+  const span = `${Math.min(r.from, r.to).toLocaleString()} to ${Math.max(r.from, r.to).toLocaleString()}`;
+  return (r.dice || 1) > 1 ? `${r.dice} dice, each ${span}` : span;
 }
 
 // The range Roll! uses; falls back to the first row if the chosen one is gone.
@@ -1552,7 +1554,7 @@ function renderRanges() {
       continue;
     }
 
-    // The whole row chooses the range, shown as "d6 1–6" or "1–6".
+    // The whole row chooses the range, shown as "d6  1 to 6" or "1 to 6".
     const row = document.createElement('button');
     row.className = 'toggle';
     row.setAttribute('aria-pressed', r === selected);
@@ -2058,8 +2060,9 @@ function hintText() {
     const lo = r.from.toLocaleString();
     const hi = r.to.toLocaleString();
     // same pattern as the other tabs: "Tap Roll! (or shake) to roll …"
-    const what = r.name ? `${r.name} (${rangeText(r)})`
-      : r.dice > 1 ? `${r.dice} dice of ${lo}–${hi}`
+    // a named range by its name only, in quotes so it reads as a name
+    const what = r.name ? `“${r.name}”`
+      : r.dice > 1 ? `${r.dice} dice, each ${lo} to ${hi}`
       : `a number from ${lo} to ${hi}`;
     return shaking ? `Tap Roll! or shake to roll ${what}` : `Tap Roll! to roll ${what}`;
   }
@@ -2149,13 +2152,13 @@ function render() {
     $('rangeOnceCard').hidden = !r;
     const pick = $('pick');
     if (r) {
-      const label = r.name ? `“${r.name}”` : rangeText(r);
+      const label = `“${r.name || rangeText(r)}”`;
       const used = (r.used || []).length;
       [...$('dicePick').children].forEach(b => {
         b.classList.toggle('on', Number(b.dataset.n) === r.dice);
         b.setAttribute('aria-pressed', Number(b.dataset.n) === r.dice);
       });
-      $('diceHint').textContent = r.dice > 1 ? `Rolls ${r.dice} dice and adds them up` : 'Roll several and add them up';
+      $('diceHint').textContent = r.dice > 1 ? `Rolls ${r.dice} dice and adds them up` : 'Rolls 1 die';
       $('rangeOnceToggle').checked = !!r.once;
       $('rangeOnceToggle').disabled = r.dice > 1;
       $('rangeOnceHint').textContent = r.dice > 1
