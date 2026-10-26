@@ -2910,8 +2910,6 @@ const TURN_MS = 600;  // how long one full turn takes at the start of a roll
 // How far through its turning a die is (0–1) at a point of the roll (0–1):
 // fast at first, slowing to a stop exactly at the end.
 const slowDown = (x) => 1 - (1 - x) ** 3;
-// upright with a corner on top, turned by angle (how a magic die spins)
-const upright = (d, angle) => qMul(qAxis([0, 1, 0], angle), qFromTo(d.shape.v[0], [0, 1, 0]));
 
 // Gives the shown dice the range's shape and numbers; keeps where they rest
 // unless the range changed.
@@ -2936,10 +2934,9 @@ function setupDice(range) {
       : role === 'tens' ? String((f.num - 1) * 10).padStart(2, '0')
       : role === 'ones' ? String(f.num - 1)
       : String(range.from + (f.num - 1) % size));
-    // at rest a real die shows its highest number; a magic die stands on a corner
+    // at rest it shows a face straight on (a real die its highest number)
     const top = d.shape.faces.reduce((a, f) => f.num > a.num ? f : a);
-    d.angle = 0.5;
-    d.q = look.magic ? upright(d, d.angle) : restPose(top);
+    d.q = restPose(top);
   });
 }
 
@@ -2947,7 +2944,24 @@ function showIdleDice(range) {
   if (diceAnim) return;
   setupDice(range);
   drawDice();
+  keepSparkling();
 }
+
+// A magic die's sparkles keep twinkling while it's on screen, not only while
+// it rolls: a light redraw (about 30 times a second) that stops by itself when
+// the die is gone, another tab is shown or the app is in the background.
+var sparkling = false; // var: render (and so this) may run before this line
+function keepSparkling() {
+  if (sparkling) return;
+  sparkling = true;
+  let last = 0;
+  requestAnimationFrame(function twinkle(now) {
+    if (mode !== 'number' || document.hidden || !dice.some(d => !d.canvas.hidden && d.magic)) { sparkling = false; return; }
+    if (!diceAnim && now - last > 33) { last = now; drawDice(now); } // while rolling, diceFrame draws
+    requestAnimationFrame(twinkle);
+  });
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) keepSparkling(); });
 
 function drawDice(now = performance.now()) {
   for (const d of dice) if (!d.canvas.hidden && d.shape) drawDie(d, now);
@@ -3045,8 +3059,8 @@ function drawSparkles(ctx, W, now, d) {
 // Rolls the dice for ms. Each die turns about one fixed axis the whole time,
 // from exactly where it rests: a real die by the single turn that takes it to
 // its rolled face, plus a few whole turns, so it slows to a stop on that face
-// without changing direction. A magic die spins upright on a corner and slows
-// to a stop wherever it is.
+// without changing direction. A magic die rolls the same way and lands on a
+// face too (any face: it has symbols, not numbers).
 // only: which shown dice to roll (all when left out); the others stay put.
 function rollDice(range, values, ms, only = null) {
   setupDice(range);
@@ -3060,14 +3074,8 @@ function rollDice(range, values, ms, only = null) {
     d.ms = ms;
     d.from = d.q;
     d.seed = Math.random() * 6;
-    if (d.magic) {
-      d.axis = [0, 1, 0];
-      d.total = Math.PI * 2 * turns * (0.9 + Math.random() * 0.2);
-      d.angle += d.total;
-      d.target = upright(d, d.angle);
-      return;
-    }
-    const faces = d.shape.faces.map((f, fi) => fi).filter(fi => d.labels[fi] === labels[i]);
+    // a magic die has symbols, not numbers, so any face will do
+    const faces = d.shape.faces.map((f, fi) => fi).filter(fi => d.magic || d.labels[fi] === labels[i]);
     d.target = restPose(d.shape.faces[faces[randomInt(faces.length)]]);
     // the one turn from here to the target: its axis and angle
     let [w, x, y, z] = qMul(d.target, [d.from[0], -d.from[1], -d.from[2], -d.from[3]]);
@@ -3076,8 +3084,9 @@ function rollDice(range, values, ms, only = null) {
     d.axis = Math.sin(half) > 1e-6 ? unit([x, y, z]) : unit([1, Math.random() - 0.5, Math.random() - 0.5]);
     d.total = 2 * half + Math.PI * 2 * turns;
     // a knock on the table every quarter turn: quick at first, further apart
-    // and softer as it slows (slowDown run backwards gives when each happens)
-    if (ms <= 0) return;
+    // and softer as it slows (slowDown run backwards gives when each happens);
+    // a magic die twinkles instead (see rollNumber)
+    if (ms <= 0 || d.magic) return;
     for (let k = 1; k * Math.PI / 2 < d.total; k++) {
       const x = 1 - (1 - k * Math.PI / 2 / d.total) ** (1 / 3);
       sfx.clack(x * ms / 1000 + Math.random() * 0.02, 1 - 0.6 * x);
