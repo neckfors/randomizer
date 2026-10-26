@@ -237,10 +237,11 @@
   .add-range input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   #numName { flex: 1; }
   .btn:disabled, #addBtn:disabled, #addRangeBtn:disabled { opacity: .4; }
-  /* a long name plus "2 dice, each 5 to 9" wraps onto a second line instead of being cut off */
-  #rangeList .label { white-space: normal; line-height: 1.3; }
-  #rangeList .label small { display: inline-block; color: var(--muted); font-size: .85rem; white-space: nowrap; }
-  #rangeList .label b { font-weight: 700; margin-right: 8px; }
+  /* a named range shows its name with what it rolls underneath ("2 dice, each 5 to 9");
+     an unnamed one is just "1 to 6" on one line */
+  #rangeList .label { line-height: 1.3; }
+  #rangeList .label b { display: block; font-weight: 700; overflow: hidden; text-overflow: ellipsis; }
+  #rangeList .label small { display: block; color: var(--muted); font-size: .85rem; overflow: hidden; text-overflow: ellipsis; }
   #rangeList li:not(.current-range) .dot { border-color: var(--muted); }
   /* ✎ on each row; tapping it opens that row for editing with a Save button */
   .row-edit { flex: none; width: 40px; height: 52px; color: var(--muted); font-size: 1.05rem; }
