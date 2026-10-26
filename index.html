@@ -2700,11 +2700,13 @@ const dice = Array.from({ length: MAX_DICE }, () => {
   $('die').append(canvas);
   return { canvas, ctx: canvas.getContext('2d'), key: '' };
 });
-let diceAnim = null; // { start, ms, settle, last } while the dice spin
-let dieRate = 1;     // spin speed, slowing down along with the ticks
-const SPIN_TURN_MS = 600;
-// full speed at first, about a quarter by the end
-const dieSpeed = (progress) => (spinPause(0) / spinPause(progress)) ** 0.7;
+let diceAnim = null; // { start, ms } while the dice roll
+const TURN_MS = 600;  // how long one full turn takes at the start of a roll
+// How far through its turning a die is (0–1) at a point of the roll (0–1):
+// fast at first, slowing to a stop exactly at the end.
+const slowDown = (x) => 1 - (1 - x) ** 3;
+// upright with a corner on top, turned by angle (how a magic die spins)
+const upright = (d, angle) => qMul(qAxis([0, 1, 0], angle), qFromTo(d.shape.v[0], [0, 1, 0]));
 
 // Gives the shown dice the range's shape and numbers; keeps where they rest
 // unless the range changed.
@@ -2722,11 +2724,12 @@ function setupDice(range) {
     if (d.canvas.width !== px) d.canvas.width = d.canvas.height = px;
     if (d.key === key) return;
     d.key = key;
-    Object.assign(d, look, { shape: SHAPES[look.sides], glow: false, target: null });
+    Object.assign(d, look, { shape: SHAPES[look.sides], target: null });
     d.labels = d.shape.faces.map(f => look.magic ? magicSymbol() : String(range.from + (f.num - 1) % size));
-    // at rest it shows the highest number (or any symbol)
+    // at rest a real die shows its highest number; a magic die stands on a corner
     const top = d.shape.faces.reduce((a, f) => f.num > a.num ? f : a);
-    d.q = restPose(top, look.sides);
+    d.angle = 0.5;
+    d.q = look.magic ? upright(d, d.angle) : restPose(top, look.sides);
   });
 }
 
@@ -2764,8 +2767,7 @@ function drawDie(d, now) {
     f.idx.forEach((m, t) => (t ? ctx.lineTo : ctx.moveTo).call(ctx, ...corners[m]));
     ctx.closePath();
     if (d.magic) {
-      const glow = d.glow && fi === d.landedFace ? 1.35 : 1;
-      ctx.fillStyle = `rgb(${Math.min(255, (40 + 120 * lit) * glow)}, ${Math.min(255, (14 + 92 * lit) * glow)}, ${Math.min(255, (100 + 150 * lit) * glow)})`;
+      ctx.fillStyle = `rgb(${40 + 120 * lit}, ${14 + 92 * lit}, ${100 + 150 * lit})`;
       ctx.fill();
       ctx.strokeStyle = 'rgba(226, 206, 255, .75)';
     } else {
@@ -2830,40 +2832,45 @@ function drawSparkles(ctx, W, now, d) {
   }
 }
 
-// Starts the dice spinning upright (a corner on top) for ms, slowing down with
-// the ticks, and settling at the end on a face showing each die's value.
+// Rolls the dice for ms. A real die tumbles about one fixed axis and slows to a
+// stop: the tumbling is worked out backwards from the face it lands on, so it
+// simply rolls to a stop there, with no turning toward it at the end. A magic
+// die spins upright on a corner and slows to a stop wherever it is.
 function rollDice(range, values, ms) {
   setupDice(range);
+  // at the start a die turns about once per TURN_MS; slowDown spreads that out
+  const turns = ms / TURN_MS / 3;
   dice.forEach((d, i) => {
     if (d.canvas.hidden) return;
-    const faces = d.shape.faces.map((f, fi) => fi).filter(fi => d.magic || d.labels[fi] === String(values[i]));
-    d.landedFace = faces[randomInt(faces.length)];
-    d.target = restPose(d.shape.faces[d.landedFace], d.sides);
     d.from = d.q;
-    d.base = qFromTo(d.shape.v[0], [0, 1, 0]);
-    d.angle = Math.random() * Math.PI * 2;
-    d.speed = 0.9 + Math.random() * 0.2;
     d.seed = Math.random() * 6;
-    d.glow = false;
+    d.total = Math.PI * 2 * Math.max(1, turns) * (0.9 + Math.random() * 0.2);
+    if (d.magic) {
+      d.angle0 = d.angle;
+      d.angle = d.angle0 + d.total;
+      d.target = upright(d, d.angle);
+      return;
+    }
+    const faces = d.shape.faces.map((f, fi) => fi).filter(fi => d.labels[fi] === String(values[i]));
+    d.target = restPose(d.shape.faces[faces[randomInt(faces.length)]], d.sides);
+    // mostly forward over its top, a little to the side, different for each die
+    d.axis = unit([1, (Math.random() - 0.5) * 0.8, (Math.random() - 0.5) * 0.6]);
   });
-  dieRate = 1;
   if (ms <= 0) { landDice(); return; }
-  diceAnim = { start: performance.now(), ms, settle: Math.min(700, ms * 0.35), last: performance.now() };
+  diceAnim = { start: performance.now(), ms };
   requestAnimationFrame(diceFrame);
 }
 
 function diceFrame(now) {
   if (!diceAnim) return;
-  const e = now - diceAnim.start;
-  const dt = Math.min(50, Math.max(0, now - diceAnim.last));
-  diceAnim.last = now;
+  const e = Math.max(0, now - diceAnim.start);
+  const done = slowDown(Math.min(1, e / diceAnim.ms));
   for (const d of dice) {
     if (d.canvas.hidden || !d.target) continue;
-    d.angle += dt / SPIN_TURN_MS * Math.PI * 2 * dieRate * d.speed;
-    let q = qMul(qAxis([0, 1, 0], d.angle), d.base);
-    if (e < 220) q = qSlerp(d.from, q, ease(Math.max(0, e) / 220)); // from rest into the spin
-    const s = (e - (diceAnim.ms - diceAnim.settle)) / diceAnim.settle;
-    if (s > 0) q = qSlerp(q, d.target, ease(Math.min(1, s)));       // settling on the rolled face
+    let q = d.magic
+      ? upright(d, d.angle0 + d.total * done)
+      : qMul(qAxis(d.axis, d.total * (1 - done)), d.target); // the turning still to go, ending at the face
+    if (e < 220) q = qSlerp(d.from, q, ease(e / 220)); // from rest into the roll
     d.q = q;
   }
   drawDice(now);
@@ -2875,14 +2882,10 @@ function shuffleMagic() {
   for (const d of dice) if (!d.canvas.hidden && d.magic) d.labels = d.labels.map(magicSymbol);
 }
 
-// The dice come to rest on their rolled faces; a magic die's face lights up.
+// The dice come to rest where their roll ends.
 function landDice() {
   diceAnim = null;
-  for (const d of dice) {
-    if (d.canvas.hidden || !d.target) continue;
-    d.q = d.target;
-    d.glow = true;
-  }
+  for (const d of dice) if (!d.canvas.hidden && d.target) d.q = d.target;
   drawDice();
 }
 
@@ -2959,7 +2962,6 @@ function rollNumber() {
       const progress = tick / total;
       const delay = spinDelay(progress);
       sfx.tick(progress);
-      dieRate = dieSpeed(progress);
       if (magic) shuffleMagic();
       if (navigator.vibrate) navigator.vibrate(5);
       setTimeout(spin, delay);

@@ -54,18 +54,42 @@ Switch to **🎲 Dice** at the top to roll dice, or any random number, instead o
 1. **Add a range** with the **From**, **To** and **Name (optional)** fields and **Add**. The Add button stays greyed out until From and To are whole numbers. Any whole numbers work, even 1 to 1,000,000. You start with the dice *d4* (1 to 4), *d6* (1 to 6), *d12* (1 to 12), *d20* (1 to 20) and *2d6* (2 dice, each 1 to 6, added up), which you can rename, change or remove.
 2. **Tap a range** to choose it. It gets a ✓.
 3. **Choose how many dice** it rolls with **Dice 1 2 3 4** above the ranges. With several dice, each die is rolled on its own and they're added up, just like real dice: with 2d6 a 7 comes up six times as often as a 2 or a 12. The row then reads *2 dice, each 1 to 6*, and the hint uses the range's name, like *Tap Roll! to roll “2d6”*.
-4. **Tap Roll!** (or shake your phone). The dice spin on a corner while numbers race past, slow down with them, and come to rest showing the face they rolled. The number is picked at random from the range, both ends included. With several dice, the total shows in the gold badge with the dice under it, like *4 + 5*.
+4. **Tap Roll!** (or shake your phone). The dice tumble while numbers race past, slow down, and come to rest showing the face they rolled. With several dice, the total shows in the gold badge with the dice under it, like *4 + 5*. See [How the dice work](#how-the-dice-work) below.
 5. **Change a range** with its **✎**: the row turns into From, To and Name fields with a green **Save** button. Change what you like and tap Save or press Enter (Esc cancels). Numbers are put in order if you swap them, and a range you already have is not added twice. **✕** removes a range (tap the red **Delete** to confirm, or **Cancel**).
-
-**Real dice shapes:** each range rolls a real-looking 3D die when one fits: a **d4**, **d6**, **d8**, **d10**, **d12** or **d20**. The faces show the range's own numbers, so *5 to 9* rolls a d10 numbered 5 to 9 (each number twice), and *1 to 3* rolls a d6 with each number twice, just like real d3s. A plain 1 to 6 die has dots. Opposite faces add up the same way as on real dice, and 6 and 9 are underlined so they can't be mixed up.
-
-**The magic die ✨:** some ranges have no real die, like 1 to 7, 1 to 100 or 1001 to 1020 (numbers too long for the faces). They roll a purple, glowing **magic d20** instead. Twinkling symbols swap on its faces while it spins, and when it lands, its number flies out into the gold badge.
 
 **Roll each number only once:** switch this on for a range when the same number must not come up twice, like drawing raffle tickets. Numbers already rolled sit out, the switch shows how many have been rolled, and when every number has been rolled the button turns into **↺ Start over**. The setting is saved per range, and works with one die.
 
 **Recent rolls:** under the ranges, *🕘 Recent rolls* keeps your last 100 rolls across all ranges. Each result shows in a small gold badge, with what was rolled next to it, like *2d6: 4 + 5* or *10 to 30*. It shows the newest 10; tap *Show all* to see the rest.
 
 Your ranges are remembered and included in backups. `https://neckfors.github.io/randomizer/#dice` opens straight in Dice mode (older `#number` links still work).
+
+### How the dice work
+
+**Which die a range gets.** Every range is rolled with a real-looking 3D die whenever a real die can do it fairly. Otherwise it gets the magic die:
+
+| Range | Die | Faces |
+|---|---|---|
+| 4 numbers | d4 | each number once |
+| 1 number | d4 | the same number on every face |
+| 2 numbers | d4 | each number twice |
+| 6 numbers | d6 | each number once (dots for a plain 1 to 6) |
+| 3 numbers | d6 | each number twice, like a real d3 |
+| 8 numbers | d8 | each number once |
+| 10 numbers | d10 | each number once |
+| 5 numbers | d10 | each number twice |
+| 12 numbers | d12 | each number once |
+| 20 numbers | d20 | each number once |
+| anything else (7, 9, 15, 37, 100, …) | magic d20 | twinkling symbols |
+
+The faces always show the range's own numbers, so *5 to 9* is a d10 with 5, 6, 7, 8 and 9 on it twice, and *95 to 100* is a cube with 95 to 100. The numbers must fit on the faces: up to 2 characters on the small triangles of the d4, d8 and d20, and up to 3 on the bigger faces of the d6, d10 and d12 (a minus sign counts). Longer numbers, like *1001 to 1020*, also get the magic die.
+
+Like real dice, opposite faces add up to the same total (1 and 6, 2 and 5, 3 and 4 on a d6), and 6 and 9 are underlined so they can't be mixed up.
+
+**The magic die ✨** is a purple, glowing d20 for ranges no real die can roll. Twinkling symbols swap on its faces while it spins upright on a corner, it slows to a stop, and its number flies out into the gold badge.
+
+**How a roll works.** The number is chosen first, completely at random. Every number in the range has the same chance, using the browser's secure random numbers (`crypto.getRandomValues`). The die's tumble is then worked out backwards from the face showing that number. It turns about one fixed axis and slows down so that it comes to rest exactly on that face, like a real die rolling to a stop, without turning toward the number at the end. When a number is on a die twice, one of its faces is picked at random. The animation only shows the result; it never decides it.
+
+**Several dice** are each rolled on their own and added up, just like real dice. So with 2d6, a 7 (six ways to make it) comes up six times as often as a 2 or a 12 (one way each). Each die lands on its own number, shown under the total, like *4 + 5*.
 
 ## Flipping a coin 🪙
 
@@ -130,7 +154,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v68` → `whostarts-v69`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v69` → `whostarts-v70`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
