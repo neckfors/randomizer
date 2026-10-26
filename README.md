@@ -177,8 +177,8 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v85` → `whostarts-v86`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v86` → `whostarts-v87`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
-If you like the app, you can support it on [PayPal](https://paypal.me/neckfors). Thank you!
+If you like the app, you can support the author on [PayPal](https://paypal.me/neckfors). Thank you!
