@@ -11,6 +11,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Randomizer">
+<script>
+  // the chosen theme, before anything is drawn (see Settings › Theme)
+  try { const t = localStorage.getItem('whostarts.theme'); if (t && t !== 'auto') document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
 <style>
   :root {
     --bg: #f4f5f2;
@@ -24,8 +28,10 @@
     --gold: #e0a400;
     --danger: #b3412e;
   }
+  /* Theme: Auto follows the phone; Light, Dark and Black (pure black, easy on
+     the eyes in a dark room) are picked in Settings (data-theme on <html>) */
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
       --bg: #121614;
       --card: #1c2220;
       --text: #e8ece9;
@@ -38,6 +44,19 @@
       --danger: #e2735f;
     }
   }
+  :root[data-theme="dark"], :root[data-theme="black"] {
+    --bg: #121614;
+    --card: #1c2220;
+    --text: #e8ece9;
+    --muted: #8d9893;
+    --line: #2c3431;
+    --accent: #3fa57f;
+    --accent-text: #0d1311;
+    --glow: rgba(63, 165, 127, .45);
+    --gold: #f2c230;
+    --danger: #e2735f;
+  }
+  :root[data-theme="black"] { --bg: #000000; --card: #0b0e0d; --line: #232a27; }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; background: var(--bg); color: var(--text); }
   body {
@@ -760,6 +779,15 @@
     </label>
     <input type="range" id="spinTime" min="0" max="3" step="0.5" aria-label="Spin time in seconds">
 
+    <h3>Theme</h3>
+    <div class="seg" id="themePick" role="group" aria-label="Theme">
+      <button type="button" class="btn" data-theme="auto">Auto</button>
+      <button type="button" class="btn" data-theme="light">Light</button>
+      <button type="button" class="btn" data-theme="dark">Dark</button>
+      <button type="button" class="btn" data-theme="black">Black</button>
+    </div>
+    <p class="hint-text">Auto follows your phone’s light or dark mode. Black is pure black, easy on the eyes in a dark room.</p>
+
     <h3>Backup</h3>
     <div class="seg">
       <button type="button" class="btn" id="exportBtn">⬇ Save backup</button>
@@ -1154,6 +1182,28 @@ function setMuted(value) {
 }
 $('mute').onclick = () => setMuted(!muted);
 $('soundToggle').onchange = (e) => setMuted(!e.target.checked);
+
+// ---------- Theme ----------
+const THEME_KEY = 'whostarts.theme';
+const THEMES = ['auto', 'light', 'dark', 'black'];
+let theme = THEMES.includes(pref(THEME_KEY, 'auto')) ? pref(THEME_KEY, 'auto') : 'auto';
+function renderTheme() {
+  if (theme === 'auto') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = theme;
+  for (const b of $('themePick').children) {
+    b.classList.toggle('on', b.dataset.theme === theme);
+    b.setAttribute('aria-pressed', b.dataset.theme === theme);
+  }
+}
+$('themePick').onclick = (e) => {
+  const t = e.target.closest('button')?.dataset.theme;
+  if (!t || t === theme) return;
+  theme = t;
+  setPref(THEME_KEY, theme);
+  renderTheme();
+  sfx.click();
+};
+renderTheme();
 
 // ---------- Confetti ----------
 const canvas = $('confetti');
@@ -2590,46 +2640,28 @@ $('pick').onclick = () => {
 // behind a window. Like the dice, it's planned before it starts: fast at first,
 // slowing down (slowDown) so it stops with the pick exactly in the middle, a
 // click for each name that passes (the list below stays still).
-// The order of names on the reel, from the top: in rounds where every name
-// shows once (in random order) before any name comes back, never the same
-// name twice in a row, and the pick (decided already) at position steps,
-// with one more name after it. steps + 2 names in all.
-function reelOrder(playing, winner, steps) {
-  const n = playing.length;
-  const length = steps + 2;
-  if (n === 2) {
-    // two names can only take turns; the pick lands on its turn
-    const other = playing.find(p => p !== winner);
-    return Array.from({ length }, (_, i) => (steps - i) % 2 === 0 ? winner : other);
-  }
-  const shuffled = () => {
-    const a = playing.slice();
-    for (let i = a.length - 1; i > 0; i--) { const j = randomInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; }
-    return a;
-  };
-  // whole rounds, each starting with a different name than the last one ended with
-  const seq = [];
-  while (seq.length < length + n) {
-    let round = shuffled();
-    while (seq.length && round[0] === seq[seq.length - 1]) round = shuffled();
-    seq.push(...round);
-  }
-  // within the pick's round, swap the pick into place (the round keeps every name once)
-  const start = steps - steps % n;
-  const at = seq.indexOf(winner, start);
-  [seq[at], seq[steps]] = [seq[steps], seq[at]];
-  // that may put the same name twice in a row where this round meets its
-  // neighbours; swap the neighbour's edge name with one from inside that round
-  const fix = (edge, from, to) => {
-    const inside = [];
-    for (let k = from; k <= to; k++) if (k !== edge) inside.push(k);
-    const k = inside[randomInt(inside.length)];
-    [seq[edge], seq[k]] = [seq[k], seq[edge]];
-  };
-  if (start > 0 && seq[start - 1] === seq[start]) fix(start - 1, start - n + 1, start - 2);
-  const end = start + n - 1;
-  if (seq[end + 1] === seq[end]) fix(end + 1, end + 2, end + n - 1);
-  return seq.slice(0, length);
+// The reel is a wheel: each list gets one random order of its names that
+// repeats round and round, so every name shows once before any comes back.
+// The order stays the same from spin to spin (a new name goes in at a random
+// spot, a removed or sitting-out one just isn't on it), and each spin starts
+// where the last one stopped. The pick (decided already, at random) only sets
+// how far the wheel turns.
+const WHEELS_KEY = 'whostarts.wheels';
+// list id -> { ids, at } (at: the id the wheel last stopped on), kept on the device
+const wheels = new Map((() => { try { return Object.entries(JSON.parse(pref(WHEELS_KEY, '{}'))); } catch (e) { return []; } })());
+const saveWheels = () => setPref(WHEELS_KEY, JSON.stringify(Object.fromEntries(wheels)));
+function wheelFor(playing) {
+  let w = wheels.get(cur().id);
+  if (!w) wheels.set(cur().id, w = { ids: [], at: null });
+  const playingId = (id) => playing.some(p => p.id === id);
+  // where it stopped, or (if that name sits out now) the next name on the wheel
+  let at = w.ids.indexOf(w.at);
+  for (let k = 0; at >= 0 && k < w.ids.length && !playingId(w.ids[at]); k++) at = (at + 1) % w.ids.length;
+  const startId = at >= 0 ? w.ids[at] : null;
+  const ids = w.ids.filter(playingId);
+  for (const p of playing) if (!ids.includes(p.id)) ids.splice(randomInt(ids.length + 1), 0, p.id);
+  w.ids = ids;
+  return { ids, from: Math.max(0, ids.indexOf(startId)) };
 }
 
 const REEL_ROW = 50;     // height of one name on the reel (see .reel-item)
@@ -2638,9 +2670,18 @@ function spinReel(playing, winner) {
   const total = spinTicks(playing.length > 1);
   const ms = rollLength(total);
   if (ms <= 0) { land(winner); return; }
-  // how many names pass: slowDown starts 3 times faster than its average
-  const steps = Math.max(6, Math.round(REEL_SPEED * ms / 1000 / 3));
-  const names = reelOrder(playing, winner, steps);
+  // how many names pass: slowDown starts 3 times faster than its average,
+  // then nudged (by up to half a turn) so the wheel stops on the pick
+  const { ids, from } = wheelFor(playing);
+  const order = ids.map(id => playing.find(p => p.id === id));
+  const n = order.length;
+  const base = Math.max(6, Math.round(REEL_SPEED * ms / 1000 / 3));
+  let steps = base + ((order.indexOf(winner) - from - base) % n + n) % n;
+  if (steps - base > n / 2 && steps - n >= 6) steps -= n;
+  wheels.get(cur().id).at = winner.id;
+  saveWheels();
+  // the wheel from one name above the start to one name below the pick, so the window is never empty
+  const names = Array.from({ length: steps + 3 }, (_, k) => order[((from + k - 1) % n + n) % n]);
 
   const strip = $('reelStrip');
   strip.innerHTML = '';
@@ -2651,13 +2692,14 @@ function spinReel(playing, winner) {
     item.firstChild.textContent = p.name; // in a span, so the middle one can wear the badge
     strip.append(item);
   }
-  const items = [...strip.children];
+  // items[k + 1] is the k-th name to reach the middle (items[0] shows above the start)
+  const items = [...strip.children].slice(1);
   result.className = ''; // the reel shows the names; the result appears when it stops
   result.textContent = '';
   $('reel').className = 'open';
 
-  // the first name starts in the middle of the window (one row from the top)
-  const at = (moved) => { strip.style.transform = `translateY(${REEL_ROW - moved * REEL_ROW}px)`; };
+  // the start name sits in the middle of the window, with the one before it above
+  const at = (moved) => { strip.style.transform = `translateY(${-moved * REEL_ROW}px)`; };
   at(0);
   for (let k = 1; k <= steps; k++) {
     const x = 1 - (1 - k / steps) ** (1 / 3); // when name k reaches the middle
@@ -2701,7 +2743,7 @@ function spinReel(playing, winner) {
     strip.style.filter = speed > 6 ? `blur(${Math.min(3, (speed - 6) / 4).toFixed(1)}px)` : '';
     lastMoved = moved;
     lastTime = now;
-    const row = Math.min(names.length - 1, Math.max(0, Math.round(moved)));
+    const row = Math.min(items.length - 1, Math.max(0, Math.round(moved)));
     if (row !== lastRow) {
       if (items[lastRow]) items[lastRow].classList.remove('hot');
       items[row].classList.add('hot');

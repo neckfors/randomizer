@@ -38,7 +38,7 @@ Anything where you need a fair, random pick:
 1. **Choose a list:** tap the list button under the Pick! area to see all your lists (*🎲 Game night*, *🍳 Who makes dinner*, *🍕 Where to eat*, …) and tap one to switch. Each list keeps its own options, so the names in one list never show up in another.
 2. **Add options** using the field under the list (the **Add** button lights up once you type something). Add several at once by separating them with commas (`Sam, Ben`), or paste a list with one option per line.
 3. **Tap an option** to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
-4. **Tap Pick!** Your options spin past on a slot-machine reel, big and blurred at speed, then slow down with clicks. The name in the middle, between two gold pointers, wears the gold badge, and the names around it shrink and fade like on a turning drum. When it stops, that badge is the pick, with a 👑 and confetti. Every name shows once before any name comes back, so nothing looks repeated. Like the dice, the pick is chosen first and the reel is planned to stop exactly on it, so it stays completely random.
+4. **Tap Pick!** Your options spin past on a slot-machine reel, big and blurred at speed, then slow down with clicks. The name in the middle, between two gold pointers, wears the gold badge, and the names around it shrink and fade like on a turning drum. When it stops, that badge is the pick, with a 👑 and confetti. The reel works like a wheel: each list gets one random order of its names that goes round and round, so every name shows once before any comes back. The order stays the same from spin to spin (a new name goes in at a random spot), and each spin starts where the last one stopped. Like the dice, the pick is chosen first and the wheel just turns far enough to stop on it, so the result is still completely random.
 5. **Rename an option** with its **✎**: the row turns into a field with a green **Save** button. Type the new name and tap Save or press Enter (Esc cancels). Tapping somewhere else saves too.
 6. Remove an option for good with **✕**: it turns into a red **Delete** button in the same spot, with **Cancel** next to it. Tap Delete to remove it, or Cancel (or anywhere else) to keep it.
 
@@ -138,6 +138,7 @@ Tap the **⛶** button at the top to show only the picker: the Pick!, Roll! or F
 - **Shake to pick** (on by default on phones): give your phone two quick shakes instead of tapping Pick!, Roll! or Flip! The hint in the Pick! card then reads *Tap Pick! or shake your phone*. On iPhone, a *📳 Tap to turn on shake to pick* button shows first, because Safari asks for motion access once. Tap *No thanks* next to it if you don't want shaking. You can switch it on or off here any time.
 - **Sound effects:** on or off (the 🔊 button at the top does the same).
 - **Spin time:** how long a pick, roll or flip spins before it lands, from *Instant* to 3 seconds (the default).
+- **Theme:** *Auto* (the default) follows your phone's light or dark mode. *Light* and *Dark* stay that way whatever the phone uses, and *Black* is a pure black dark mode, easy on the eyes in a dark room and on phone batteries with OLED screens.
 - **Backup:** *Save backup* downloads a file with all your lists. *Restore* loads such a file and replaces your lists with it. Use it to keep your lists safe, or to move them to a new phone.
 
 ## Install on your phone
@@ -177,7 +178,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v86` → `whostarts-v87`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v87` → `whostarts-v88`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
