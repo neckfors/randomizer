@@ -22,6 +22,7 @@
     --accent-text: #ffffff;
     --glow: rgba(31, 111, 84, .35);
     --gold: #e0a400;
+    --gold-text: #8f6100; /* gold that reads on a light gold background */
     --danger: #b3412e;
   }
   @media (prefers-color-scheme: dark) {
@@ -35,6 +36,7 @@
       --accent-text: #0d1311;
       --glow: rgba(63, 165, 127, .45);
       --gold: #f2c230;
+      --gold-text: #f2c230;
       --danger: #e2735f;
     }
   }
@@ -151,8 +153,11 @@
      pointer on each side of it */
   .reel-band {
     position: absolute; left: 9%; right: 9%; top: 52px; height: 46px; border-radius: 14px;
-    background: linear-gradient(90deg, transparent, rgba(242, 194, 48, .2) 22%, rgba(242, 194, 48, .2) 78%, transparent);
-    box-shadow: inset 0 0 0 2px rgba(242, 194, 48, .6), 0 0 20px rgba(242, 194, 48, .3);
+    /* glassy gold: a shine across the top, a deeper gold below */
+    background:
+      linear-gradient(180deg, rgba(255, 244, 200, .32), rgba(255, 244, 200, 0) 45%),
+      linear-gradient(90deg, rgba(242, 194, 48, .12), rgba(242, 194, 48, .34) 30%, rgba(242, 194, 48, .34) 70%, rgba(242, 194, 48, .12));
+    box-shadow: inset 0 0 0 2px #f2c230, 0 0 22px rgba(242, 194, 48, .45), 0 0 4px rgba(242, 194, 48, .6);
   }
   .reel-pointer {
     position: absolute; top: 61px; width: 0; height: 0; z-index: 1;
@@ -167,6 +172,8 @@
     font-size: 1.9rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .reel-item.long { font-size: 1.35rem; }
+  /* the name in the middle shines gold; the others shrink and fade with distance (set as it turns) */
+  .reel-item.hot { color: var(--gold-text); text-shadow: 0 0 14px rgba(242, 194, 48, .55), 0 1px 0 rgba(0, 0, 0, .25); }
   /* with several dice, the dice that were rolled show under the total */
   #resultParts { color: var(--muted); font-size: .95rem; margin-top: 8px; font-variant-numeric: tabular-nums; }
   #resultParts[hidden] { display: none; }
@@ -2656,6 +2663,7 @@ function spinReel(playing, winner) {
     item.textContent = p.name;
     strip.append(item);
   }
+  const items = [...strip.children];
   result.className = ''; // the reel shows the names; the result appears when it stops
   result.textContent = '';
   $('reel').className = 'open';
@@ -2694,6 +2702,14 @@ function spinReel(playing, winner) {
     const x = Math.min(1, Math.max(0, (now - start) / ms));
     const moved = steps * slowDown(x);
     at(moved);
+    // like a drum: names grow toward the middle and shrink and fade away from it
+    for (let k = Math.floor(moved) - 2; k <= Math.ceil(moved) + 2; k++) {
+      const item = items[k];
+      if (!item) continue;
+      const d = Math.min(1.5, Math.abs(k - moved));
+      item.style.transform = `scale(${(1.12 - 0.2 * d).toFixed(3)})`;
+      item.style.opacity = (1 - 0.35 * d).toFixed(2);
+    }
     // blur while it's fast
     const speed = (moved - lastMoved) / Math.max(1, now - lastTime) * 1000;
     strip.style.filter = speed > 6 ? `blur(${Math.min(3, (speed - 6) / 4).toFixed(1)}px)` : '';
@@ -2701,6 +2717,8 @@ function spinReel(playing, winner) {
     lastTime = now;
     const row = Math.min(names.length - 1, Math.max(0, Math.round(moved)));
     if (row !== lastRow) {
+      if (items[lastRow]) items[lastRow].classList.remove('hot');
+      items[row].classList.add('hot');
       lastRow = row;
       highlightRow(names[row].id);
       if (navigator.vibrate) navigator.vibrate(4);
