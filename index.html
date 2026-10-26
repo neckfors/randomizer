@@ -712,7 +712,7 @@
   </div>
 
   <form id="add">
-    <input id="name" placeholder="Add options, e.g. Sam, Ben" autocomplete="off" enterkeyhint="done" maxlength="600">
+    <input id="name" placeholder="Add options, e.g. Sam, Ben, Pizza, Burger" autocomplete="off" enterkeyhint="done" maxlength="600">
     <button class="btn" type="submit" id="addBtn" disabled>Add</button>
   </form>
 
@@ -1773,13 +1773,17 @@ for (const id of ['numFrom', 'numTo', 'numName']) $(id).addEventListener('input'
 // The add row stays on one line; when "Name (optional)" would be cut off
 // (narrow phone, large text), the placeholder shortens to "Name".
 const measureCtx = document.createElement('canvas').getContext('2d');
-function fitNamePlaceholder() {
-  const field = $('numName');
-  if (!field.clientWidth) return; // hidden in Lists mode
+// Each field gets the longest of its placeholders that fits (the last one always does).
+function fitPlaceholder(field, texts) {
+  if (!field.clientWidth) return; // hidden in the other mode
   const style = getComputedStyle(field);
   measureCtx.font = `${style.fontSize} ${style.fontFamily}`;
   const room = field.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-  field.placeholder = measureCtx.measureText('Name (optional)').width <= room ? 'Name (optional)' : 'Name';
+  field.placeholder = texts.find(t => measureCtx.measureText(t).width <= room) || texts.at(-1);
+}
+function fitNamePlaceholder() {
+  fitPlaceholder($('numName'), ['Name (optional)', 'Name']);
+  fitPlaceholder($('name'), ['Add options, e.g. Sam, Ben, Pizza, Burger', 'Add options, e.g. Sam, Ben, Pizza', 'Add options, e.g. Sam, Ben']);
 }
 addEventListener('resize', fitNamePlaceholder);
 // Enter in From moves on to To
@@ -2361,6 +2365,7 @@ function render() {
   }
   renderSets();
   renderHistory();
+  fitNamePlaceholder();
   syncAddress();
 
   const lists = $('lists');

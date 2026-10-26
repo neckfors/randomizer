@@ -36,7 +36,7 @@ Anything where you need a fair, random pick:
 ## How it works
 
 1. **Choose a list:** tap the list button under the Pick! area to see all your lists (*🎲 Game night*, *🍳 Who makes dinner*, *🍕 Where to eat*, …) and tap one to switch. Each list keeps its own options, so the names in one list never show up in another.
-2. **Add options** using the field under the list (the **Add** button lights up once you type something). Add several at once by separating them with commas (`Sam, Ben`), or paste a list with one option per line.
+2. **Add options** using the field under the list (the **Add** button lights up once you type something). Add several at once by separating them with commas (`Sam, Ben`), or paste a list with one option per line. The field's example (*e.g. Sam, Ben, Pizza, Burger*) shows as many of those as fit the screen.
 3. **Tap an option** to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
 4. **Tap Pick!** Your options spin past on a slot-machine reel, big and blurred at speed, then slow down with clicks. The name in the middle, between two gold pointers, wears the gold badge, and the names around it shrink and fade like on a turning drum. When it stops, that badge is the pick, with a 👑 and confetti. The reel works like a wheel: each spin shuffles your names into a new random order that goes round and round, so every name shows once before any comes back. Like the dice, the pick is chosen first and the wheel just turns far enough to stop on it, so the result is still completely random. Tap the picked name, or swipe across the name area, to pick again.
 5. **Rename an option** with its **✎**: the row turns into a field with a green **Save** button. Type the new name and tap Save or press Enter (Esc cancels). Tapping somewhere else saves too.
@@ -181,7 +181,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v97` → `whostarts-v98`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v98` → `whostarts-v99`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
