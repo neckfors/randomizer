@@ -2992,7 +2992,8 @@ function setupDice(range) {
     d.canvas.hidden = i >= count;
     if (d.canvas.hidden) return;
     const px = Math.round(cssSize * dpr);
-    if (d.canvas.width !== px) d.canvas.width = d.canvas.height = px;
+    // both sides: a new canvas is 300 × 150, so 3 dice at 3× (300 px) matched its width only
+    if (d.canvas.width !== px || d.canvas.height !== px) d.canvas.width = d.canvas.height = px;
     d.canvas.style.width = d.canvas.style.height = `${cssSize}px`;
     const role = look.percentile ? (i % 2 ? 'ones' : 'tens') : '';
     const key = `${look.sides}:${look.magic}:${range.from}:${range.to}:${role}`;
@@ -3427,7 +3428,8 @@ let coinDirty = null; // [x, y, w, h] drawn last frame, in canvas pixels
 function drawCoin() {
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const W = Math.round(COIN_W * dpr), H = Math.round(COIN_H * dpr);
-  if (coinCanvas.width !== W) { coinCanvas.width = W; coinCanvas.height = H; coinDirty = null; }
+  // (both sides: a new canvas is 300 × 150, so at 1× its width already matches)
+  if (coinCanvas.width !== W || coinCanvas.height !== H) { coinCanvas.width = W; coinCanvas.height = H; coinDirty = null; }
   const ctx = coinCtx;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   if (coinDirty) ctx.clearRect(...coinDirty);
