@@ -102,36 +102,22 @@
   #crown { position: relative; height: 0; font-size: 2rem; line-height: 1; opacity: 0; transition: height .3s ease, margin-top .3s ease; }
   /* pulled up into the card's top padding, so the space above it matches the space under the badge */
   #crown.show { height: 2.2rem; margin-top: -12px; opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
-  /* 3D dice (1–4) balanced on one corner (long diagonal straight up), spinning
-     around that upright axis while a number rolls. --s is the size of a side
-     (set from JS: three or four dice get smaller so they fit side by side). */
-  #die { --s: 42px; position: relative; display: flex; justify-content: center; gap: 4px; height: 0; opacity: 0; pointer-events: none; }
-  #die.rolling { height: 86px; opacity: 1; }
-  .die-box { display: grid; place-items: center; width: calc(var(--s) * 2.05); height: 86px; flex: none; perspective: 320px; }
-  .die-box[hidden] { display: none; }
-  .die-spin, .die-cube { width: var(--s); height: var(--s); transform-style: preserve-3d; }
-  #die.rolling .die-spin, #die.landing .die-spin { animation: spin-upright .6s linear infinite; }
-  /* when the number lands: the slowed dice shrink away while the crown takes their place */
-  #die.landing { height: 0; opacity: 0; transform: scale(.4); transition: height .3s ease, opacity .3s ease, transform .3s ease-in; }
-  .die-cube { position: relative; transform: rotateX(-35.264deg) rotateZ(45deg); } /* corner up, corner down */
-  .die-side {
-    position: absolute; inset: 0;
-    background: linear-gradient(135deg, #ffffff, #e4e6e3);
-    border: 1px solid rgba(0, 0, 0, .14); border-radius: calc(var(--s) / 6);
+  /* Dice mode shows the dice of the chosen range (1–4 of them), drawn in 3D on
+     canvases: real shapes (d4, d6, d8, d10, d12, d20) when the range fits one,
+     or a purple "magic" d20 otherwise. They rest on the face they last landed on. */
+  #die { display: flex; justify-content: center; gap: 4px; height: 0; opacity: 0; pointer-events: none; transition: height .3s ease, opacity .3s ease; }
+  body.number-mode #die { height: 90px; opacity: 1; margin-top: -6px; }
+  #die canvas { display: block; width: 90px; height: 90px; flex: none; }
+  #die.many canvas { width: 74px; height: 74px; margin-top: 8px; } /* three or four fit side by side */
+  #die canvas[hidden] { display: none; }
+  body.number-mode #crown { display: none !important; } /* the dice are the result */
+  /* a magic die's number flies out of it into the badge */
+  #result.won.from-die { animation: from-die .7s cubic-bezier(.2, 1.4, .4, 1); }
+  @keyframes from-die {
+    0% { transform: translateY(-70px) scale(.2); opacity: 0; filter: drop-shadow(0 0 14px #b78cff); }
+    55% { transform: translateY(4px) scale(1.15); opacity: 1; filter: drop-shadow(0 0 10px #b78cff); }
+    100% { transform: none; filter: none; }
   }
-  /* each pair of opposite sides has its own shade, so the edges read as 3D */
-  .die-side.shade-2 { background: linear-gradient(135deg, #f1f2f0, #d6d9d5); }
-  .die-side.shade-3 { background: linear-gradient(135deg, #e3e5e2, #c4c8c3); }
-  /* every side has six pips that slide between layouts as the number on it changes;
-     pips a side doesn't need shrink into its middle */
-  .die-side i {
-    position: absolute; left: var(--x); top: var(--y);
-    width: calc(var(--s) / 6); height: calc(var(--s) / 6); margin: calc(var(--s) / -12) 0 0 calc(var(--s) / -12);
-    border-radius: 50%; background: #1d2321;
-    transition: left var(--pip-time, .2s) ease, top var(--pip-time, .2s) ease, transform var(--pip-time, .2s) ease;
-  }
-  .die-side i.off { transform: scale(0); }
-  @keyframes spin-upright { to { transform: rotateY(360deg); } }
   /* with several dice, the dice that were rolled show under the total */
   #resultParts { color: var(--muted); font-size: .95rem; margin-top: 8px; font-variant-numeric: tabular-nums; }
   #resultParts[hidden] { display: none; }
@@ -1326,7 +1312,6 @@ function resetCard() {
   winnerId = null;
   result.className = 'hint';
   $('crown').className = '';
-  $('die').className = '';
   $('card').className = 'starter';
   $('pick').textContent = idleLabel();
   $('resultParts').hidden = true;
@@ -2182,6 +2167,8 @@ function render() {
     if (result.classList.contains('hint')) result.textContent = hintText();
     renderRanges();
     renderHistory();
+    if (r) showIdleDice(r);
+    else for (const d of dice) d.canvas.hidden = true;
     fitNamePlaceholder();
     syncAddress();
     return;
@@ -2568,76 +2555,336 @@ function startOverRange() {
 }
 
 // ---------- The 3D dice ----------
-// Each side has six pips. A number lays out the first pips on spots of a 3×3
-// grid (one more pip keeps the spots of the one before, so they slide only a
-// little); the rest shrink into the middle. Opposite sides add up to 7.
-const PIP_SPOTS = { tl: [24, 24], tr: [76, 24], ml: [24, 50], c: [50, 50], mr: [76, 50], bl: [24, 76], br: [76, 76] };
-const PIP_LAYOUTS = {
-  1: ['c'],
-  2: ['tl', 'br'],
-  3: ['tl', 'br', 'c'],
-  4: ['tl', 'br', 'tr', 'bl'],
-  5: ['tl', 'br', 'tr', 'bl', 'c'],
-  6: ['tl', 'br', 'tr', 'bl', 'ml', 'mr'],
+// Real dice shapes, drawn on a canvas by a tiny 3D renderer (no libraries).
+// Each shape is only its corner points; its faces are worked out from them.
+// A range uses a real die when its size divides the die's sides and its numbers
+// fit on the faces (1–3 on a d6 shows each number twice, 1–5 on a d10).
+// Anything else gets a purple "magic" d20 with twinkling symbols instead of numbers.
+const PHI = (1 + Math.sqrt(5)) / 2;
+const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const mul = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const unit = (a) => mul(a, 1 / Math.hypot(...a));
+// every sign combination of a point (zeros stay zero), and its cyclic rotations
+const signs = (p) => p.reduce((list, c) => list.flatMap(q => c ? [[...q, c], [...q, -c]] : [[...q, 0]]), [[]]);
+const cyclic = ([a, b, c]) => [[a, b, c], [b, c, a], [c, a, b]];
+
+const DIE_POINTS = {
+  4: [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]],
+  6: signs([1, 1, 1]),
+  8: cyclic([1, 0, 0]).flatMap(signs),
+  // d10: a point at the top and bottom with a zigzag ring between them; this
+  // ring height makes each of the ten kite-shaped faces perfectly flat
+  10: [[0, 1, 0], [0, -1, 0], ...Array.from({ length: 10 }, (_, k) => {
+    const h = (1 - Math.cos(Math.PI / 5)) / (1 + Math.cos(Math.PI / 5));
+    return [Math.cos(k * Math.PI / 5), k % 2 ? -h : h, Math.sin(k * Math.PI / 5)];
+  })],
+  12: [...signs([1, 1, 1]), ...cyclic([0, 1 / PHI, PHI]).flatMap(signs)],
+  20: cyclic([0, 1, PHI]).flatMap(signs),
 };
-// pairs of opposite sides, with the numbers they show at rest
-const SIDE_PAIRS = [[1, 'rotateY(0deg)', 6, 'rotateY(180deg)'],
-  [2, 'rotateY(90deg)', 5, 'rotateY(-90deg)'], [3, 'rotateX(90deg)', 4, 'rotateX(-90deg)']];
 
-// Up to MAX_DICE dice; a roll shows as many as the range has. Each one starts
-// its turn at a different point, so they don't spin in step.
-const dice = Array.from({ length: MAX_DICE }, (_, d) => {
-  const box = document.createElement('div');
-  box.className = 'die-box';
-  box.innerHTML = '<div class="die-spin"><div class="die-cube"></div></div>';
-  box.firstChild.style.animationDelay = `${-0.17 * d}s`;
-  const cube = box.querySelector('.die-cube');
-  const pairs = SIDE_PAIRS.map(([a, turnA, b, turnB], shade) => [[a, turnA], [b, turnB]].map(([n, turn]) => {
-    const side = document.createElement('div');
-    side.className = 'die-side shade-' + (shade + 1);
-    side.style.transform = `${turn} translateZ(calc(var(--s) / 2))`;
-    for (let i = 0; i < 6; i++) side.append(document.createElement('i'));
-    cube.append(side);
-    showPips(side, n);
-    return side;
-  }));
-  $('die').append(box);
-  return { box, pairs };
+// The faces of a convex shape: every plane through three corners that has all
+// other corners on one side. Each face gets its outward direction, its middle,
+// an "up" direction for its number, and how much room the number has.
+function makeShape(points) {
+  // scaled as a whole (not point by point, which would bend the d10's kites) so the farthest corner is 1 away
+  const far = Math.max(...points.map(p => Math.hypot(...p)));
+  const v = points.map(p => mul(p, 1 / far));
+  const faces = [];
+  const seen = new Set();
+  for (let i = 0; i < v.length; i++) for (let j = i + 1; j < v.length; j++) for (let k = j + 1; k < v.length; k++) {
+    let n = cross(sub(v[j], v[i]), sub(v[k], v[i]));
+    if (Math.hypot(...n) < 1e-9) continue;
+    n = unit(n);
+    const d = dot(n, v[i]);
+    const on = [];
+    let above = 0, below = 0;
+    v.forEach((p, m) => {
+      const s = dot(n, p) - d;
+      if (s > 1e-6) above++; else if (s < -1e-6) below++; else on.push(m);
+    });
+    if ((above && below) || seen.has(on.join())) continue;
+    seen.add(on.join());
+    if (above) n = mul(n, -1);
+    const c = mul(on.reduce((s, m) => add(s, v[m]), [0, 0, 0]), 1 / on.length);
+    const a = unit(sub(v[on[0]], c)), b = cross(n, a);
+    const angle = (m) => Math.atan2(dot(sub(v[m], c), b), dot(sub(v[m], c), a));
+    on.sort((p, q) => angle(p) - angle(q));
+    const pts = on.map(m => v[m]);
+    const mids = pts.map((p, t) => mul(add(p, pts[(t + 1) % pts.length]), 0.5));
+    const dist = pts.map(p => Math.hypot(...sub(p, c)));
+    const square = pts.length === 4 && Math.max(...dist) - Math.min(...dist) < 1e-6;
+    // numbers point at a corner (at the edge's middle on a square, like a d6)
+    const toward = square ? mids[0] : pts[dist.indexOf(Math.max(...dist))];
+    const up = unit(sub(toward, c));
+    faces.push({ idx: on, n, c, up, right: cross(up, n), room: Math.min(...mids.map(q => Math.hypot(...sub(q, c)))) });
+  }
+  // Numbering: opposite faces add up to sides + 1, like real dice.
+  const done = new Set();
+  let next = 1;
+  faces.forEach((f, i) => {
+    if (done.has(i)) return;
+    done.add(i);
+    f.num = next++;
+    const j = faces.findIndex((g, gi) => !done.has(gi) && dot(g.n, f.n) < -0.999);
+    if (j >= 0) { done.add(j); faces[j].num = faces.length + 1 - f.num; }
+  });
+  return { v, faces };
+}
+const SHAPES = Object.fromEntries(Object.entries(DIE_POINTS).map(([sides, pts]) => [sides, makeShape(pts)]));
+
+// Which die a range rolls. Small triangles fit 2 characters, the bigger faces 3.
+const REAL_DICE = [4, 6, 8, 10, 12, 20];
+const FACE_ROOM = { 4: 2, 6: 3, 8: 2, 10: 3, 12: 3, 20: 2 };
+function dieFor(range) {
+  const size = range.to - range.from + 1;
+  const width = Math.max(String(range.from).length, String(range.to).length);
+  const sides = REAL_DICE.find(s => s % size === 0 && width <= FACE_ROOM[s]);
+  if (!sides) return { sides: 20, magic: true };
+  return { sides, magic: false, pips: sides === 6 && range.from === 1 && range.to === 6 };
+}
+const MAGIC_SYMBOLS = ['✦', '✧', '✶', '✷', '✸', '✹', '✺', '✩', '✪', '★', '☆', '❂'];
+const magicSymbol = () => MAGIC_SYMBOLS[randomInt(MAGIC_SYMBOLS.length)];
+
+// ----- rotations (quaternions [w, x, y, z]) -----
+const qMul = (a, b) => [
+  a[0] * b[0] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3],
+  a[0] * b[1] + a[1] * b[0] + a[2] * b[3] - a[3] * b[2],
+  a[0] * b[2] - a[1] * b[3] + a[2] * b[0] + a[3] * b[1],
+  a[0] * b[3] + a[1] * b[2] - a[2] * b[1] + a[3] * b[0],
+];
+const qAxis = (axis, angle) => { const s = Math.sin(angle / 2); return [Math.cos(angle / 2), axis[0] * s, axis[1] * s, axis[2] * s]; };
+function qFromTo(a, b) {
+  const axis = cross(a, b);
+  if (Math.hypot(...axis) < 1e-9) return dot(a, b) > 0 ? [1, 0, 0, 0] : qAxis(Math.abs(a[0]) < 0.9 ? unit(cross(a, [1, 0, 0])) : unit(cross(a, [0, 1, 0])), Math.PI);
+  return qAxis(unit(axis), Math.acos(Math.max(-1, Math.min(1, dot(a, b)))));
+}
+function qMatrix([w, x, y, z]) {
+  return [
+    [1 - 2 * (y * y + z * z), 2 * (x * y - w * z), 2 * (x * z + w * y)],
+    [2 * (x * y + w * z), 1 - 2 * (x * x + z * z), 2 * (y * z - w * x)],
+    [2 * (x * z - w * y), 2 * (y * z + w * x), 1 - 2 * (x * x + y * y)],
+  ];
+}
+function qFromMatrix(m) {
+  const t = m[0][0] + m[1][1] + m[2][2];
+  if (t > 0) { const s = Math.sqrt(t + 1) * 2; return [s / 4, (m[2][1] - m[1][2]) / s, (m[0][2] - m[2][0]) / s, (m[1][0] - m[0][1]) / s]; }
+  if (m[0][0] > m[1][1] && m[0][0] > m[2][2]) { const s = Math.sqrt(1 + m[0][0] - m[1][1] - m[2][2]) * 2; return [(m[2][1] - m[1][2]) / s, s / 4, (m[0][1] + m[1][0]) / s, (m[0][2] + m[2][0]) / s]; }
+  if (m[1][1] > m[2][2]) { const s = Math.sqrt(1 + m[1][1] - m[0][0] - m[2][2]) * 2; return [(m[0][2] - m[2][0]) / s, (m[0][1] + m[1][0]) / s, s / 4, (m[1][2] + m[2][1]) / s]; }
+  const s = Math.sqrt(1 + m[2][2] - m[0][0] - m[1][1]) * 2;
+  return [(m[1][0] - m[0][1]) / s, (m[0][2] + m[2][0]) / s, (m[1][2] + m[2][1]) / s, s / 4];
+}
+function qSlerp(a, b, t) {
+  let d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+  if (d < 0) { b = b.map(c => -c); d = -d; }
+  if (d > 0.9995) { const q = a.map((c, i) => c + (b[i] - c) * t); const l = Math.hypot(...q); return q.map(c => c / l); }
+  const th = Math.acos(d), s = Math.sin(th);
+  return a.map((c, i) => (c * Math.sin((1 - t) * th) + b[i] * Math.sin(t * th)) / s);
+}
+const turn = (m, p) => [dot(m[0], p), dot(m[1], p), dot(m[2], p)];
+const ease = (t) => t * t * (3 - 2 * t);
+
+// Resting pose showing a face: the face toward you, its number upright, tipped
+// back a little so the faces around it show too (a d4 more, or it looks flat).
+const REST_TILT = qMul(qAxis([0, 1, 0], 0.22), qAxis([1, 0, 0], 0.36));
+const REST_TILT_D4 = qMul(qAxis([0, 1, 0], 0.35), qAxis([1, 0, 0], 0.75));
+function restPose(face, sides) {
+  return qMul(sides === 4 ? REST_TILT_D4 : REST_TILT, qFromMatrix([face.right, face.up, face.n]));
+}
+
+// ----- the dice on screen -----
+const dice = Array.from({ length: MAX_DICE }, () => {
+  const canvas = document.createElement('canvas');
+  $('die').append(canvas);
+  return { canvas, ctx: canvas.getContext('2d'), key: '' };
 });
+let diceAnim = null; // { start, ms, settle, last } while the dice spin
+let dieRate = 1;     // spin speed, slowing down along with the ticks
+const SPIN_TURN_MS = 600;
+// full speed at first, about a quarter by the end
+const dieSpeed = (progress) => (spinPause(0) / spinPause(progress)) ** 0.7;
 
-function showPips(side, n) {
-  [...side.children].forEach((pip, i) => {
-    const [x, y] = PIP_SPOTS[PIP_LAYOUTS[n][i] || 'c'];
-    pip.style.setProperty('--x', `${x}%`);
-    pip.style.setProperty('--y', `${y}%`);
-    pip.classList.toggle('off', i >= n);
+// Gives the shown dice the range's shape and numbers; keeps where they rest
+// unless the range changed.
+function setupDice(range) {
+  const look = dieFor(range);
+  const size = range.to - range.from + 1;
+  const cssSize = range.dice > 2 ? 74 : 90;
+  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  const key = `${look.sides}:${look.magic}:${range.from}:${range.to}`;
+  $('die').classList.toggle('many', range.dice > 2);
+  dice.forEach((d, i) => {
+    d.canvas.hidden = i >= range.dice;
+    if (d.canvas.hidden) return;
+    const px = Math.round(cssSize * dpr);
+    if (d.canvas.width !== px) d.canvas.width = d.canvas.height = px;
+    if (d.key === key) return;
+    d.key = key;
+    Object.assign(d, look, { shape: SHAPES[look.sides], glow: false, target: null });
+    d.labels = d.shape.faces.map(f => look.magic ? magicSymbol() : String(range.from + (f.num - 1) % size));
+    // at rest it shows the highest number (or any symbol)
+    const top = d.shape.faces.reduce((a, f) => f.num > a.num ? f : a);
+    d.q = restPose(top, look.sides);
   });
 }
 
-function showDice(count) {
-  dice.forEach((d, i) => { d.box.hidden = i >= count; });
-  $('die').style.setProperty('--s', count > 2 ? '34px' : '42px'); // three or four get smaller to fit
+function showIdleDice(range) {
+  if (diceAnim) return;
+  setupDice(range);
+  drawDice();
 }
 
-// Every tick of a roll, each pair of sides shows new numbers; the pips take
-// most of the time until the next tick to slide there.
-function shufflePips(ms) {
-  $('die').style.setProperty('--pip-time', `${Math.round(Math.min(260, Math.max(90, ms * 0.9)))}ms`);
-  for (const d of dice) {
-    if (d.box.hidden) continue;
-    for (const [a, b] of d.pairs) {
-      const n = 1 + randomInt(6);
-      showPips(a, n);
-      showPips(b, 7 - n);
+function drawDice(now = performance.now()) {
+  for (const d of dice) if (!d.canvas.hidden && d.shape) drawDie(d, now);
+}
+
+const LIGHT = unit([-0.45, 0.65, 0.6]);
+// pips for 1–6 on a d6, at spots of a 3×3 grid (in parts of the face's half size)
+const PIPS = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]],
+  5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] };
+
+function drawDie(d, now) {
+  const { ctx, canvas, shape } = d;
+  const W = canvas.width;
+  const R = qMatrix(d.q);
+  const scale = W * 0.36, D = 5, mid = W / 2;
+  const proj = (w) => { const f = D / (D - w[2]); return [mid + w[0] * scale * f, mid - w[1] * scale * f]; };
+  const corners = shape.v.map(p => proj(turn(R, p)));
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, W, W);
+  const hasSixAndNine = d.labels.includes('6') && d.labels.includes('9');
+  shape.faces.forEach((f, fi) => {
+    const n = turn(R, f.n), c = turn(R, f.c);
+    if (dot(n, sub([0, 0, D], c)) <= 0) return; // facing away
+    const lit = 0.55 + 0.45 * Math.max(0, dot(n, LIGHT));
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.beginPath();
+    f.idx.forEach((m, t) => (t ? ctx.lineTo : ctx.moveTo).call(ctx, ...corners[m]));
+    ctx.closePath();
+    if (d.magic) {
+      const glow = d.glow && fi === d.landedFace ? 1.35 : 1;
+      ctx.fillStyle = `rgb(${Math.min(255, (40 + 120 * lit) * glow)}, ${Math.min(255, (14 + 92 * lit) * glow)}, ${Math.min(255, (100 + 150 * lit) * glow)})`;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(226, 206, 255, .75)';
+    } else {
+      const g = Math.round(150 + 105 * lit);
+      ctx.fillStyle = `rgb(${g}, ${g}, ${Math.round(g * 0.985)})`;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0, 0, 0, .22)';
     }
+    ctx.lineWidth = W / 110;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // the face's own flat directions on screen (right and up), per unit of size
+    const at = proj(c);
+    const e = 0.05;
+    const r = proj(add(c, mul(turn(R, f.right), e))), u = proj(add(c, mul(turn(R, f.up), e)));
+    const ax = [(r[0] - at[0]) / e, (r[1] - at[1]) / e], ay = [(u[0] - at[0]) / e, (u[1] - at[1]) / e];
+    ctx.setTransform(ax[0], ax[1], -ay[0], -ay[1], at[0], at[1]);
+    if (d.pips) {
+      ctx.fillStyle = '#1d2321';
+      for (const [x, y] of PIPS[f.num]) {
+        ctx.beginPath();
+        ctx.arc(x * f.room * 0.5, y * f.room * 0.5, f.room * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      return;
+    }
+    const label = d.labels[fi];
+    const size = f.room * (d.magic ? 1.25 : label.length === 1 ? 1.15 : label.length === 2 ? 0.95 : 0.72);
+    ctx.scale(size / 100, size / 100);
+    ctx.font = '800 100px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    if (d.magic) {
+      ctx.shadowColor = '#d9c2ff';
+      ctx.shadowBlur = W / 14;
+      ctx.fillStyle = '#f7efff';
+    } else {
+      ctx.fillStyle = '#1d2321';
+    }
+    ctx.fillText(label, 0, 6);
+    ctx.shadowBlur = 0;
+    // 6 and 9 get a line underneath when both are on the die, like real dice
+    if (hasSixAndNine && (label === '6' || label === '9')) ctx.fillRect(-26, 44, 52, 9);
+  });
+  if (d.magic) drawSparkles(ctx, W, now, d);
+}
+
+// a few twinkling stars around a magic die
+function drawSparkles(ctx, W, now, d) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = 'rgba(232, 214, 255, .9)';
+  for (let i = 0; i < 6; i++) {
+    const a = i * 1.05 + (d.seed || 0);
+    const x = W / 2 + Math.cos(a) * W * 0.43, y = W / 2 + Math.sin(a) * W * 0.43;
+    const s = W * 0.035 * (0.55 + 0.45 * Math.sin(now / 230 + i * 1.7));
+    ctx.beginPath();
+    ctx.moveTo(x, y - s * 2); ctx.lineTo(x + s * 0.5, y - s * 0.5); ctx.lineTo(x + s * 2, y); ctx.lineTo(x + s * 0.5, y + s * 0.5);
+    ctx.lineTo(x, y + s * 2); ctx.lineTo(x - s * 0.5, y + s * 0.5); ctx.lineTo(x - s * 2, y); ctx.lineTo(x - s * 0.5, y - s * 0.5);
+    ctx.closePath();
+    ctx.fill();
   }
 }
 
-// The dice slow down along with the numbers: full speed at first, about a
-// quarter by the end. Then they shrink away as the number lands.
-let dieTimer;
-const dieSpins = () => [...document.querySelectorAll('.die-box:not([hidden]) .die-spin')].map(el => el.getAnimations()[0]).filter(Boolean);
-const dieSpeed = (progress) => (spinPause(0) / spinPause(progress)) ** 0.7;
+// Starts the dice spinning upright (a corner on top) for ms, slowing down with
+// the ticks, and settling at the end on a face showing each die's value.
+function rollDice(range, values, ms) {
+  setupDice(range);
+  dice.forEach((d, i) => {
+    if (d.canvas.hidden) return;
+    const faces = d.shape.faces.map((f, fi) => fi).filter(fi => d.magic || d.labels[fi] === String(values[i]));
+    d.landedFace = faces[randomInt(faces.length)];
+    d.target = restPose(d.shape.faces[d.landedFace], d.sides);
+    d.from = d.q;
+    d.base = qFromTo(d.shape.v[0], [0, 1, 0]);
+    d.angle = Math.random() * Math.PI * 2;
+    d.speed = 0.9 + Math.random() * 0.2;
+    d.seed = Math.random() * 6;
+    d.glow = false;
+  });
+  dieRate = 1;
+  if (ms <= 0) { landDice(); return; }
+  diceAnim = { start: performance.now(), ms, settle: Math.min(700, ms * 0.35), last: performance.now() };
+  requestAnimationFrame(diceFrame);
+}
+
+function diceFrame(now) {
+  if (!diceAnim) return;
+  const e = now - diceAnim.start;
+  const dt = Math.min(50, Math.max(0, now - diceAnim.last));
+  diceAnim.last = now;
+  for (const d of dice) {
+    if (d.canvas.hidden || !d.target) continue;
+    d.angle += dt / SPIN_TURN_MS * Math.PI * 2 * dieRate * d.speed;
+    let q = qMul(qAxis([0, 1, 0], d.angle), d.base);
+    if (e < 220) q = qSlerp(d.from, q, ease(Math.max(0, e) / 220)); // from rest into the spin
+    const s = (e - (diceAnim.ms - diceAnim.settle)) / diceAnim.settle;
+    if (s > 0) q = qSlerp(q, d.target, ease(Math.min(1, s)));       // settling on the rolled face
+    d.q = q;
+  }
+  drawDice(now);
+  if (e < diceAnim.ms) requestAnimationFrame(diceFrame);
+}
+
+// Every tick a magic die's faces show new symbols.
+function shuffleMagic() {
+  for (const d of dice) if (!d.canvas.hidden && d.magic) d.labels = d.labels.map(magicSymbol);
+}
+
+// The dice come to rest on their rolled faces; a magic die's face lights up.
+function landDice() {
+  diceAnim = null;
+  for (const d of dice) {
+    if (d.canvas.hidden || !d.target) continue;
+    d.q = d.target;
+    d.glow = true;
+  }
+  drawDice();
+}
 
 // Picks how many dice the chosen range rolls. More than one die can't use
 // "roll each number only once", so that switches off.
@@ -2696,11 +2943,10 @@ function rollNumber() {
   $('card').className = 'starter rolling';
   $('crown').className = '';
   $('resultParts').hidden = true;
-  clearTimeout(dieTimer);
-  showDice(range.dice);
-  $('die').className = '';
-  void $('die').offsetWidth; // restarts the spin at full speed
-  $('die').className = 'rolling';
+  let rollMs = 0;
+  for (let t = 1; t < total; t++) rollMs += spinDelay(t / total);
+  rollDice(range, parts.length ? parts : [number], rollMs);
+  const magic = dieFor(range).magic;
   $('pick').textContent = 'Rolling…';
   $('pick').disabled = true;
   sfx.start();
@@ -2713,8 +2959,8 @@ function rollNumber() {
       const progress = tick / total;
       const delay = spinDelay(progress);
       sfx.tick(progress);
-      for (const a of dieSpins()) a.updatePlaybackRate(dieSpeed(progress));
-      shufflePips(delay);
+      dieRate = dieSpeed(progress);
+      if (magic) shuffleMagic();
       if (navigator.vibrate) navigator.vibrate(5);
       setTimeout(spin, delay);
       return;
@@ -2734,11 +2980,10 @@ function rollNumber() {
     });
     rolls.length = Math.min(rolls.length, MAX_HISTORY);
     saveRolls();
-    $('die').className = 'landing';
-    dieTimer = setTimeout(() => { $('die').className = ''; }, 300);
+    landDice();
     result.className = '';
     void result.offsetWidth;
-    result.className = 'won' + (shown.length > 14 ? ' long' : '');
+    result.className = 'won' + (shown.length > 14 ? ' long' : '') + (magic ? ' from-die' : '');
     result.textContent = shown;
     if (parts.length > 1) {
       $('resultParts').textContent = parts.map(p => p.toLocaleString()).join(' + ');

@@ -7,10 +7,11 @@ A tiny web app that picks one thing at random from a list, rolls up to four 3D d
 It installs on your phone like a normal app, works offline, and remembers your lists.
 
 <p align="center">
-  <img src="screenshots/lists.png" alt="A list of options: Ben, Sam, Alex, Mia and Noah (left out)" width="200">
-  <img src="screenshots/picked.png" alt="One option has been picked, shown in a gold badge with a crown" width="200">
-  <img src="screenshots/dice.png" alt="Dice mode after rolling 2d6: the total in a gold badge with the two dice under it" width="200">
-  <img src="screenshots/coin.png" alt="Coin mode after a flip, with the result in a gold badge and the heads and tails tally" width="200">
+  <img src="screenshots/lists.png" alt="A list of options: Ben, Sam, Alex, Mia and Noah (left out)" width="160">
+  <img src="screenshots/picked.png" alt="One option has been picked, shown in a gold badge with a crown" width="160">
+  <img src="screenshots/dice.png" alt="Dice mode after rolling 2d6: two 3D dice showing 4 and 1, and the total 5 in a gold badge" width="160">
+  <img src="screenshots/magic.png" alt="The purple magic d20 after rolling a 1 to 100 raffle ticket, with the number in a gold badge" width="160">
+  <img src="screenshots/coin.png" alt="Coin mode after a flip, with the result in a gold badge and the heads and tails tally" width="160">
 </p>
 
 ## What can it be used for?
@@ -53,8 +54,12 @@ Switch to **🎲 Dice** at the top to roll dice, or any random number, instead o
 1. **Add a range** with the **From**, **To** and **Name (optional)** fields and **Add**. The Add button stays greyed out until From and To are whole numbers. Any whole numbers work, even 1 to 1,000,000. You start with the dice *d4* (1 to 4), *d6* (1 to 6), *d12* (1 to 12), *d20* (1 to 20) and *2d6* (2 dice, each 1 to 6, added up), which you can rename, change or remove.
 2. **Tap a range** to choose it. It gets a ✓.
 3. **Choose how many dice** it rolls with **Dice 1 2 3 4** above the ranges. With several dice, each die is rolled on its own and they're added up, just like real dice: with 2d6 a 7 comes up six times as often as a 2 or a 12. The row then reads *2 dice, each 1 to 6*, and the hint uses the range's name, like *Tap Roll! to roll “2d6”*.
-4. **Tap Roll!** (or shake your phone). 3D dice, standing on one corner, spin while numbers race past (their dots slide around into new numbers), slow down with them and shrink away as it lands on a number from the range, both ends included. With several dice, the total shows in the gold badge with the dice under it, like *4 + 5*.
+4. **Tap Roll!** (or shake your phone). The dice spin on a corner while numbers race past, slow down with them, and come to rest showing the face they rolled. The number is picked at random from the range, both ends included. With several dice, the total shows in the gold badge with the dice under it, like *4 + 5*.
 5. **Change a range** with its **✎**: the row turns into From, To and Name fields with a green **Save** button. Change what you like and tap Save or press Enter (Esc cancels). Numbers are put in order if you swap them, and a range you already have is not added twice. **✕** removes a range (tap the red **Delete** to confirm, or **Cancel**).
+
+**Real dice shapes:** each range rolls a real-looking 3D die when one fits: a **d4**, **d6**, **d8**, **d10**, **d12** or **d20**. The faces show the range's own numbers, so *5 to 9* rolls a d10 numbered 5 to 9 (each number twice), and *1 to 3* rolls a d6 with each number twice, just like real d3s. A plain 1 to 6 die has dots. Opposite faces add up the same way as on real dice, and 6 and 9 are underlined so they can't be mixed up.
+
+**The magic die ✨:** some ranges have no real die, like 1 to 7, 1 to 100 or 1001 to 1020 (numbers too long for the faces). They roll a purple, glowing **magic d20** instead. Twinkling symbols swap on its faces while it spins, and when it lands, its number flies out into the gold badge.
 
 **Roll each number only once:** switch this on for a range when the same number must not come up twice, like drawing raffle tickets. Numbers already rolled sit out, the switch shows how many have been rolled, and when every number has been rolled the button turns into **↺ Start over**. The setting is saved per range, and works with one die.
 
@@ -119,11 +124,13 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 - Shared lists are encoded in the link after `#list=`, which never reaches the server.
 - The sounds are generated with the Web Audio API, so there are no audio files.
 - The random pick uses `crypto.getRandomValues`.
+- The 3D dice are drawn on a `<canvas>` by a small built-in 3D renderer. Each die shape is only its corner points, and the faces are worked out from them.
+- The earlier dice look (spinning cubes with sliding dots that shrink away) is kept as the git tag [`classic-dice`](https://github.com/neckfors/randomizer/tree/classic-dice).
 
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v67` → `whostarts-v68`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v68` → `whostarts-v69`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
