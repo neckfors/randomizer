@@ -1,6 +1,6 @@
 # 👑 Randomizer
 
-A tiny web app that picks one thing at random from a list, rolls up to five 3D dice or flips a coin, with shuffling cards, tumbling dice, confetti and sound effects.
+A tiny web app that picks one thing at random from a list, rolls up to five 3D dice or flips a coin, with a spinning name reel, tumbling dice, confetti and sound effects.
 
 **Try it:** https://neckfors.github.io/randomizer/
 
@@ -36,9 +36,9 @@ Anything where you need a fair, random pick:
 ## How it works
 
 1. **Choose a list:** tap the list button under the Pick! area to see all your lists (*🎲 Game night*, *🍳 Who makes dinner*, *🍕 Where to eat*, …) and tap one to switch. Each list keeps its own options, so the names in one list never show up in another.
-2. **Add options** using the field under the list (the **Add** button lights up once you type something). Add several at once by separating them with commas (`Ben, Sam`), or paste a list with one option per line.
+2. **Add options** using the field under the list (the **Add** button lights up once you type something). Add several at once by separating them with commas (`Sam, Ben`), or paste a list with one option per line.
 3. **Tap an option** to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
-4. **Tap Pick!** Face-down cards fan out and shuffle, one is drawn and turns over to show the pick. It lights up in gold, with a 👑 and confetti. (Prefer the classic flashing names? Switch to them in Settings.)
+4. **Tap Pick!** Your options spin past on a slot-machine reel, big and blurred at speed, then slow down with clicks until the pick stops between the gold lines. It turns into a gold badge, with a 👑 and confetti. Like the dice, the reel is planned to stop exactly on the pick, which was chosen before it started. (Prefer the classic flashing names? Switch to them in Settings.)
 5. **Rename an option** with its **✎**: the row turns into a field with a green **Save** button. Type the new name and tap Save or press Enter (Esc cancels). Tapping somewhere else saves too.
 6. Remove an option for good with **✕**: it turns into a red **Delete** button in the same spot, with **Cancel** next to it. Tap Delete to remove it, or Cancel (or anywhere else) to keep it.
 
@@ -138,7 +138,7 @@ Tap the **⛶** button at the top to show only the picker: the Pick!, Roll! or F
 - **Shake to pick** (on by default on phones): give your phone two quick shakes instead of tapping Pick!, Roll! or Flip! The hint in the Pick! card then reads *Tap Pick! or shake your phone*. On iPhone, a *📳 Tap to turn on shake to pick* button shows first, because Safari asks for motion access once. Tap *No thanks* next to it if you don't want shaking. You can switch it on or off here any time.
 - **Sound effects:** on or off (the 🔊 button at the top does the same).
 - **Spin time:** how long a pick, roll or flip spins before it lands, from *Instant* to 3 seconds (the default).
-- **Picking from a list:** *🃏 Cards* (the default: cards shuffle and one is drawn and turned over) or *✨ Flashing names* (the classic slot-machine spin through the names).
+- **Picking from a list:** *🎰 Reel* (the default: your options spin past on a slot-machine reel) or *✨ Flashing names* (the names flash by in the card, the classic look).
 - **Backup:** *Save backup* downloads a file with all your lists. *Restore* loads such a file and replaces your lists with it. Use it to keep your lists safe, or to move them to a new phone.
 
 ## Install on your phone
@@ -178,7 +178,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v76` → `whostarts-v77`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v77` → `whostarts-v78`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
