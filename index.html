@@ -137,7 +137,7 @@
   /* Picking from a list with a reel: the names, at full size, on a reel that
      spins behind a window, blurs at speed and slows to a stop on the pick
      (Settings can switch back to the flashing names). The window shows three
-     names; the middle one, between the gold lines, is the one that counts. */
+     names; the middle one, in the gold band between the pointers, is the one that counts. */
   #reel {
     position: relative; height: 0; overflow: hidden; transition: height .3s ease;
     -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
@@ -146,14 +146,21 @@
   #reel.open { height: 150px; }
   #reel { justify-self: stretch; }
   #reel.done { height: 0; transition: height .35s ease; }
-  #reel.done .reel-strip { opacity: 0; transition: opacity .25s; }
-  #reel::before, #reel::after {
-    content: ""; position: absolute; left: 12%; right: 12%; height: 2px; z-index: 1;
-    background: var(--gold); opacity: .7; border-radius: 2px;
+  #reel.done > * { opacity: 0; transition: opacity .25s; }
+  /* the window: a glowing gold band behind the middle name, and two gold
+     pointers that each passing name flicks, like the flapper on a prize wheel */
+  .reel-band {
+    position: absolute; left: 9%; right: 9%; top: 52px; height: 46px; border-radius: 14px;
+    background: linear-gradient(90deg, transparent, rgba(242, 194, 48, .2) 22%, rgba(242, 194, 48, .2) 78%, transparent);
+    box-shadow: inset 0 0 0 2px rgba(242, 194, 48, .6), 0 0 20px rgba(242, 194, 48, .3);
   }
-  #reel::before { top: 50px; }
-  #reel.done::before, #reel.done::after { opacity: 0; transition: opacity .2s; }
-  #reel::after { top: 98px; }
+  .reel-pointer {
+    position: absolute; top: 61px; width: 0; height: 0; z-index: 1;
+    border-top: 14px solid transparent; border-bottom: 14px solid transparent;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .4));
+  }
+  .reel-pointer.left { left: 2%; border-left: 20px solid #f2c230; transform-origin: 0 50%; }
+  .reel-pointer.right { right: 2%; border-right: 20px solid #f2c230; transform-origin: 100% 50%; }
   .reel-strip { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
   .reel-item {
     height: 50px; display: flex; align-items: center; justify-content: center; padding: 0 12px;
@@ -633,7 +640,7 @@
     <div id="die" aria-hidden="true"></div>
     <div class="coin-box coin-only" aria-hidden="true"><canvas id="coinCanvas"></canvas></div>
 
-    <div class="stage"><div id="reel" aria-hidden="true"><div class="reel-strip" id="reelStrip"></div></div><div id="result" class="hint">Add some options, then tap Pick!</div><div id="resultParts" hidden></div></div>
+    <div class="stage"><div id="reel" aria-hidden="true"><div class="reel-band" id="reelBand"></div><div class="reel-strip" id="reelStrip"></div><div class="reel-pointer left"></div><div class="reel-pointer right"></div></div><div id="result" class="hint">Add some options, then tap Pick!</div><div id="resultParts" hidden></div></div>
     <button id="pick" type="button">Pick!</button>
     <div class="shake-ask" id="shakeAsk" hidden>
       <button type="button" class="shake-tip" id="shakeTip">📳 Tap to turn on shake to pick</button>
@@ -2623,6 +2630,16 @@ renderPickStyle();
 // slowing down (slowDown) so it stops with the pick exactly in the middle, a
 // click for each name that passes, and the list row of the name in the middle
 // lighting up as it goes.
+// Each name passing the middle flicks the two pointers outward, and they
+// spring back, like the flapper on a prize wheel.
+function flickPointers() {
+  for (const p of document.querySelectorAll('.reel-pointer')) {
+    const out = p.classList.contains('left') ? -28 : 28;
+    p.animate([{ transform: 'rotate(0)' }, { transform: `rotate(${out}deg)`, offset: 0.3 }, { transform: 'rotate(0)' }],
+      { duration: 160, easing: 'ease-out' });
+  }
+}
+
 const REEL_ROW = 50;     // height of one name on the reel (see .reel-item)
 const REEL_SPEED = 16;   // names per second at the start of a 3-second spin
 function spinReel(playing, winner) {
@@ -2668,8 +2685,15 @@ function spinReel(playing, winner) {
     landed = true;
     at(steps);
     strip.style.filter = '';
-    $('reel').className = 'done';
-    land(winner);
+    // the band flashes as the pick lands, then the reel folds into the badge
+    $('reelBand').animate([
+      { boxShadow: 'inset 0 0 0 2px rgba(242, 194, 48, .6), 0 0 20px rgba(242, 194, 48, .3)' },
+      { boxShadow: 'inset 0 0 0 3px #f2c230, 0 0 34px rgba(242, 194, 48, .9)', background: 'rgba(242, 194, 48, .45)' },
+    ], { duration: 220 });
+    setTimeout(() => {
+      $('reel').className = 'done';
+      land(winner);
+    }, 220);
   };
   // the pick always lands when the time is up, even if a frame went wrong
   setTimeout(finish, ms + 400);
@@ -2689,6 +2713,7 @@ function spinReel(playing, winner) {
     if (row !== lastRow) {
       lastRow = row;
       highlightRow(names[row].id);
+      flickPointers();
       if (navigator.vibrate) navigator.vibrate(4);
     }
     if (x < 1) requestAnimationFrame(frame);
