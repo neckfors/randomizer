@@ -188,10 +188,12 @@
   #resultParts { color: var(--muted); font-size: .95rem; margin-top: 8px; font-variant-numeric: tabular-nums; }
   #resultParts[hidden] { display: none; }
 
-  /* the coin, drawn in 3D on a canvas (see "The coin" in the script); seen from
-     above, lying on a table, with room to grow when it's tossed toward you */
-  .coin-box { display: grid; place-items: center; height: 124px; margin: -12px 0 0; }
-  .coin-box canvas { display: block; width: 170px; height: 124px; }
+  /* the coin, drawn in 3D on a canvas (see "Flipping a coin" in the script); seen
+     from above, lying on a table. The canvas reaches far above the coin, so a
+     toss can fly up out of the card (which stops clipping while it flips). */
+  .coin-box { position: relative; height: 140px; margin: -10px 0 0; }
+  .coin-box canvas { position: absolute; left: 50%; top: -190px; width: 300px; height: 400px; margin-left: -150px; pointer-events: none; z-index: 5; }
+  body.coin-mode .starter.rolling { overflow: visible; }
   .coin-tally { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
   .coin-tally .spacer { flex: 1; }
   .coin-tally b { font-variant-numeric: tabular-nums; }
@@ -1139,7 +1141,9 @@ const sfx = {
     noise({ at, dur: 0.03, vol: 0.12 * strength, freq: 5000, q: 2 });
   },
   // the coin tossed up into the air
-  whoosh() { noise({ dur: 0.4, vol: 0.06, freq: 500, to: 2600, q: 0.8, attack: 0.15 }); },
+  whoosh(at = 0) { noise({ at, dur: 0.4, vol: 0.06, freq: 500, to: 2600, q: 0.8, attack: 0.15 }); },
+  // a thumb flicking the coin: a sharp tick with a little ring
+  flick() { noise({ dur: 0.025, vol: 0.16, freq: 3800, q: 3 }); tone(1900, { dur: 0.05, type: 'triangle', vol: 0.035 }); },
   // a faint metal shimmer as the spinning coin's face catches the light
   ting(at, strength = 1) { tone(3000 + randomInt(600), { at, dur: 0.07, type: 'sine', vol: 0.012 * strength }); },
   // a die knocking on the table as it tumbles: a hard click and a low knock
@@ -3099,11 +3103,25 @@ function rollDice(range, values, ms, only = null) {
     const faces = d.shape.faces.map((f, fi) => fi).filter(fi => d.magic || d.labels[fi] === labels[i]);
     d.target = restPose(d.shape.faces[faces[randomInt(faces.length)]]);
     // the one turn from here to the target: its axis and angle
-    let [w, x, y, z] = qMul(d.target, [d.from[0], -d.from[1], -d.from[2], -d.from[3]]);
+    const turn1 = qMul(d.target, [d.from[0], -d.from[1], -d.from[2], -d.from[3]]);
+    let [w, x, y, z] = turn1;
     if (w < 0) [w, x, y, z] = [-w, -x, -y, -z];
     const half = Math.acos(Math.min(1, w));
-    d.axis = Math.sin(half) > 1e-6 ? unit([x, y, z]) : unit([1, Math.random() - 0.5, Math.random() - 0.5]);
+    d.axis = Math.sin(half) > 1e-6 ? unit([x, y, z]) : null;
     d.total = 2 * half + Math.PI * 2 * turns;
+    d.drift = null;
+    // Turning straight about the x, y or z axis looks flat (a d6 always would:
+    // one upright face to another is a quarter or half turn about x or y), so
+    // then it turns about an axis leaning away from them instead, and the small
+    // turn still needed to land on the face is spread evenly over the whole
+    // roll (never saved up for the end).
+    if (!d.axis || Math.max(...d.axis.map(Math.abs)) > 0.94) {
+      d.axis = leanAxis(d.axis);
+      let [dw, dx, dy, dz] = qMul(turn1, qAxis(d.axis, -d.total));
+      if (dw < 0) [dw, dx, dy, dz] = [-dw, -dx, -dy, -dz];
+      const dHalf = Math.acos(Math.min(1, dw));
+      if (Math.sin(dHalf) > 1e-6) d.drift = { axis: unit([dx, dy, dz]), angle: 2 * dHalf };
+    }
     // a knock on the table every quarter turn: quick at first, further apart
     // and softer as it slows (slowDown run backwards gives when each happens);
     // a magic die twinkles instead (see rollNumber)
@@ -3118,6 +3136,17 @@ function rollDice(range, values, ms, only = null) {
   if (!diceAnim) { diceAnim = true; requestAnimationFrame(diceFrame); }
 }
 
+// An axis that leans 25–37° away from the x, y and z axes: near the given
+// axis when there is one (so the roll keeps its direction), or anywhere.
+function leanAxis(near) {
+  for (;;) {
+    const r = unit([Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5]);
+    const a = near ? unit(add(mul(near, Math.cos(0.5)), mul(unit(cross(near, r)), Math.sin(0.5)))) : r;
+    const most = Math.max(...a.map(Math.abs));
+    if (most < Math.cos(25 * Math.PI / 180) && (near || most > 0.6)) return a;
+  }
+}
+
 // Each rolling die moves on its own clock, so one die can roll by itself.
 function diceFrame(now) {
   if (!diceAnim) return;
@@ -3126,7 +3155,9 @@ function diceFrame(now) {
     if (d.canvas.hidden || !d.ms) continue;
     const e = Math.max(0, now - d.start);
     if (e >= d.ms) { d.q = d.target; d.ms = 0; continue; }
-    d.q = qMul(qAxis(d.axis, d.total * slowDown(e / d.ms)), d.from);
+    const s = slowDown(e / d.ms);
+    d.q = qMul(qAxis(d.axis, d.total * s), d.from);
+    if (d.drift) d.q = qMul(qAxis(d.drift.axis, d.drift.angle * s), d.q);
     moving = true;
   }
   drawDice(now);
@@ -3288,21 +3319,33 @@ $('die').addEventListener('click', (e) => {
 
 // ---------- Flipping a coin ----------
 // The coin is drawn in 3D on a canvas, seen from above as it lies on a table:
-// a gold disc with a raised rim, a crown on heads, a star on tails and a ridged
-// edge. Its metal catches the light as it turns.
+// gold on the heads side and silver on the tails side, each with a raised rim
+// around a sunken field, a raised emblem (a crown or a star) in a ring of
+// raised dots. The ridged edge is half gold, half silver.
+// Its metal catches the light as it turns.
 //
 // A flip is planned before it starts, like the dice: the side is picked first
-// (each half the time), then the coin is tossed toward you, turning end over end
-// about one axis, and comes down flat with the picked side up, bouncing once.
+// (each half the time). Then a thumb flicks it (a small dip), it flies up out of
+// the card, turning end over end about one axis and tilted a little so you see
+// its edge, blurred while it's fast, and comes down flat with the picked side
+// up, bouncing once. Its shadow stays on the table, shrinking as it rises.
 const COIN_EDGE = 48;          // segments around the rim (alternate shades make the ridges)
 const COIN_THICK = 0.13;       // thickness, in coin radii
-const FLY = 0.84, BOUNCE = 0.97; // parts of the flip: in the air until FLY, one bounce until BOUNCE
+const COIN_R = 56;             // radius at rest, in CSS pixels
+const COIN_W = 300, COIN_H = 400, COIN_Y = 260; // the canvas, and the coin's middle at rest (see .coin-box)
+const COIN_RISE = 62;          // how far up the screen it goes per unit of height (it peaks about 105 px up)
+const FLICK = 0.07, FLY = 0.84, BOUNCE = 0.97; // parts of the flip: the flick, in the air until FLY, one bounce until BOUNCE
+const COIN_TILT = 0.5;         // how far it leans in the air (radians), back to flat by the landing
 const HEADS_UP = [1, 0, 0, 0];
 const TAILS_UP = qAxis([1, 0, 0], Math.PI);
 const coinCanvas = $('coinCanvas');
 const coinCtx = coinCanvas.getContext('2d');
-let coin = { q: HEADS_UP, z: 0 };  // how it lies, and how high above the table
+let coin = { q: HEADS_UP, z: 0, blur: 0 };  // how it lies, how high above the table, and its motion blur
 let coinAnim = null;
+
+// the two metals: color, the color of its shine, and the dark and light edges of raised shapes
+const GOLD = { color: [226, 168, 38], shine: [255, 245, 190], dark: 'rgba(95, 58, 0, .7)', light: 'rgba(255, 246, 200, .75)' };
+const SILVER = { color: [196, 203, 212], shine: [255, 255, 255], dark: 'rgba(38, 46, 58, .6)', light: 'rgba(255, 255, 255, .85)' };
 
 // rim corners on both sides, and the outward direction of each ridge
 const COIN_RIM = Array.from({ length: COIN_EDGE }, (_, i) => {
@@ -3310,144 +3353,181 @@ const COIN_RIM = Array.from({ length: COIN_EDGE }, (_, i) => {
   return [Math.cos(a), Math.sin(a)];
 });
 
-function metal(n, ridge = 1) {
+function metal(n, ridge = 1, m = GOLD) {
   const diffuse = Math.max(0, dot(n, LIGHT));
   // light bounced off the surface straight at you makes the shine
   const bounce = sub(mul(n, 2 * dot(n, LIGHT)), LIGHT);
   const shine = Math.max(0, bounce[2]) ** 10;
-  // bright gold when it faces you, darker as it turns away
+  // bright when it faces you, darker as it turns away
   const k = (0.42 + 0.33 * diffuse + 0.3 * Math.max(0, n[2])) * ridge;
-  return [226 * k + 255 * shine * 0.85, 168 * k + 245 * shine * 0.8, 38 * k + 190 * shine * 0.7].map(c => Math.round(Math.min(255, c)));
+  return m.color.map((c, i) => Math.round(Math.min(255, c * k + m.shine[i] * shine * 0.8)));
 }
 const rgb = (c, a = 1) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${a})`;
+const shadeBy = (c, k) => c.map(v => Math.min(255, Math.round(v * k)));
 
 function drawCoin() {
   const dpr = Math.min(3, window.devicePixelRatio || 1);
-  const W = Math.round(170 * dpr), H = Math.round(124 * dpr);
+  const W = Math.round(COIN_W * dpr), H = Math.round(COIN_H * dpr);
   if (coinCanvas.width !== W) { coinCanvas.width = W; coinCanvas.height = H; }
   const ctx = coinCtx;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, W, H);
-  const size = H * 0.3, D = 6, mx = W / 2, my = H / 2;
+  const size = COIN_R * dpr, D = 6, mx = W / 2, my = COIN_Y * dpr;
+  const lift = coin.z * COIN_RISE * dpr; // higher in the air is further up the screen
   const R = qMatrix(coin.q);
-  const at = (p) => { const w = turn(R, p); const f = D / (D - w[2] - coin.z); return [mx + w[0] * size * f, my - w[1] * size * f]; };
+  const at = (p) => { const w = turn(R, p); const f = D / (D - w[2] - coin.z); return [mx + w[0] * size * f, my - lift - w[1] * size * f]; };
   const top = turn(R, [0, 0, 1]);
 
-  // the shadow on the table: smaller, fainter and further off the higher it is
-  const sx = mx + coin.z * size * 0.28, sy = my + coin.z * size * 0.38;
-  const sr = size * (0.75 + 0.25 * Math.abs(top[2])) * (1 - Math.min(0.35, coin.z * 0.12));
-  const shade = ctx.createRadialGradient(sx, sy, sr * 0.5, sx, sy, sr * 1.15);
-  shade.addColorStop(0, `rgba(0, 0, 0, ${0.38 * (1 - Math.min(0.7, coin.z * 0.3))})`);
+  // the shadow stays on the table where it will land: smaller and fainter the higher the coin is
+  const high = Math.max(0, coin.z);
+  const sx = mx + size * 0.08, sy = my + size * 0.12;
+  const sr = size * (0.7 + 0.3 * Math.abs(top[2])) * (1 - Math.min(0.45, high * 0.25));
+  const shade = ctx.createRadialGradient(sx, sy, sr * 0.45, sx, sy, sr * 1.15);
+  shade.addColorStop(0, `rgba(0, 0, 0, ${0.42 * (1 - Math.min(0.75, high * 0.4))})`);
   shade.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = shade;
   ctx.beginPath();
   ctx.arc(sx, sy, sr * 1.15, 0, Math.PI * 2);
   ctx.fill();
 
+  // motion blur while it spins fast (where the browser can blur a canvas)
+  if (coin.blur > 0.05 && 'filter' in ctx) ctx.filter = `blur(${(coin.blur * dpr).toFixed(2)}px)`;
+
   const facing = (n, c) => dot(turn(R, n), sub([0, 0, D - coin.z], turn(R, c))) > 0;
-  // the ridged edge: one thin side per segment, alternately lighter and darker
+  // the ridged edge: one thin side per segment, alternately lighter and darker,
+  // gold on the heads half of its thickness and silver on the tails half
+  const h = COIN_THICK / 2;
   for (let i = 0; i < COIN_EDGE; i++) {
     const [a1, b1] = COIN_RIM[i], [a2, b2] = COIN_RIM[(i + 1) % COIN_EDGE];
     const n = unit([a1 + a2, b1 + b2, 0]);
     if (!facing(n, mul(n, 1))) continue;
-    const h = COIN_THICK / 2;
-    const quad = [[a1, b1, h], [a2, b2, h], [a2, b2, -h], [a1, b1, -h]].map(at);
-    ctx.beginPath();
-    quad.forEach((p, t) => (t ? ctx.lineTo : ctx.moveTo).call(ctx, ...p));
-    ctx.closePath();
-    ctx.fillStyle = rgb(metal(turn(R, n), i % 2 ? 0.72 : 0.95));
-    ctx.fill();
+    for (const [z1, z2, m] of [[h, 0, GOLD], [0, -h, SILVER]]) {
+      const quad = [[a1, b1, z1], [a2, b2, z1], [a2, b2, z2], [a1, b1, z2]].map(at);
+      ctx.beginPath();
+      quad.forEach((p, t) => (t ? ctx.lineTo : ctx.moveTo).call(ctx, ...p));
+      ctx.closePath();
+      ctx.fillStyle = rgb(metal(turn(R, n), i % 2 ? 0.7 : 0.95, m));
+      ctx.fill();
+    }
   }
 
-  // the face toward you (heads on +z, tails on -z)
+  // the face toward you (heads, gold, on +z; tails, silver, on -z)
   for (const side of [1, -1]) {
-    const n = [0, 0, side], c = [0, 0, side * COIN_THICK / 2];
+    const n = [0, 0, side], c = [0, 0, side * h];
     if (!facing(n, c)) continue;
+    const m = side === 1 ? GOLD : SILVER;
     const ring = COIN_RIM.map(([a, b]) => at([a, b, c[2]]));
-    const base = metal(turn(R, n));
+    const base = metal(turn(R, n), 1, m);
     ctx.beginPath();
     ring.forEach((p, t) => (t ? ctx.lineTo : ctx.moveTo).call(ctx, ...p));
     ctx.closePath();
     // a soft sheen across the face that moves as the coin turns
     const p1 = at([-0.9, 0.9 * side, c[2]]), p2 = at([0.9, -0.9 * side, c[2]]);
     const sheen = ctx.createLinearGradient(p1[0], p1[1], p2[0], p2[1]);
-    sheen.addColorStop(0, rgb(base.map(v => Math.min(255, v + 45))));
+    sheen.addColorStop(0, rgb(shadeBy(base, 1.25)));
     sheen.addColorStop(0.55, rgb(base));
-    sheen.addColorStop(1, rgb(base.map(v => v * 0.78)));
+    sheen.addColorStop(1, rgb(shadeBy(base, 0.75)));
     ctx.fillStyle = sheen;
     ctx.fill();
 
-    // the face's own flat directions on screen; the emblem is drawn in coin radii
+    // the face's own flat directions on screen; everything on it is drawn in coin radii
     const o = at(c);
     const r = at(add(c, [0.05, 0, 0])), u = at(add(c, [0, 0.05 * side, 0]));
     ctx.setTransform((r[0] - o[0]) / 0.05, (r[1] - o[1]) / 0.05, -(u[0] - o[0]) / 0.05, -(u[1] - o[1]) / 0.05, o[0], o[1]);
-    // pressed into the metal: a dark edge below, a light edge above, then the shape
-    const emboss = (draw, fill) => {
-      for (const [dx, dy, color] of [[0.025, 0.025, 'rgba(90, 55, 0, .55)'], [-0.02, -0.02, 'rgba(255, 248, 210, .55)'], [0, 0, fill]]) {
+
+    // the sunken field inside the raised rim: a little darker, with the rim's
+    // shadow along its top left and light catching its bottom right
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(0, 0, 0.84, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.fillStyle = 'rgba(0, 0, 0, .1)';
+    ctx.fill();
+    ctx.lineWidth = 0.09;
+    ctx.strokeStyle = m.dark;
+    ctx.beginPath(); ctx.arc(0.035, 0.035, 0.86, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = m.light;
+    ctx.lineWidth = 0.05;
+    ctx.beginPath(); ctx.arc(-0.03, -0.03, 0.87, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+
+    // raised shapes: a dark edge below right, a light edge above left, then the shape
+    const raised = (draw, fill) => {
+      for (const [dx, dy, color] of [[0.03, 0.03, m.dark], [-0.022, -0.022, m.light], [0, 0, fill]]) {
         ctx.save();
         ctx.translate(dx, dy);
         draw(color);
         ctx.restore();
       }
     };
-    const rimColor = rgb(base.map(v => v * 0.86));
-    emboss((color) => { ctx.lineWidth = 0.07; ctx.strokeStyle = color; ctx.beginPath(); ctx.arc(0, 0, 0.84, 0, Math.PI * 2); ctx.stroke(); }, rimColor);
-    if (side === 1) emboss((color) => { ctx.fillStyle = color; crownPath(); ctx.fill(); }, rgb(base.map(v => v * 0.8)));
-    else emboss((color) => { ctx.fillStyle = color; starPath(); ctx.fill(); }, rgb(base.map(v => v * 0.8)));
+    const relief = rgb(shadeBy(base, 1.02));
+    raised((color) => { ctx.fillStyle = color; side === 1 ? crownPath() : starPath(); ctx.fill(); }, relief);
+    raised((color) => { ctx.fillStyle = color; rimDots(); ctx.fill(); }, relief);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
+  ctx.filter = 'none';
 }
 
 // heads: a crown with three points and a band (in coin radii, y down)
 function crownPath() {
   coinCtx.beginPath();
-  coinCtx.moveTo(-0.46, 0.2);
-  coinCtx.lineTo(-0.52, -0.28);
-  coinCtx.lineTo(-0.24, -0.02);
-  coinCtx.lineTo(0, -0.4);
-  coinCtx.lineTo(0.24, -0.02);
-  coinCtx.lineTo(0.52, -0.28);
-  coinCtx.lineTo(0.46, 0.2);
+  coinCtx.moveTo(-0.42, 0.26);
+  coinCtx.lineTo(-0.47, -0.16);
+  coinCtx.lineTo(-0.22, 0.06);
+  coinCtx.lineTo(0, -0.26);
+  coinCtx.lineTo(0.22, 0.06);
+  coinCtx.lineTo(0.47, -0.16);
+  coinCtx.lineTo(0.42, 0.26);
   coinCtx.closePath();
-  coinCtx.rect(-0.46, 0.25, 0.92, 0.13);
-  for (const [x, y] of [[-0.52, -0.33], [0, -0.46], [0.52, -0.33]]) {
-    coinCtx.moveTo(x + 0.07, y);
-    coinCtx.arc(x, y, 0.07, 0, Math.PI * 2);
+  coinCtx.rect(-0.42, 0.31, 0.84, 0.12);
+  for (const [x, y] of [[-0.47, -0.21], [0, -0.32], [0.47, -0.21]]) {
+    coinCtx.moveTo(x + 0.065, y);
+    coinCtx.arc(x, y, 0.065, 0, Math.PI * 2);
   }
 }
 
-// tails: a five-pointed star in a ring of dots
+// tails: a five-pointed star
 function starPath() {
   coinCtx.beginPath();
   for (let i = 0; i < 10; i++) {
-    const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 0.2 : 0.48;
-    (i ? coinCtx.lineTo : coinCtx.moveTo).call(coinCtx, Math.cos(a) * r, Math.sin(a) * r);
+    const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 0.19 : 0.45;
+    (i ? coinCtx.lineTo : coinCtx.moveTo).call(coinCtx, Math.cos(a) * r, Math.sin(a) * r + 0.04);
   }
   coinCtx.closePath();
-  for (let i = 0; i < 16; i++) {
-    const a = i / 16 * Math.PI * 2, x = Math.cos(a) * 0.66, y = Math.sin(a) * 0.66;
+}
+
+// a ring of dots inside the rim, on both sides
+function rimDots() {
+  coinCtx.beginPath();
+  for (let i = 0; i < 20; i++) {
+    const a = i / 20 * Math.PI * 2, x = Math.cos(a) * 0.68, y = Math.sin(a) * 0.68;
     coinCtx.moveTo(x + 0.035, y);
     coinCtx.arc(x, y, 0.035, 0, Math.PI * 2);
   }
 }
 
-// The flip, worked out before it starts: tossed up toward you (bigger),
-// turning end over end at a steady speed about the x axis, it lands flat with
-// the picked side up and bounces once. The sounds are timed to match.
+// The flip, worked out before it starts: a thumb flicks it (a small dip), it's
+// tossed up and toward you, turning end over end at a steady speed about the
+// x axis and leaning a little about the y axis, then lands flat with the
+// picked side up and bounces once. The sounds are timed to match.
 function tossCoin(heads, ms) {
   const from = coin.q;
   const end = heads ? HEADS_UP : TAILS_UP;
   const wasHeads = dot(turn(qMatrix(from), [0, 0, 1]), [0, 0, 1]) > 0;
-  const flyMs = ms * FLY;
+  const flyMs = ms * (FLY - FLICK);
   const flips = Math.max(2, Math.round(flyMs / 260));
   // whole turns, plus a half turn when it changes sides
   const total = Math.PI * 2 * flips + (wasHeads === heads ? 0 : Math.PI);
-  coinAnim = { start: performance.now(), ms, from, end, total };
+  // it leans one way or the other (this doesn't change the side it lands on)
+  const lean = (randomInt(2) ? 1 : -1) * COIN_TILT;
+  coinAnim = { start: performance.now(), ms, from, end, total, lean };
 
-  sfx.whoosh();
+  const flick = ms * FLICK / 1000;
+  sfx.flick();
+  sfx.whoosh(flick);
   // a faint shimmer each time a face turns toward you in the air
-  for (let k = 1; k * Math.PI < total; k++) sfx.ting((k * Math.PI / total) * flyMs / 1000, 1 - 0.4 * k * Math.PI / total);
-  sfx.clink(flyMs / 1000);
+  for (let k = 1; k * Math.PI < total; k++) sfx.ting(flick + (k * Math.PI / total) * flyMs / 1000, 1 - 0.4 * k * Math.PI / total);
+  sfx.clink(ms * FLY / 1000);
   sfx.clink(ms * BOUNCE / 1000, 0.45);
   requestAnimationFrame(coinFrame);
 }
@@ -3456,14 +3536,24 @@ function coinFrame(now) {
   const a = coinAnim;
   if (!a) return;
   const x = Math.min(1, Math.max(0, (now - a.start) / a.ms));
-  if (x < FLY) {
-    const u = x / FLY;
-    coin.q = qMul(qAxis([1, 0, 0], a.total * u), a.from);
+  if (x < FLICK) {
+    // the thumb presses it down a little and it rocks back, ready to fly
+    const dip = Math.sin(Math.PI * x / FLICK);
+    coin.q = qMul(qAxis([1, 0, 0], -0.22 * dip), a.from);
+    coin.z = -0.12 * dip;
+    coin.blur = 0;
+  } else if (x < FLY) {
+    const u = (x - FLICK) / (FLY - FLICK);
+    const spin = qMul(qAxis([1, 0, 0], a.total * u), a.from);
+    coin.q = qMul(qAxis([0, 1, 0], a.lean * Math.sin(Math.PI * u)), spin);
     coin.z = 1.7 * 4 * u * (1 - u);
+    // blurred at the start, sharp by the time it comes down, so you can read the side
+    coin.blur = 2.4 * Math.min(1, u / 0.06) * Math.max(0, 1 - u / 0.7);
   } else {
     const w = Math.min(1, (x - FLY) / (BOUNCE - FLY));
     coin.q = a.end;
     coin.z = 0.2 * 4 * w * (1 - w); // one small hop, flat
+    coin.blur = 0;
   }
   drawCoin();
   if (x < 1) requestAnimationFrame(coinFrame);

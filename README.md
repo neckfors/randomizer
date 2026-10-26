@@ -11,7 +11,7 @@ It installs on your phone like a normal app, works offline, and remembers your l
   <img src="screenshots/picked.png" alt="One option has been picked, shown in a gold badge with a crown" width="160">
   <img src="screenshots/dice.png" alt="Dice mode after rolling 2d6: two 3D dice showing 4 and 1, and the total 5 in a gold badge" width="160">
   <img src="screenshots/magic.png" alt="The purple magic d20 after rolling a 1 to 1,000 raffle ticket, with the number in a gold badge" width="160">
-  <img src="screenshots/coin.png" alt="Coin mode after a flip: a 3D gold coin with an embossed crown, Heads in a gold badge, and the heads and tails tally" width="160">
+  <img src="screenshots/coin.png" alt="Coin mode after a flip: a big 3D silver coin with a raised star in a ring of dots, Tails in a gold badge, and the heads and tails tally" width="160">
   <img src="screenshots/focus.png" alt="Focus mode: only the pick card in the middle of the screen, with a close button in the corner" width="160">
 </p>
 
@@ -89,7 +89,7 @@ Like real dice, opposite faces add up to the same total (1 and 6, 2 and 5, 3 and
 
 **The magic die ✨** is a purple, glowing d20 for ranges no real die can roll. Symbols swap on its faces while it tumbles, and it lands on a face just like the other dice, then its number flies out into the gold badge. The sparkles around it keep twinkling as long as it is on screen.
 
-**How a roll works.** The number is chosen first, completely at random. Every number in the range has the same chance, using the browser's secure random numbers (`crypto.getRandomValues`). The die's tumble is then worked out to fit: from exactly where the die rests, it turns about one fixed axis, a few whole turns plus the turn that brings up that face, and slows down until it stops with the face pointing straight at you. It never changes direction or turns toward the number at the end; it simply rolls to a stop, like a real die. When a number is on a die twice, one of its faces is picked at random. The animation only shows the result; it never decides it.
+**How a roll works.** The number is chosen first, completely at random. Every number in the range has the same chance, using the browser's secure random numbers (`crypto.getRandomValues`). The die's tumble is then worked out to fit: from exactly where the die rests, it turns about one axis, a few whole turns plus the turn that brings up that face, and slows down until it stops with the face pointing straight at you. That axis always leans at an angle, never straight sideways or up and down, so the die tumbles at a slant instead of just rolling forward. When the turn to the face would be straight (as it always is for a d6), the die spins about a leaning axis instead. The small extra turn it still needs is spread evenly over the whole roll, so the tumble drifts a little but never turns toward the number at the end. It simply rolls to a stop, like a real die. When a number is on a die twice, one of its faces is picked at random. The animation only shows the result; it never decides it.
 
 **Several dice** are each rolled on their own and added up, just like real dice. So with 2d6, a 7 (six ways to make it) comes up six times as often as a 2 or a 12 (one way each). Each die lands on its own number, shown under the total, like *4 + 5*.
 
@@ -103,12 +103,13 @@ Like real dice, opposite faces add up to the same total (1 and 6, 2 and 5, 3 and
 
 Switch to **🪙 Coin** at the top and tap **Flip!** (or shake your phone). The result shows as *Heads* or *Tails*, and each side comes up half the time. Under the card, a tally counts how many heads and tails you've flipped; **Reset** starts it over. `https://neckfors.github.io/randomizer/#coin` opens straight in Coin mode.
 
-**The coin** is a 3D gold coin seen from above, lying on a table. It has a raised rim and a ridged edge, an embossed **crown** on heads and a **star** in a ring of dots on tails. Its metal catches the light as it turns.
+**The coin** is a big 3D coin seen from above, lying on a table: **gold on heads** with a raised **crown**, and **silver on tails** with a raised **star**, so you can tell the sides apart at a glance, even mid-flip. Each side has a raised rim around a slightly sunken middle, with a ring of raised dots, and the ridged edge is half gold, half silver. The raised parts are lit on one side and shadowed on the other, and the metal catches the light as it turns.
 
 **How a flip works.** Like the dice, the side is picked first (with secure random numbers), and the whole flip is worked out to end on it:
 
-1. With a whoosh, the coin is tossed toward you, getting bigger while its shadow shrinks and fades. It turns end over end at a steady speed, with a faint shimmer each time a face catches the light.
-2. It lands flat with the picked side up, with a clink, and bounces once.
+1. A thumb flicks it: the coin dips a little with a short *tick*.
+2. With a whoosh, it flies up out of the card and comes back down, getting bigger as it comes toward you. Its shadow stays on the table, shrinking and fading as the coin rises. It turns end over end at a steady speed, leaning a little so you see its edge, with a faint shimmer each time a face catches the light. It's blurred while it's fast and sharp again as it comes down.
+3. It lands flat with the picked side up, with a clink, and bounces once.
 
 It never turns over at the end to show the right side; the toss is planned so it lands that way.
 
@@ -178,7 +179,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v88` → `whostarts-v89`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v89` → `whostarts-v90`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
