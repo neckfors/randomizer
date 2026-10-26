@@ -384,6 +384,13 @@
   #historyList li { justify-content: space-between; padding: 10px 14px; gap: 12px; }
   #historyList .h-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #historyList .h-time { flex: none; color: var(--muted); font-size: .85rem; }
+  /* a recent roll: the result as a small gold badge, what was rolled in grey after it */
+  #historyList .h-result {
+    display: inline-block; min-width: 2.2em; margin-right: 10px; padding: 1px 8px;
+    border-radius: 8px; background: var(--gold); color: #1d2321;
+    font-weight: 800; text-align: center; font-variant-numeric: tabular-nums;
+  }
+  #historyList .h-from { color: var(--muted); font-size: .9rem; }
   .history-actions { display: flex; gap: 8px; margin-top: 8px; }
   .history-actions .btn { font-size: .85rem; padding: 6px 12px; }
 
@@ -894,12 +901,12 @@ let rolling = false;
 // (with up to 4 dice added up); "coin" flips a coin
 let mode = ['number', 'coin'].includes(pref(MODE_KEY, 'lists')) ? pref(MODE_KEY, 'lists') : 'lists';
 // the last MAX_HISTORY dice rolls, newest first, for all ranges together:
-// { name: "9 · 2d6 (4 + 5)", at }, shown as Recent rolls in Dice mode
+// { value: "9", from: "2d6", parts: "4 + 5", at }, shown as Recent rolls in Dice mode
 const ROLLS_KEY = 'whostarts.rolls';
 let rolls = (() => {
   try {
     const r = JSON.parse(pref(ROLLS_KEY, '[]'));
-    if (Array.isArray(r)) return r.filter(e => e && typeof e.name === 'string' && Number.isFinite(e.at)).slice(0, MAX_HISTORY);
+    if (Array.isArray(r)) return r.filter(e => e && typeof e.value === 'string' && Number.isFinite(e.at)).slice(0, MAX_HISTORY);
   } catch (e) {}
   return [];
 })();
@@ -2382,7 +2389,19 @@ function renderHistory() {
   for (const entry of h.slice(0, historyExpanded ? MAX_HISTORY : HISTORY_SHOWN)) {
     const li = document.createElement('li');
     li.innerHTML = '<span class="h-name"></span><span class="h-time"></span>';
-    li.querySelector('.h-name').textContent = entry.name;
+    const name = li.querySelector('.h-name');
+    if (entry.value !== undefined) {
+      // a roll: the result in a small gold badge, then what was rolled in grey
+      const badge = document.createElement('b');
+      badge.className = 'h-result';
+      badge.textContent = entry.value;
+      const from = document.createElement('span');
+      from.className = 'h-from';
+      from.textContent = entry.parts ? `${entry.from}: ${entry.parts}` : entry.from;
+      name.append(badge, from);
+    } else {
+      name.textContent = entry.name;
+    }
     li.querySelector('.h-time').textContent = ago(entry.at);
     ul.append(li);
   }
@@ -2702,9 +2721,13 @@ function rollNumber() {
       saveRanges();
     }
     const shown = number.toLocaleString();
-    // Recent rolls: "9 · 2d6 (4 + 5)", "4 · d6" or "17 · 1–20"
-    const detail = parts.length > 1 ? ` (${parts.map(p => p.toLocaleString()).join(' + ')})` : '';
-    rolls.unshift({ name: `${shown} · ${range.name || rangeText(range)}${detail}`, at: Date.now() });
+    // Recent rolls: the result, what was rolled ("2d6", "1–20") and the dice ("4 + 5")
+    rolls.unshift({
+      value: shown,
+      from: range.name || rangeText(range),
+      parts: parts.length > 1 ? parts.map(p => p.toLocaleString()).join(' + ') : '',
+      at: Date.now(),
+    });
     rolls.length = Math.min(rolls.length, MAX_HISTORY);
     saveRolls();
     $('die').className = 'landing';
