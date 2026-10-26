@@ -102,8 +102,7 @@ Switch to **🪙 Coin** at the top and tap **Flip!** (or shake your phone). The 
 **How a flip works.** Like the dice, the side is picked first (with secure random numbers), and the whole flip is worked out to end on it:
 
 1. With a whoosh, the coin is tossed toward you, getting bigger while its shadow shrinks and fades. It turns end over end at a steady speed, with a faint shimmer each time a face catches the light.
-2. It comes down tilted on its edge with a clink and bounces once.
-3. Then it wobbles down like a coin spinning out on a table: rocking around its edge faster and faster with a quickening rattle, while the tilt dies away, until it lies flat with the picked side up.
+2. It lands flat with the picked side up, with a clink, and bounces once.
 
 It never turns over at the end to show the right side; the toss is planned so it lands that way.
 
@@ -160,13 +159,13 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 - Shared lists are encoded in the link after `#list=`, which never reaches the server.
 - The sounds are generated with the Web Audio API, so there are no audio files.
 - The random pick uses `crypto.getRandomValues`.
-- The 3D dice and the coin are drawn on a `<canvas>` by a small built-in 3D renderer. Each die shape is only its corner points, and the faces are worked out from them. The knocks, clinks, rattles and whooshes are filtered noise, also generated on the fly.
+- The 3D dice and the coin are drawn on a `<canvas>` by a small built-in 3D renderer. Each die shape is only its corner points, and the faces are worked out from them. The knocks, clinks and whooshes are filtered noise, also generated on the fly.
 - The earlier dice look (spinning cubes with sliding dots that shrink away) is kept as the git tag [`classic-dice`](https://github.com/neckfors/randomizer/tree/classic-dice).
 
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v71` → `whostarts-v72`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v72` → `whostarts-v73`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 

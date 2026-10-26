@@ -1016,7 +1016,7 @@ function tone(freq, { at = 0, dur = 0.1, type = 'triangle', vol = 0.15, slide = 
   o.stop(t + dur + 0.05);
 }
 
-// A burst of noise through a band filter: knocks, rattles and whooshes.
+// A burst of noise through a band filter: knocks, clinks and whooshes.
 // The filter can sweep (from freq to to) for a whoosh.
 let noiseBuffer = null;
 function noise({ at = 0, dur = 0.04, vol = 0.2, freq = 2000, to = null, q = 1.5, attack = 0.004 } = {}) {
@@ -1070,11 +1070,6 @@ const sfx = {
   whoosh() { noise({ dur: 0.4, vol: 0.06, freq: 500, to: 2600, q: 0.8, attack: 0.15 }); },
   // a faint metal shimmer as the spinning coin's face catches the light
   ting(at, strength = 1) { tone(3000 + randomInt(600), { at, dur: 0.07, type: 'sine', vol: 0.012 * strength }); },
-  // the coin rattling on its edge as it wobbles down
-  rattle(at, strength = 1) {
-    tone(2200 + randomInt(900), { at, dur: 0.025, type: 'sine', vol: 0.03 * strength });
-    noise({ at, dur: 0.018, vol: 0.06 * strength, freq: 6000, q: 3 });
-  },
   // a die knocking on the table as it tumbles: a hard click and a low knock
   clack(at, strength = 1) {
     noise({ at, dur: 0.035, vol: 0.2 * strength, freq: 1900 + randomInt(900), q: 2.5 });
@@ -3034,13 +3029,10 @@ function rollNumber() {
 //
 // A flip is planned before it starts, like the dice: the side is picked first
 // (each half the time), then the coin is tossed toward you, turning end over end
-// about one axis, comes down tilted on its edge so that the side facing up is
-// the picked one, bounces once, and wobbles down flat like a spinning coin,
-// faster and faster with a rattle, until it lies still.
+// about one axis, and comes down flat with the picked side up, bouncing once.
 const COIN_EDGE = 48;          // segments around the rim (alternate shades make the ridges)
 const COIN_THICK = 0.13;       // thickness, in coin radii
-const COIN_TILT = 0.34;        // how far it leans on its edge when it lands (radians)
-const FLY = 0.58, BOUNCE = 0.7; // parts of the flip: in the air, one bounce, then the wobble
+const FLY = 0.84, BOUNCE = 0.97; // parts of the flip: in the air until FLY, one bounce until BOUNCE
 const HEADS_UP = [1, 0, 0, 0];
 const TAILS_UP = qAxis([1, 0, 0], Math.PI);
 const coinCanvas = $('coinCanvas');
@@ -3175,34 +3167,24 @@ function starPath() {
   }
 }
 
-// The flip, worked out before it starts. Over ms, in three parts:
-// in the air: tossed up toward you (bigger), turning end over end at a steady
-// speed about the x axis, landing tilted on its edge; one small bounce; then
-// the wobble: it rocks around its edge faster and faster while the tilt dies
-// down, ending flat with the picked side up. The sounds are timed to match.
+// The flip, worked out before it starts: tossed up toward you (bigger),
+// turning end over end at a steady speed about the x axis, it lands flat with
+// the picked side up and bounces once. The sounds are timed to match.
 function tossCoin(heads, ms) {
   const from = coin.q;
   const end = heads ? HEADS_UP : TAILS_UP;
   const wasHeads = dot(turn(qMatrix(from), [0, 0, 1]), [0, 0, 1]) > 0;
   const flyMs = ms * FLY;
   const flips = Math.max(2, Math.round(flyMs / 260));
-  // whole turns, plus a half turn when it changes sides, plus the lean it lands with
-  const total = Math.PI * 2 * flips + (wasHeads === heads ? 0 : Math.PI) + COIN_TILT;
-  const precess = (v) => Math.PI * 2 * (1.3 * v + 3.2 * v ** 3);
-  coinAnim = { start: performance.now(), ms, from, end, total, precess };
+  // whole turns, plus a half turn when it changes sides
+  const total = Math.PI * 2 * flips + (wasHeads === heads ? 0 : Math.PI);
+  coinAnim = { start: performance.now(), ms, from, end, total };
 
   sfx.whoosh();
   // a faint shimmer each time a face turns toward you in the air
-  for (let k = 1; k * Math.PI < total - COIN_TILT; k++) sfx.ting((k * Math.PI / total) * flyMs / 1000, 1 - 0.4 * k * Math.PI / total);
+  for (let k = 1; k * Math.PI < total; k++) sfx.ting((k * Math.PI / total) * flyMs / 1000, 1 - 0.4 * k * Math.PI / total);
   sfx.clink(flyMs / 1000);
-  sfx.clink(ms * BOUNCE / 1000, 0.5);
-  // the rattle quickens with the wobble: a tap each quarter of a rock
-  for (let k = 1; k < 200; k++) {
-    let v = 0;
-    while (v < 1 && precess(v) < k * Math.PI / 2) v += 0.002;
-    if (v >= 0.97) break;
-    sfx.rattle((ms * (BOUNCE + v * (1 - BOUNCE))) / 1000, 0.5 + 0.7 * v);
-  }
+  sfx.clink(ms * BOUNCE / 1000, 0.45);
   requestAnimationFrame(coinFrame);
 }
 
@@ -3214,16 +3196,10 @@ function coinFrame(now) {
     const u = x / FLY;
     coin.q = qMul(qAxis([1, 0, 0], a.total * u), a.from);
     coin.z = 1.7 * 4 * u * (1 - u);
-  } else if (x < BOUNCE) {
-    const w = (x - FLY) / (BOUNCE - FLY);
-    coin.q = qMul(qAxis([1, 0, 0], COIN_TILT), a.end);
-    coin.z = 0.22 * 4 * w * (1 - w);
   } else {
-    const v = (x - BOUNCE) / (1 - BOUNCE);
-    const tilt = COIN_TILT * (1 - v) ** 1.6;
-    const p = a.precess(v);
-    coin.q = qMul(qAxis([Math.cos(p), Math.sin(p), 0], tilt), a.end);
-    coin.z = 0;
+    const w = Math.min(1, (x - FLY) / (BOUNCE - FLY));
+    coin.q = a.end;
+    coin.z = 0.2 * 4 * w * (1 - w); // one small hop, flat
   }
   drawCoin();
   if (x < 1) requestAnimationFrame(coinFrame);
