@@ -1,6 +1,6 @@
 # 👑 Randomizer
 
-A tiny web app that picks one thing at random from a list, rolls up to four 3D dice or flips a coin, with a slot-machine spin, confetti and sound effects.
+A tiny web app that picks one thing at random from a list, rolls up to five 3D dice or flips a coin, with shuffling cards, tumbling dice, confetti and sound effects.
 
 **Try it:** https://neckfors.github.io/randomizer/
 
@@ -10,8 +10,9 @@ It installs on your phone like a normal app, works offline, and remembers your l
   <img src="screenshots/lists.png" alt="A list of options: Ben, Sam, Alex, Mia and Noah (left out)" width="160">
   <img src="screenshots/picked.png" alt="One option has been picked, shown in a gold badge with a crown" width="160">
   <img src="screenshots/dice.png" alt="Dice mode after rolling 2d6: two 3D dice showing 4 and 1, and the total 5 in a gold badge" width="160">
-  <img src="screenshots/magic.png" alt="The purple magic d20 after rolling a 1 to 100 raffle ticket, with the number in a gold badge" width="160">
+  <img src="screenshots/magic.png" alt="The purple magic d20 after rolling a 1 to 1,000 raffle ticket, with the number in a gold badge" width="160">
   <img src="screenshots/coin.png" alt="Coin mode after a flip: a 3D gold coin with an embossed crown, Heads in a gold badge, and the heads and tails tally" width="160">
+<img src="screenshots/focus.png" alt="Focus mode: only the pick card in the middle of the screen, with a close button in the corner" width="160">
 </p>
 
 ## What can it be used for?
@@ -29,7 +30,7 @@ Anything where you need a fair, random pick:
 - 📚 **What to read or play next** from your backlog
 - 🏃 **Which workout today:** run, gym, yoga, rest day…
 - 🤔 **Any tough decision:** when you just can't choose, let it choose
-- 🔢 **A random number:** roll up to 4 dice for a board game, pick a raffle ticket, or any number between two values
+- 🔢 **A random number:** roll dice for a board game, play dice games where you keep some dice and reroll the rest (Yahtzee-style), roll percentile dice for 1 to 100, pick a raffle ticket, or any number between two values
 - 🪙 **Heads or tails:** flip a coin to settle it
 
 ## How it works
@@ -37,7 +38,7 @@ Anything where you need a fair, random pick:
 1. **Choose a list:** tap the list button under the Pick! area to see all your lists (*🎲 Game night*, *🍳 Who makes dinner*, *🍕 Where to eat*, …) and tap one to switch. Each list keeps its own options, so the names in one list never show up in another.
 2. **Add options** using the field under the list (the **Add** button lights up once you type something). Add several at once by separating them with commas (`Ben, Sam`), or paste a list with one option per line.
 3. **Tap an option** to leave it out for now (someone isn't here, the restaurant is closed…). Tap it again to bring it back.
-4. **Tap Pick!** and watch it spin. The picked option lights up in gold, with a 👑 and confetti.
+4. **Tap Pick!** Face-down cards fan out and shuffle, one is drawn and turns over to show the pick. It lights up in gold, with a 👑 and confetti. (Prefer the classic flashing names? Switch to them in Settings.)
 5. **Rename an option** with its **✎**: the row turns into a field with a green **Save** button. Type the new name and tap Save or press Enter (Esc cancels). Tapping somewhere else saves too.
 6. Remove an option for good with **✕**: it turns into a red **Delete** button in the same spot, with **Cancel** next to it. Tap Delete to remove it, or Cancel (or anywhere else) to keep it.
 
@@ -51,9 +52,9 @@ Every pick is completely random. Each option in the draw has the same chance eve
 
 Switch to **🎲 Dice** at the top to roll dice, or any random number, instead of picking from a list. It works just like a list, except each row is a range of numbers:
 
-1. **Add a range** with the **From**, **To** and **Name (optional)** fields and **Add**. The Add button stays greyed out until From and To are whole numbers. Any whole numbers work, even 1 to 1,000,000. You start with the dice *d4* (1 to 4), *d6* (1 to 6), *d12* (1 to 12), *d20* (1 to 20) and *2d6* (2 dice, each 1 to 6, added up), which you can rename, change or remove.
+1. **Add a range** with the **From**, **To** and **Name (optional)** fields and **Add**. The Add button stays greyed out until From and To are whole numbers. Any whole numbers work, even 1 to 1,000,000. You start with the dice *d4* (1 to 4), *d6* (1 to 6), *d12* (1 to 12), *d20* (1 to 20) *2d6* (2 dice, each 1 to 6, added up) and *5 dice* (for dice games where you keep some dice and reroll the rest, like Yahtzee), which you can rename, change or remove.
 2. **Tap a range** to choose it. It gets a ✓.
-3. **Choose how many dice** it rolls with **Dice 1 2 3 4** above the ranges. With several dice, each die is rolled on its own and they're added up, just like real dice: with 2d6 a 7 comes up six times as often as a 2 or a 12. The row then reads *2 dice, each 1 to 6*, and the hint uses the range's name, like *Tap Roll! to roll “2d6”*.
+3. **Choose how many dice** it rolls with **Dice 1 2 3 4 5** above the ranges. With several dice, each die is rolled on its own and they're added up, just like real dice: with 2d6 a 7 comes up six times as often as a 2 or a 12. The row then reads *2 dice, each 1 to 6*, and the hint uses the range's name, like *Tap Roll! to roll “2d6”*.
 4. **Tap Roll!** (or shake your phone). The dice tumble while numbers race past, slow down, and come to rest showing the face they rolled. With several dice, the total shows in the gold badge with the dice under it, like *4 + 5*. See [How the dice work](#how-the-dice-work) below.
 5. **Change a range** with its **✎**: the row turns into From, To and Name fields with a green **Save** button. Change what you like and tap Save or press Enter (Esc cancels). Numbers are put in order if you swap them, and a range you already have is not added twice. **✕** removes a range (tap the red **Delete** to confirm, or **Cancel**).
 
@@ -79,7 +80,8 @@ Your ranges are remembered and included in backups. `https://neckfors.github.io/
 | 5 numbers | d10 | each number twice |
 | 12 numbers | d12 | each number once |
 | 20 numbers | d20 | each number once |
-| anything else (7, 9, 15, 37, 100, …) | magic d20 | twinkling symbols |
+| 1 to 100 or 0 to 99 (1 or 2 dice) | two d10s: tens and ones | percentile dice: 00–90 and 0–9 |
+| anything else (7, 9, 15, 37, 1,000, …) | magic d20 | twinkling symbols |
 
 The faces always show the range's own numbers, so *5 to 9* is a d10 with 5, 6, 7, 8 and 9 on it twice, and *95 to 100* is a cube with 95 to 100. The numbers must fit on the faces: up to 2 characters on the small triangles of the d4, d8 and d20, and up to 3 on the bigger faces of the d6, d10 and d12 (a minus sign counts). Longer numbers, like *1001 to 1020*, also get the magic die.
 
@@ -90,6 +92,10 @@ Like real dice, opposite faces add up to the same total (1 and 6, 2 and 5, 3 and
 **How a roll works.** The number is chosen first, completely at random. Every number in the range has the same chance, using the browser's secure random numbers (`crypto.getRandomValues`). The die's tumble is then worked out to fit: from exactly where the die rests, it turns about one fixed axis, a few whole turns plus the turn that brings up that face, and slows down until it stops with the face pointing straight at you. It never changes direction or turns toward the number at the end; it simply rolls to a stop, like a real die. When a number is on a die twice, one of its faces is picked at random. The animation only shows the result; it never decides it.
 
 **Several dice** are each rolled on their own and added up, just like real dice. So with 2d6, a 7 (six ways to make it) comes up six times as often as a 2 or a 12 (one way each). Each die lands on its own number, shown under the total, like *4 + 5*.
+
+**Percentile dice** are how real players roll 1 to 100: two d10s, one with 00, 10, 20 … 90 for the tens and one with 0 to 9 for the ones, added up. 70 and 4 make 74, and 00 and 0 make 100 (on a 0 to 99 range they make 0).
+
+**Reroll one die.** After rolling several dice, tap a die to roll just that one again and keep the others, like in Yahtzee-style dice games. The total, the dice under it and Recent rolls update. (A percentile pair rerolls together; with one die, tapping it is just a new roll.)
 
 **Sounds.** Each die knocks on the table every quarter turn as it tumbles: quick at first, then further apart and softer as it slows, with a deeper knock when it comes to rest. The magic die twinkles instead.
 
@@ -123,11 +129,16 @@ Every list has its own address, for example `https://neckfors.github.io/randomiz
 
 Tap ✎ on a list, then **⤴ Share this list**. You get a link to send to anyone. When they open it, Randomizer asks whether to add the list, with all its options, to their own lists. The list travels inside the link itself, so nothing is uploaded anywhere.
 
+## Focus mode ⛶
+
+Tap the **⛶** button at the top to show only the picker: the Pick!, Roll! or Flip! card in the middle of the screen, with everything else hidden. Where the phone allows it (Android), it also goes fullscreen. Leave with the **✕** in the corner, the phone's back gesture, or Esc on a keyboard. Handy on a table at game night.
+
 ## Settings ⚙️
 
 - **Shake to pick** (on by default on phones): give your phone two quick shakes instead of tapping Pick!, Roll! or Flip! The hint in the Pick! card then reads *Tap Pick! or shake your phone*. On iPhone, a *📳 Tap to turn on shake to pick* button shows first, because Safari asks for motion access once. Tap *No thanks* next to it if you don't want shaking. You can switch it on or off here any time.
 - **Sound effects:** on or off (the 🔊 button at the top does the same).
 - **Spin time:** how long a pick, roll or flip spins before it lands, from *Instant* to 3 seconds (the default).
+- **Picking from a list:** *🃏 Cards* (the default: cards shuffle and one is drawn and turned over) or *✨ Flashing names* (the classic slot-machine spin through the names).
 - **Backup:** *Save backup* downloads a file with all your lists. *Restore* loads such a file and replaces your lists with it. Use it to keep your lists safe, or to move them to a new phone.
 
 ## Install on your phone
@@ -135,7 +146,9 @@ Tap ✎ on a list, then **⤴ Share this list**. You get a link to send to anyon
 - **iPhone:** open the link in Safari, tap **Share**, then **Add to Home Screen**.
 - **Android:** open the link in Chrome and tap **Install app** (also in the ⋮ menu).
 
-On **Android** the installed app opens fullscreen, without the status bar. (iPhone always keeps the status bar for home screen apps.)
+On **Android** the installed app opens fullscreen, without the status bar. (iPhone always keeps the status bar for home screen apps.) Swiping up from the very bottom edge to bring back Android's bar doesn't scroll or tap anything in the app.
+
+**Screen readers** hear each result once it has landed, like *Picked Sam*, *Rolled 9: 4 + 5* or *Heads*, instead of every flicker of the spin.
 
 > On iPhone, the silent switch also mutes the sound effects.
 
@@ -165,7 +178,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v73` → `whostarts-v74`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Change `CACHE` in `sw.js` every time** (for example `whostarts-v76` → `whostarts-v77`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 

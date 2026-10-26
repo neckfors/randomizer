@@ -50,6 +50,17 @@
   h1 { font-size: 1.5rem; margin: 0; white-space: nowrap; }
   .right { display: flex; align-items: center; gap: 2px; min-width: 0; }
   .icon-btn { background: none; border: 0; font-size: 1.3rem; width: 40px; height: 40px; border-radius: 50%; color: var(--text); }
+  .icon-btn svg { display: block; margin: auto; }
+  /* Focus mode: only the pick card, in the middle of the screen (fullscreen where the phone allows it) */
+  body.focus-mode { display: flex; flex-direction: column; justify-content: center; min-height: 100vh; min-height: 100dvh; }
+  body.focus-mode > :not(#card):not(#toast):not(#updateBar):not(#confetti):not(#announce):not(#focusExit):not(dialog):not(script) { display: none !important; }
+  body.focus-mode #card { margin: 0; padding: 32px 18px; }
+  #focusExit {
+    position: fixed; top: calc(12px + env(safe-area-inset-top)); right: 12px; z-index: 20;
+    width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%;
+    background: var(--card); color: var(--text); font-size: 1.1rem;
+  }
+  #focusExit[hidden] { display: none; }
 
   .starter {
     position: relative;
@@ -102,12 +113,15 @@
   #crown { position: relative; height: 0; font-size: 2rem; line-height: 1; opacity: 0; transition: height .3s ease, margin-top .3s ease; }
   /* pulled up into the card's top padding, so the space above it matches the space under the badge */
   #crown.show { height: 2.2rem; margin-top: -12px; opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
-  /* Dice mode shows the dice of the chosen range (1–4 of them), drawn in 3D on
+  /* Dice mode shows the dice of the chosen range (1–5 of them), drawn in 3D on
      canvases: real shapes (d4, d6, d8, d10, d12, d20) when the range fits one,
      or a purple "magic" d20 otherwise. They rest on the face they last landed on. */
   #die { display: flex; justify-content: center; align-items: center; gap: 4px; height: 0; opacity: 0; pointer-events: none; transition: height .3s ease, opacity .3s ease; }
-  body.number-mode #die { height: 112px; opacity: 1; margin-top: -10px; }
-  #die canvas { display: block; flex: none; } /* sized from JS: smaller with more dice, so they fit side by side */
+  body.number-mode #die { height: 112px; opacity: 1; margin-top: -10px; pointer-events: auto; }
+  #die canvas { cursor: pointer; -webkit-tap-highlight-color: transparent; } /* tap a die to roll it again */
+  /* sized from JS: smaller with more dice, so they fit side by side; the shadow
+     keeps white dice from blending into a light card */
+  #die canvas { display: block; flex: none; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, .28)); }
   #die canvas[hidden] { display: none; }
   body.number-mode #crown { display: none !important; } /* the dice are the result */
   /* a magic die's number flies out of it into the badge */
@@ -117,6 +131,33 @@
     55% { transform: translateY(4px) scale(1.15); opacity: 1; filter: drop-shadow(0 0 10px #b78cff); }
     100% { transform: none; filter: none; }
   }
+  /* Picking from a list with cards: face-down cards fan out and shuffle, one is
+     drawn and flips over to show the pick (Settings can switch back to the
+     flashing names) */
+  #deck { position: relative; height: 0; perspective: 700px; transition: height .3s ease; }
+  #deck.open { height: 132px; }
+  #deck.done { height: 0; transition: height .3s ease .15s; }
+  .pcard {
+    position: absolute; left: 50%; top: 14px; width: 64px; height: 90px; margin-left: -32px;
+    transform-style: preserve-3d; transition: transform .28s cubic-bezier(.3, .7, .4, 1), opacity .3s;
+  }
+  .pcard-back, .pcard-front {
+    position: absolute; inset: 0; border-radius: 9px;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, .35);
+  }
+  .pcard-back {
+    background: repeating-linear-gradient(45deg, rgba(255, 255, 255, .12) 0 5px, transparent 5px 10px), var(--accent);
+    border: 3px solid #f2c230;
+  }
+  .pcard-front {
+    transform: rotateY(180deg);
+    display: grid; place-items: center; padding: 6px; overflow: hidden;
+    background: radial-gradient(circle at 35% 25%, #ffe58a, #f2c230 60%, #d9a514);
+    color: #1d2321; font-weight: 800; text-align: center; line-height: 1.1; overflow-wrap: anywhere;
+  }
+  .pcard.aside { opacity: .3; }
+  #deck.done .pcard { opacity: 0; }
   /* with several dice, the dice that were rolled show under the total */
   #resultParts { color: var(--muted); font-size: .95rem; margin-top: 8px; font-variant-numeric: tabular-nums; }
   #resultParts[hidden] { display: none; }
@@ -157,7 +198,7 @@
   body.number-mode .number-only[hidden] { display: none !important; }
   .range-once-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-bottom: 12px; }
   .range-once-card .once { border-top: 1px solid var(--line); }
-  /* how many dice a range rolls (1–4), added up */
+  /* how many dice a range rolls (1–5), added up */
   .dice-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px 12px; }
   .dice-row .once-text { flex: 1; }
   .dice-pick { display: flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; }
@@ -562,6 +603,7 @@
   @keyframes drop-in { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
   #confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+  .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before { animation: none !important; transition: none !important; }
@@ -572,6 +614,7 @@
   <header>
     <h1>Randomizer</h1>
     <div class="right">
+      <button class="icon-btn" id="focusBtn" type="button" aria-label="Focus mode: only the picker, fullscreen"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
       <button class="icon-btn" id="mute" type="button"></button>
       <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings">⚙️</button>
     </div>
@@ -587,6 +630,7 @@
     <div id="crown" aria-hidden="true">👑</div>
     <div id="die" aria-hidden="true"></div>
     <div class="coin-box coin-only" aria-hidden="true"><canvas id="coinCanvas"></canvas></div>
+    <div id="deck" aria-hidden="true"></div>
     <div class="stage"><div id="result" class="hint">Add some options, then tap Pick!</div><div id="resultParts" hidden></div></div>
     <button id="pick" type="button">Pick!</button>
     <div class="shake-ask" id="shakeAsk" hidden>
@@ -598,7 +642,7 @@
   <div class="range-once-card number-only" id="rangeOnceCard">
     <div class="dice-row">
       <span class="once-text">Dice<small id="diceHint"></small></span>
-      <div class="dice-pick" id="dicePick" role="group" aria-label="Number of dice"><button type="button" data-n="1">1</button><button type="button" data-n="2">2</button><button type="button" data-n="3">3</button><button type="button" data-n="4">4</button></div>
+      <div class="dice-pick" id="dicePick" role="group" aria-label="Number of dice"><button type="button" data-n="1">1</button><button type="button" data-n="2">2</button><button type="button" data-n="3">3</button><button type="button" data-n="4">4</button><button type="button" data-n="5">5</button></div>
     </div>
     <label class="once">
       <input type="checkbox" id="rangeOnceToggle">
@@ -648,7 +692,7 @@
     </div>
   </details>
 
-  <p class="tip number-only">Tap a range to choose it, then tap Roll! ✎ changes its numbers or name, and ✕ removes it.</p>
+  <p class="tip number-only">Tap a range to choose it, then tap Roll! After rolling several dice, tap a die to roll just that one again. ✎ changes a range’s numbers or name, and ✕ removes it.</p>
   <p class="tip list-tip">Tap an option to leave it out of the draw. It stays in your list, so tap it again to bring it back. ✎ renames it, and only ✕ removes it.</p>
 
   <a class="support" id="support" href="https://paypal.me/neckfors" target="_blank" rel="noopener"><span class="heart">♥</span> Support the app</a>
@@ -709,6 +753,11 @@
       <span class="spin-value" id="spinValue"></span>
     </label>
     <input type="range" id="spinTime" min="0" max="3" step="0.5" aria-label="Spin time in seconds">
+    <div class="spin-row"><span class="once-text">Picking from a list<small>How a pick from a list is shown</small></span></div>
+    <div class="seg" id="pickStyle" role="group" aria-label="How a pick from a list is shown">
+      <button type="button" class="btn" data-style="cards">🃏 Cards</button>
+      <button type="button" class="btn" data-style="names">✨ Flashing names</button>
+    </div>
 
     <h3>Backup</h3>
     <div class="seg">
@@ -738,6 +787,9 @@
   <div id="toast" role="status" aria-live="polite"></div>
   <div id="updateBar" role="status" aria-live="polite" hidden><span>✨ New version available</span><button type="button" id="updateBtn">Update</button></div>
   <canvas id="confetti"></canvas>
+  <!-- what screen readers say once a pick, roll or flip lands (the result itself flickers while spinning) -->
+  <div id="announce" class="sr-only" role="status" aria-live="polite"></div>
+  <button type="button" id="focusExit" aria-label="Leave focus mode" hidden>✕</button>
 
 <script>
 const KEY = 'whostarts.v1';
@@ -862,7 +914,7 @@ let state = load();
 ensureSlugs();
 let rolling = false;
 // "lists" picks an option from the current list; "number" rolls a number From–To
-// (with up to 4 dice added up); "coin" flips a coin
+// (with up to 5 dice added up); "coin" flips a coin
 let mode = ['number', 'coin'].includes(pref(MODE_KEY, 'lists')) ? pref(MODE_KEY, 'lists') : 'lists';
 // the last MAX_HISTORY dice rolls, newest first, for all ranges together:
 // { value: "9", from: "2d6", parts: "4 + 5", at }, shown as Recent rolls in Dice mode
@@ -1079,6 +1131,9 @@ const sfx = {
     noise({ at, dur: 0.07, vol: 0.18, freq: 900, q: 1.5 });
     tone(110, { at, dur: 0.1, type: 'sine', vol: 0.09 });
   },
+  // cards: one sliding over another while shuffling, and the drawn card turning over
+  flick(strength = 1) { noise({ dur: 0.03, vol: 0.12 * strength, freq: 3200 + randomInt(800), q: 1.2 }); },
+  cardFlip() { noise({ dur: 0.2, vol: 0.08, freq: 1400, to: 3600, q: 0.9, attack: 0.04 }); },
   // a magic die: a soft twinkle
   sparkle(at = 0) { tone(1800 + randomInt(2200), { at, dur: 0.09, type: 'sine', vol: 0.02 }); },
   win() {
@@ -1112,12 +1167,26 @@ let pieces = [];
 let confettiRunning = false;
 const COLORS = ['#e0a400', '#3fa57f', '#e2735f', '#5b8def', '#c86bd6', '#f2c230'];
 
-function burst(x, y) {
-  if (reducedMotion) return;
+// The confetti layer matches the screen; rotating the phone resizes it (and
+// clears it), so no stretched leftovers stay behind.
+function sizeConfetti() {
   const dpr = window.devicePixelRatio || 1;
   canvas.width = innerWidth * dpr;
   canvas.height = innerHeight * dpr;
   cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+addEventListener('resize', sizeConfetti);
+
+function clearConfetti() {
+  cctx.save();
+  cctx.setTransform(1, 0, 0, 1, 0, 0);
+  cctx.clearRect(0, 0, canvas.width, canvas.height);
+  cctx.restore();
+}
+
+function burst(x, y) {
+  if (reducedMotion) return;
+  sizeConfetti();
   for (let i = 0; i < 140; i++) {
     const angle = Math.random() * Math.PI * 2;
     const speed = 4 + Math.random() * 9;
@@ -1137,7 +1206,7 @@ function burst(x, y) {
 }
 
 function drawConfetti() {
-  cctx.clearRect(0, 0, innerWidth, innerHeight);
+  clearConfetti();
   pieces = pieces.filter(p => p.life < 180 && p.y < innerHeight + 20);
   for (const p of pieces) {
     p.life++;
@@ -1155,7 +1224,7 @@ function drawConfetti() {
     cctx.restore();
   }
   if (pieces.length) requestAnimationFrame(drawConfetti);
-  else { confettiRunning = false; cctx.clearRect(0, 0, innerWidth, innerHeight); }
+  else { confettiRunning = false; clearConfetti(); }
 }
 
 // ---------- Lists (sets) ----------
@@ -1331,6 +1400,9 @@ closeOnBackdrop(dialog);
 
 function resetCard() {
   winnerId = null;
+  lastRoll = null;
+  $('deck').className = '';
+  $('deck').innerHTML = '';
   result.className = 'hint';
   $('crown').className = '';
   $('card').className = 'starter';
@@ -1360,7 +1432,7 @@ $('modeCoin').onclick = () => setMode('coin');
 // Dice mode works like a list: one row per range, tap a row to roll it,
 // ✎ gives it an optional name such as "d6", ✕ removes it.
 const RANGES_KEY = 'whostarts.ranges';
-// Common dice to start with. A range can roll up to 4 dice and add them up,
+// Common dice to start with. A range can roll up to 5 dice and add them up,
 // like 2d6: two dice of 1–6 (so 7 comes up far more often than 2 or 12).
 const DEFAULT_RANGES = [
   { from: 1, to: 4, name: 'd4' },
@@ -1368,8 +1440,9 @@ const DEFAULT_RANGES = [
   { from: 1, to: 12, name: 'd12' },
   { from: 1, to: 20, name: 'd20' },
   { from: 1, to: 6, name: '2d6', dice: 2 },
+  { from: 1, to: 6, name: '5 dice', dice: 5 }, // for dice games where you keep some and reroll the rest
 ];
-const MAX_DICE = 4;
+const MAX_DICE = 5;
 
 function normalizeRanges(list) {
   if (!Array.isArray(list)) return null;
@@ -1405,6 +1478,16 @@ let ranges = (() => {
   try { return normalizeRanges(JSON.parse(pref(RANGES_KEY, 'null'))) || normalizeRanges(DEFAULT_RANGES); } catch (e) { return normalizeRanges(DEFAULT_RANGES); }
 })();
 let freshRange = null;   // row that was just added
+// "5 dice" came later: ranges saved before it get it added once (and if it's
+// removed, it stays removed)
+const FIVE_DICE_KEY = 'whostarts.fiveDice';
+if (pref(FIVE_DICE_KEY, '0') !== '1') {
+  if (!ranges.some(r => r.from === 1 && r.to === 6 && r.dice === 5)) {
+    ranges.push(...normalizeRanges(DEFAULT_RANGES.filter(r => r.dice === 5)));
+    saveRanges();
+  }
+  setPref(FIVE_DICE_KEY, '1');
+}
 
 function saveRanges() {
   setPref(RANGES_KEY, JSON.stringify(ranges));
@@ -1894,7 +1977,7 @@ function openFromAddress() {
 function syncAddress() {
   if (location.hash.startsWith('#list=')) return;
   const want = mode === 'lists' ? '#' + cur().slug : mode === 'number' ? '#dice' : '#coin';
-  if (location.hash !== want) history.replaceState(null, '', location.pathname + location.search + want);
+  if (location.hash !== want) history.replaceState(history.state, '', location.pathname + location.search + want); // keeps focus mode's entry
 }
 
 addEventListener('hashchange', () => {
@@ -2458,6 +2541,12 @@ function spinDelay(progress) {
 }
 
 // ---------- Picking ----------
+// Says the result to screen readers, once it has landed.
+function announce(text) {
+  $('announce').textContent = '';
+  setTimeout(() => { $('announce').textContent = text; }, 50); // a change, even when it's the same as last time
+}
+
 function showName(name) {
   result.className = '';
   void result.offsetWidth; // restart the flip animation
@@ -2505,9 +2594,100 @@ $('pick').onclick = () => {
   $('card').className = 'starter rolling';
   $('crown').className = '';
   $('pick').textContent = 'Picking…';
-  sfx.start();
-  spinSlots(playing, winner);
+  if (pickStyle === 'cards') spinCards(playing, winner);
+  else { sfx.start(); spinSlots(playing, winner); }
 };
+
+// How a pick from a list is shown: cards (the default) or flashing names.
+const PICK_STYLE_KEY = 'whostarts.pickStyle';
+let pickStyle = pref(PICK_STYLE_KEY, 'cards') === 'names' ? 'names' : 'cards';
+function renderPickStyle() {
+  for (const b of $('pickStyle').children) b.classList.toggle('on', b.dataset.style === pickStyle);
+}
+$('pickStyle').onclick = (e) => {
+  const style = e.target.closest('button')?.dataset.style;
+  if (!style || style === pickStyle) return;
+  pickStyle = style;
+  setPref(PICK_STYLE_KEY, pickStyle);
+  renderPickStyle();
+  sfx.click();
+};
+renderPickStyle();
+
+// Cards: face-down cards (one for each option in the draw, up to 7) fan out and
+// shuffle, swapping places on every tick, slower and slower. Then one is drawn
+// and turns over to show the pick, which was chosen before it all started.
+function spinCards(playing, winner) {
+  const total = spinTicks(playing.length > 1);
+  const ms = rollLength(total);
+  if (ms <= 0) { land(winner); return; }
+  result.className = ''; // not 'hint', or the hint text comes back while the cards shuffle
+  result.textContent = '';
+  const deck = $('deck');
+  const n = Math.min(7, playing.length);
+  deck.innerHTML = '';
+  deck.className = 'open';
+  const cards = Array.from({ length: n }, () => {
+    const card = document.createElement('div');
+    card.className = 'pcard';
+    card.innerHTML = '<div class="pcard-back"></div><div class="pcard-front"></div>';
+    deck.append(card);
+    return card;
+  });
+  const slots = cards.map((c, i) => i);
+  const spread = Math.min(34, 220 / n);
+  const fan = (card, slot) => {
+    const k = slot - (n - 1) / 2;
+    card.style.transform = `translateX(${k * spread}px) translateY(${Math.abs(k) * 3}px) rotate(${k * 7}deg)`;
+  };
+  // they start as one stack and fan out
+  requestAnimationFrame(() => requestAnimationFrame(() => cards.forEach((c, i) => fan(c, slots[i]))));
+  const chosen = cards[randomInt(n)];
+  const front = chosen.querySelector('.pcard-front');
+  front.textContent = winner.name;
+  front.style.fontSize = winner.name.length <= 6 ? '17px' : winner.name.length <= 12 ? '13px' : '10px';
+
+  // drawn: the chosen card comes up to the middle; the others step back
+  setTimeout(() => {
+    chosen.style.zIndex = 5;
+    chosen.style.transform = 'translateY(-4px) scale(1.3)';
+    for (const c of cards) if (c !== chosen) c.classList.add('aside');
+    sfx.flick(1.3);
+  }, ms * 0.62);
+  // turned over
+  setTimeout(() => {
+    chosen.style.transition = 'transform .45s ease';
+    chosen.style.transform = 'translateY(-4px) scale(1.3) rotateY(180deg)';
+    sfx.cardFlip();
+  }, ms * 0.8);
+
+  let tick = 0;
+  let elapsed = 0;
+  (function shuffle() {
+    tick++;
+    if (tick < total) {
+      const progress = tick / total;
+      const delay = spinDelay(progress);
+      // while still shuffling: two cards swap places
+      if (elapsed < ms * 0.6 && n > 1) {
+        const i = randomInt(n);
+        let j = randomInt(n - 1);
+        if (j >= i) j++;
+        [slots[i], slots[j]] = [slots[j], slots[i]];
+        fan(cards[i], slots[i]);
+        fan(cards[j], slots[j]);
+        sfx.flick(1 - 0.5 * progress);
+        if (navigator.vibrate) navigator.vibrate(4);
+      }
+      elapsed += delay;
+      setTimeout(shuffle, delay);
+      return;
+    }
+    deck.className = 'done';
+    setTimeout(() => { if (deck.className === 'done') deck.innerHTML = ''; }, 500);
+    land(winner);
+  })();
+}
 
 function spinSlots(playing, winner) {
   const total = spinTicks(playing.length > 1);
@@ -2544,6 +2724,7 @@ function land(winner) {
   void result.offsetWidth;
   result.className = 'won' + (winner.name.length > 14 ? ' long' : '');
   result.textContent = winner.name;
+  announce(`Picked ${winner.name}`);
   $('crown').className = 'show';
   $('card').className = 'starter winner';
   $('pick').textContent = 'Pick again';
@@ -2660,12 +2841,25 @@ const SHAPES = Object.fromEntries(Object.entries(DIE_POINTS).map(([sides, pts]) 
 // Which die a range rolls. Small triangles fit 2 characters, the bigger faces 3.
 const REAL_DICE = [4, 6, 8, 10, 12, 20];
 const FACE_ROOM = { 4: 2, 6: 3, 8: 2, 10: 3, 12: 3, 20: 2 };
+// 1 to 100 (or 0 to 99) is rolled like real players do, with percentile dice:
+// two d10s, one for the tens (00–90) and one for the ones (0–9); 00 and 0 make
+// 100. That's two dice on screen per die of the range, so up to 2 of them.
 function dieFor(range) {
   const size = range.to - range.from + 1;
+  if (size === 100 && (range.from === 0 || range.from === 1) && range.dice <= 2) {
+    return { sides: 10, magic: false, pips: false, percentile: true };
+  }
   const width = Math.max(String(range.from).length, String(range.to).length);
   const sides = REAL_DICE.find(s => s % size === 0 && width <= FACE_ROOM[s]);
-  if (!sides) return { sides: 20, magic: true, pips: false };
-  return { sides, magic: false, pips: sides === 6 && range.from === 1 && range.to === 6 };
+  if (!sides) return { sides: 20, magic: true, pips: false, percentile: false };
+  return { sides, magic: false, pips: sides === 6 && range.from === 1 && range.to === 6, percentile: false };
+}
+
+// The face labels the shown dice land on for these values (one per die of the
+// range; a percentile die is a tens die and a ones die).
+function faceLabels(range, values) {
+  if (!dieFor(range).percentile) return values.map(String);
+  return values.flatMap(v => [String(Math.floor((v % 100) / 10) * 10).padStart(2, '0'), String(v % 10)]);
 }
 const MAGIC_SYMBOLS = ['✦', '✧', '✶', '✷', '✸', '✹', '✺', '✩', '✪', '★', '☆', '❂'];
 const magicSymbol = () => MAGIC_SYMBOLS[randomInt(MAGIC_SYMBOLS.length)];
@@ -2711,7 +2905,7 @@ const dice = Array.from({ length: MAX_DICE }, () => {
   $('die').append(canvas);
   return { canvas, ctx: canvas.getContext('2d'), key: '' };
 });
-let diceAnim = null; // { start, ms } while the dice roll
+let diceAnim = null; // true while any die is rolling
 const TURN_MS = 600;  // how long one full turn takes at the start of a roll
 // How far through its turning a die is (0–1) at a point of the roll (0–1):
 // fast at first, slowing to a stop exactly at the end.
@@ -2724,19 +2918,24 @@ const upright = (d, angle) => qMul(qAxis([0, 1, 0], angle), qFromTo(d.shape.v[0]
 function setupDice(range) {
   const look = dieFor(range);
   const size = range.to - range.from + 1;
-  const cssSize = range.dice > 3 ? 74 : range.dice > 2 ? 100 : 112;
+  const count = range.dice * (look.percentile ? 2 : 1);
+  const cssSize = count > 4 ? 58 : count > 3 ? 74 : count > 2 ? 100 : 112;
   const dpr = Math.min(3, window.devicePixelRatio || 1);
-  const key = `${look.sides}:${look.magic}:${range.from}:${range.to}`;
   dice.forEach((d, i) => {
-    d.canvas.hidden = i >= range.dice;
+    d.canvas.hidden = i >= count;
     if (d.canvas.hidden) return;
     const px = Math.round(cssSize * dpr);
     if (d.canvas.width !== px) d.canvas.width = d.canvas.height = px;
     d.canvas.style.width = d.canvas.style.height = `${cssSize}px`;
+    const role = look.percentile ? (i % 2 ? 'ones' : 'tens') : '';
+    const key = `${look.sides}:${look.magic}:${range.from}:${range.to}:${role}`;
     if (d.key === key) return;
     d.key = key;
-    Object.assign(d, look, { shape: SHAPES[look.sides], target: null });
-    d.labels = d.shape.faces.map(f => look.magic ? magicSymbol() : String(range.from + (f.num - 1) % size));
+    Object.assign(d, look, { shape: SHAPES[look.sides], target: null, ms: 0, role });
+    d.labels = d.shape.faces.map(f => look.magic ? magicSymbol()
+      : role === 'tens' ? String((f.num - 1) * 10).padStart(2, '0')
+      : role === 'ones' ? String(f.num - 1)
+      : String(range.from + (f.num - 1) % size));
     // at rest a real die shows its highest number; a magic die stands on a corner
     const top = d.shape.faces.reduce((a, f) => f.num > a.num ? f : a);
     d.angle = 0.5;
@@ -2848,12 +3047,17 @@ function drawSparkles(ctx, W, now, d) {
 // its rolled face, plus a few whole turns, so it slows to a stop on that face
 // without changing direction. A magic die spins upright on a corner and slows
 // to a stop wherever it is.
-function rollDice(range, values, ms) {
+// only: which shown dice to roll (all when left out); the others stay put.
+function rollDice(range, values, ms, only = null) {
   setupDice(range);
+  const labels = faceLabels(range, values);
   // at the start a die turns about once per TURN_MS; slowDown spreads that out
   const turns = Math.max(1, Math.round(ms / TURN_MS / 3));
+  const now = performance.now();
   dice.forEach((d, i) => {
-    if (d.canvas.hidden) return;
+    if (d.canvas.hidden || (only && !only.includes(i))) return;
+    d.start = now;
+    d.ms = ms;
     d.from = d.q;
     d.seed = Math.random() * 6;
     if (d.magic) {
@@ -2863,7 +3067,7 @@ function rollDice(range, values, ms) {
       d.target = upright(d, d.angle);
       return;
     }
-    const faces = d.shape.faces.map((f, fi) => fi).filter(fi => d.labels[fi] === String(values[i]));
+    const faces = d.shape.faces.map((f, fi) => fi).filter(fi => d.labels[fi] === labels[i]);
     d.target = restPose(d.shape.faces[faces[randomInt(faces.length)]]);
     // the one turn from here to the target: its axis and angle
     let [w, x, y, z] = qMul(d.target, [d.from[0], -d.from[1], -d.from[2], -d.from[3]]);
@@ -2881,20 +3085,23 @@ function rollDice(range, values, ms) {
     sfx.diceStop(ms / 1000 + i * 0.03);
   });
   if (ms <= 0) { landDice(); return; }
-  diceAnim = { start: performance.now(), ms };
-  requestAnimationFrame(diceFrame);
+  if (!diceAnim) { diceAnim = true; requestAnimationFrame(diceFrame); }
 }
 
+// Each rolling die moves on its own clock, so one die can roll by itself.
 function diceFrame(now) {
   if (!diceAnim) return;
-  const e = Math.max(0, now - diceAnim.start);
-  const done = slowDown(Math.min(1, e / diceAnim.ms));
+  let moving = false;
   for (const d of dice) {
-    if (d.canvas.hidden || !d.target) continue;
-    d.q = qMul(qAxis(d.axis, d.total * done), d.from);
+    if (d.canvas.hidden || !d.ms) continue;
+    const e = Math.max(0, now - d.start);
+    if (e >= d.ms) { d.q = d.target; d.ms = 0; continue; }
+    d.q = qMul(qAxis(d.axis, d.total * slowDown(e / d.ms)), d.from);
+    moving = true;
   }
   drawDice(now);
-  if (e < diceAnim.ms) requestAnimationFrame(diceFrame);
+  if (moving) requestAnimationFrame(diceFrame);
+  else diceAnim = null;
 }
 
 // Every tick a magic die's faces show new symbols.
@@ -2905,7 +3112,7 @@ function shuffleMagic() {
 // The dice come to rest where their roll ends.
 function landDice() {
   diceAnim = null;
-  for (const d of dice) if (!d.canvas.hidden && d.target) d.q = d.target;
+  for (const d of dice) if (!d.canvas.hidden && d.target) { d.q = d.target; d.ms = 0; }
   drawDice();
 }
 
@@ -2935,6 +3142,15 @@ $('dicePick').onclick = (e) => {
 // dice, each die is rolled on its own and they're added up, like real dice.
 // With "roll each number only once" (one die), it picks uniformly among the
 // numbers not rolled yet: the k-th free number is found by stepping past the used ones.
+var lastRoll = null; // { range, values } of the roll on screen, for rerolling one die (var: resetCard may run first)
+
+// How long a roll spins: the pauses between its ticks, added up.
+function rollLength(ticks) {
+  let ms = 0;
+  for (let t = 1; t < ticks; t++) ms += spinDelay(t / ticks);
+  return ms;
+}
+
 function rollNumber() {
   if (rolling) return;
   const range = currentRange();
@@ -2944,20 +3160,18 @@ function rollNumber() {
   const max = range.to;
   const roll = () => min + randomInt(max - min + 1);
   const rollAll = () => Array.from({ length: range.dice }, roll);
-  const sum = (parts) => parts.reduce((a, b) => a + b, 0);
-  let parts = [];
-  let number;
+  let values;
   if (range.once) {
     const left = numbersLeft(range);
     if (left <= 0) return;
-    number = min + randomInt(left);
+    let number = min + randomInt(left);
     for (const u of [...range.used].sort((a, b) => a - b)) {
       if (u <= number) number++;
       else break;
     }
+    values = [number];
   } else {
-    parts = rollAll();
-    number = sum(parts);
+    values = rollAll();
   }
 
   document.activeElement?.blur?.(); // closes the keyboard
@@ -2966,60 +3180,81 @@ function rollNumber() {
   $('card').className = 'starter rolling';
   $('crown').className = '';
   $('resultParts').hidden = true;
-  let rollMs = 0;
-  for (let t = 1; t < total; t++) rollMs += spinDelay(t / total);
-  rollDice(range, parts.length ? parts : [number], rollMs);
+  // the dice make their own sounds as they tumble (see rollDice)
+  rollDice(range, values, rollLength(total));
   const magic = dieFor(range).magic;
   $('pick').textContent = 'Rolling…';
   $('pick').disabled = true;
-  // the dice make their own sounds as they tumble (see rollDice)
 
   let tick = 0;
   (function spin() {
     tick++;
     if (tick < total) {
-      showName(sum(rollAll()).toLocaleString());
+      showName(rollAll().reduce((a, b) => a + b, 0).toLocaleString());
       const progress = tick / total;
-      const delay = spinDelay(progress);
       if (magic) { shuffleMagic(); sfx.sparkle(); }
       if (navigator.vibrate) navigator.vibrate(5);
-      setTimeout(spin, delay);
+      setTimeout(spin, spinDelay(progress));
       return;
     }
-    rolling = false;
     if (range.once) {
-      range.used = [...(range.used || []), number];
+      range.used = [...(range.used || []), values[0]];
       saveRanges();
     }
-    const shown = number.toLocaleString();
-    // Recent rolls: the result, what was rolled ("2d6", "1–20") and the dice ("4 + 5")
-    rolls.unshift({
-      value: shown,
-      from: range.name || rangeText(range),
-      parts: parts.length > 1 ? parts.map(p => p.toLocaleString()).join(' + ') : '',
-      at: Date.now(),
-    });
-    rolls.length = Math.min(rolls.length, MAX_HISTORY);
-    saveRolls();
     landDice();
-    result.className = '';
-    void result.offsetWidth;
-    result.className = 'won' + (shown.length > 14 ? ' long' : '') + (magic ? ' from-die' : '');
-    result.textContent = shown;
-    if (parts.length > 1) {
-      $('resultParts').textContent = parts.map(p => p.toLocaleString()).join(' + ');
-      $('resultParts').hidden = false;
-    }
-    $('crown').className = 'show';
-    $('card').className = 'starter winner';
-    $('pick').textContent = 'Roll again';
-    render();
-    sfx.win();
-    if (navigator.vibrate) navigator.vibrate([40, 60, 40, 60, 120]);
-    const r = result.getBoundingClientRect();
-    burst(r.left + r.width / 2, r.top + r.height / 2);
+    showRolled(range, values, true);
   })();
 }
+
+// Shows a roll that has landed: the total in the gold badge (with the dice
+// under it), Recent rolls, and what screen readers say.
+function showRolled(range, values, celebrate) {
+  rolling = false;
+  lastRoll = { range, values };
+  const number = values.reduce((a, b) => a + b, 0);
+  const shown = number.toLocaleString();
+  const parts = values.length > 1 ? values.map(v => v.toLocaleString()).join(' + ') : '';
+  // Recent rolls: the result, what was rolled ("2d6", "1 to 20") and the dice ("4 + 5")
+  rolls.unshift({ value: shown, from: range.name || rangeText(range), parts, at: Date.now() });
+  rolls.length = Math.min(rolls.length, MAX_HISTORY);
+  saveRolls();
+  result.className = '';
+  void result.offsetWidth;
+  result.className = 'won' + (shown.length > 14 ? ' long' : '') + (dieFor(range).magic ? ' from-die' : '');
+  result.textContent = shown;
+  $('resultParts').textContent = parts;
+  $('resultParts').hidden = !parts;
+  announce(parts ? `Rolled ${shown}: ${parts}` : `Rolled ${shown}`);
+  $('card').className = 'starter winner';
+  $('pick').textContent = 'Roll again';
+  render();
+  sfx.win();
+  if (!celebrate) return;
+  if (navigator.vibrate) navigator.vibrate([40, 60, 40, 60, 120]);
+  const r = result.getBoundingClientRect();
+  burst(r.left + r.width / 2, r.top + r.height / 2);
+}
+
+// After a roll with several dice, tapping a die rolls just that one again and
+// keeps the others, like in dice games. The total and Recent rolls update.
+// With one die (or "roll each number only once"), tapping it is a new roll.
+$('die').addEventListener('click', (e) => {
+  if (mode !== 'number' || rolling) return;
+  const i = dice.findIndex(d => d.canvas === e.target);
+  const range = currentRange();
+  if (i < 0 || !range) return;
+  if (!lastRoll || lastRoll.range !== range || range.dice < 2 || range.once) { $('pick').click(); return; }
+  const look = dieFor(range);
+  const which = look.percentile ? Math.floor(i / 2) : i;
+  const values = lastRoll.values.slice();
+  values[which] = range.from + randomInt(range.to - range.from + 1);
+  rolling = true;
+  $('pick').disabled = true;
+  const ms = Math.round(rollLength(spinTicks(true)) * 0.6);
+  rollDice(range, values, ms, look.percentile ? [which * 2, which * 2 + 1] : [i]);
+  if (navigator.vibrate) navigator.vibrate(10);
+  setTimeout(() => { landDice(); showRolled(range, values, false); }, ms);
+});
 
 // ---------- Flipping a coin ----------
 // The coin is drawn in 3D on a canvas, seen from above as it lies on a table:
@@ -3230,6 +3465,7 @@ function flipCoin() {
     void result.offsetWidth;
     result.className = 'won';
     result.textContent = heads ? 'Heads' : 'Tails';
+    announce(heads ? 'Heads' : 'Tails');
     $('card').className = 'starter winner';
     $('pick').textContent = 'Flip again';
     render();
@@ -3264,6 +3500,47 @@ openFromAddress();
 resetCard();
 render();
 checkSharedLink();
+
+// ---------- Focus mode ----------
+// Only the pick card, in the middle of the screen, and fullscreen where the
+// phone allows it (iPhone keeps its bars). ✕, Esc or the phone's back gesture
+// leaves it: entering adds a step to the history, so back undoes just that.
+const inFocus = () => document.body.classList.contains('focus-mode');
+function enterFocus() {
+  if (inFocus()) return;
+  document.body.classList.add('focus-mode');
+  $('focusExit').hidden = false;
+  history.pushState({ focus: true }, '', location.href);
+  const root = document.documentElement;
+  if (!document.fullscreenElement && root.requestFullscreen) root.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+  sfx.swap();
+}
+function leaveFocus() {
+  if (!inFocus()) return;
+  document.body.classList.remove('focus-mode');
+  $('focusExit').hidden = true;
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  sfx.swap();
+}
+$('focusBtn').onclick = enterFocus;
+// ✕ steps back through history, which leaves focus mode (see popstate)
+$('focusExit').onclick = () => { if (history.state && history.state.focus) history.back(); else leaveFocus(); };
+addEventListener('popstate', leaveFocus);
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && inFocus() && !document.querySelector('dialog[open]')) $('focusExit').click(); });
+// leaving fullscreen some other way (like swiping it away) leaves focus mode too
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && inFocus()) $('focusExit').click(); });
+
+// ---------- Fullscreen edge swipes ----------
+// Fullscreen (the installed app on Android, or focus mode), the phone's own
+// bars come back with a swipe in from the bottom edge. A touch that starts
+// right at that edge is left to the phone, so the swipe doesn't also scroll or
+// tap something in the app.
+const SYSTEM_EDGE = 24;
+addEventListener('touchstart', (e) => {
+  const fullscreen = document.fullscreenElement || matchMedia('(display-mode: fullscreen)').matches;
+  const t = e.touches[0];
+  if (fullscreen && t && t.clientY > innerHeight - SYSTEM_EDGE) e.preventDefault();
+}, { passive: false });
 
 // ---------- Updates ----------
 // A new version downloads in the background; once it has taken over, a bar
