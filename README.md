@@ -139,7 +139,6 @@ Tap the **⛶** button at the top to show only the picker: the Pick!, Roll! or F
 ## Settings ⚙️
 
 - **Shake to pick** (on by default on phones): give your phone two quick shakes instead of tapping Pick!, Roll! or Flip! The hint in the Pick! card then reads *Tap Pick! or shake your phone*. On iPhone, a *📳 Tap to turn on shake to pick* button shows first, because Safari asks for motion access once. Tap *No thanks* next to it if you don't want shaking. You can switch it on or off here any time.
-- **Sound effects:** on or off (the 🔊 button at the top does the same).
 - **Spin time:** how long a pick, roll or flip spins before it lands, from *Instant* to 3 seconds (the default).
 - **Theme:** *Auto* (the default) follows your phone's light or dark mode. *Light* and *Dark* stay that way whatever the phone uses, and *Black* is a pure black dark mode, easy on the eyes in a dark room and on phone batteries with OLED screens.
 - **Backup:** *Save backup* downloads a file with all your lists. *Restore* loads such a file and replaces your lists with it. Use it to keep your lists safe, or to move them to a new phone.
@@ -153,7 +152,7 @@ On **Android** the installed app opens fullscreen, without the status bar. (iPho
 
 **Screen readers** hear each result once it has landed, like *Picked Sam*, *Rolled 9: 4 + 5* or *Heads*, instead of every flicker of the spin.
 
-> On iPhone, the silent switch also mutes the sound effects.
+> **Sound:** the 🔊 button at the top turns the sound effects on or off. On iPhone, the silent switch also mutes them.
 
 **Updates:** the app checks for a new version whenever you open it or come back to it, and every half hour while it stays open. When one has downloaded, a bar with **New version available** and an **Update** button appears at the top. The new version waits until you tap **Update**, so nothing is cut off halfway. Your lists and ranges are kept. Settings shows which version your phone is running.
 
@@ -173,7 +172,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 
 - Your lists are stored in the browser's `localStorage` on your device. Nothing is sent anywhere.
 - Shared lists are encoded in the link after `#list=`, which never reaches the server.
-- The sounds are generated with the Web Audio API, so there are no audio files.
+- The sounds are generated with the Web Audio API, so there are no audio files. The audio starts on your first touch (phones take a moment to start it), and sounds timed to an animation are scheduled early by the phone's own audio delay, so you hear them as you see them.
 - The random pick uses `crypto.getRandomValues`.
 - The 3D dice and the coin are drawn on a `<canvas>` by a small built-in 3D renderer. Each die shape is only its corner points, and the faces are worked out from them. The knocks, clinks and whooshes are filtered noise, also generated on the fly.
 - The earlier dice look (spinning cubes with sliding dots that shrink away) is kept as the git tag [`classic-dice`](https://github.com/neckfors/randomizer/tree/classic-dice).
@@ -181,7 +180,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Increase `VERSION` in `sw.js` every time** (for example `102` → `103`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Increase `VERSION` in `sw.js` every time** (for example `103` → `104`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 

@@ -780,11 +780,6 @@
       <span class="switch" aria-hidden="true"></span>
       <span class="once-text">Shake to pick<small id="shakeHint">Give your phone two quick shakes instead of tapping Pick!, Roll! or Flip!</small></span>
     </label>
-    <label class="switch-row">
-      <input type="checkbox" id="soundToggle">
-      <span class="switch" aria-hidden="true"></span>
-      <span class="once-text">Sound effects<small>On iPhone, the silent switch also mutes them</small></span>
-    </label>
     <label class="spin-row">
       <span class="once-text">Spin time<small>How long a pick, roll or flip spins before it lands</small></span>
       <span class="spin-value" id="spinValue"></span>
@@ -1087,10 +1082,23 @@ function audio() {
   if (!actx) {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
-    actx = new AC();
+    actx = new AC({ latencyHint: 'interactive' });
   }
   if (actx.state === 'suspended') actx.resume();
   return actx;
+}
+// Phones take a moment to start (or wake) their audio, and sounds timed
+// before then all come late. So it starts on the first touch, before the tap
+// that picks has even ended, and wakes up again when you come back to the app.
+addEventListener('pointerdown', () => { if (!muted) audio(); }, { capture: true, passive: true });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && actx && !muted) audio(); });
+// Phones also take a while (their output latency) to turn a sound into
+// something you hear. Sounds timed to an animation (a knock as a die turns, a
+// clink as the coin lands, a click as a name passes) are asked for that much
+// earlier, so you hear them when you see them: inSync(at) instead of at.
+function inSync(at) {
+  const lag = muted || !actx ? 0 : (actx.outputLatency || actx.baseLatency || 0);
+  return Math.max(0, at - lag);
 }
 
 function tone(freq, { at = 0, dur = 0.1, type = 'triangle', vol = 0.15, slide = null } = {}) {
@@ -1189,7 +1197,6 @@ const sfx = {
 function renderMute() {
   $('mute').textContent = muted ? '🔇' : '🔊';
   $('mute').setAttribute('aria-label', muted ? 'Turn sound on' : 'Turn sound off');
-  $('soundToggle').checked = !muted;
 }
 function setMuted(value) {
   muted = value;
@@ -1198,7 +1205,6 @@ function setMuted(value) {
   sfx.toggleSound();
 }
 $('mute').onclick = () => setMuted(!muted);
-$('soundToggle').onchange = (e) => setMuted(!e.target.checked);
 
 // ---------- Theme ----------
 const THEME_KEY = 'whostarts.theme';
@@ -2736,7 +2742,7 @@ function spinReel(playing, winner) {
   at(0);
   for (let k = 1; k <= steps; k++) {
     const x = 1 - (1 - k / steps) ** (1 / 3); // when name k reaches the middle
-    sfx.reelClick(x * ms / 1000, 1 - 0.5 * x);
+    sfx.reelClick(inSync(x * ms / 1000), 1 - 0.5 * x);
   }
   const start = performance.now();
   let lastRow = -1, lastMoved = 0, lastTime = start;
@@ -3188,9 +3194,9 @@ function rollDice(range, values, ms, only = null) {
     if (ms <= 0 || d.magic) return;
     for (let k = 1; k * Math.PI / 2 < d.total; k++) {
       const x = 1 - (1 - k * Math.PI / 2 / d.total) ** (1 / 3);
-      sfx.clack(x * ms / 1000 + Math.random() * 0.02, 1 - 0.6 * x);
+      sfx.clack(inSync(x * ms / 1000 + Math.random() * 0.02), 1 - 0.6 * x);
     }
-    sfx.diceStop(ms / 1000 + i * 0.03);
+    sfx.diceStop(inSync(ms / 1000 + i * 0.03));
   });
   if (ms <= 0) { landDice(); return; }
   if (!diceAnim) { diceAnim = true; requestAnimationFrame(diceFrame); }
@@ -3612,11 +3618,11 @@ function tossCoin(heads, ms) {
 
   const flick = ms * FLICK / 1000;
   sfx.flick();
-  sfx.whoosh(flick);
+  sfx.whoosh(inSync(flick));
   // a faint shimmer each time a face turns toward you in the air
-  for (let k = 1; k * Math.PI < total; k++) sfx.ting(flick + (k * Math.PI / total) * flyMs / 1000, 1 - 0.4 * k * Math.PI / total);
-  sfx.clink(ms * FLY / 1000);
-  sfx.clink(ms * BOUNCE / 1000, 0.45);
+  for (let k = 1; k * Math.PI < total; k++) sfx.ting(inSync(flick + (k * Math.PI / total) * flyMs / 1000), 1 - 0.4 * k * Math.PI / total);
+  sfx.clink(inSync(ms * FLY / 1000));
+  sfx.clink(inSync(ms * BOUNCE / 1000), 0.45);
   requestAnimationFrame(coinFrame);
 }
 
