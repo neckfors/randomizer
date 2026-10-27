@@ -109,7 +109,7 @@ Switch to **🪙 Coin** at the top and tap **Flip!** (or shake your phone, tap t
 
 **How a flip works.** Like the dice, the side is picked first (with secure random numbers), and the whole flip is worked out to end on it:
 
-1. A thumb flicks it: the coin dips a little with a soft metal *ping*.
+1. A thumb flicks it: the coin dips a little, ready to fly.
 2. With a whoosh, it flies up out of the card and comes back down, getting bigger as it comes toward you. Its shadow stays on the table, shrinking and fading as the coin rises. It turns end over end at a steady speed, leaning a little so you see its edge, with a faint shimmer each time a face catches the light. While it's fast it leaves a faint smear behind (a quick motion blur that stays smooth on phones), and it's sharp again as it comes down.
 3. It lands flat with the picked side up, with a clink, and bounces once.
 
@@ -180,7 +180,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Increase `VERSION` in `sw.js` every time** (for example `104` → `105`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Increase `VERSION` in `sw.js` every time** (for example `105` → `106`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 

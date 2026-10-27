@@ -1,5 +1,5 @@
 // Bump VERSION when you change any file so phones pick up the update.
-const VERSION = 104;
+const VERSION = 105;
 const CACHE = `whostarts-v${VERSION}`;
 const FILES = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 

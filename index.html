@@ -1163,14 +1163,6 @@ const sfx = {
   },
   // the coin tossed up into the air
   whoosh(at = 0) { noise({ at, dur: 0.4, vol: 0.06, freq: 500, to: 2600, q: 0.8, attack: 0.15 }); },
-  // a thumbnail flicking the coin: a soft metal ping (a few ringing tones that
-  // aren't in tune with each other, like real metal), quieter than the landing clink
-  flick() {
-    const f = 2600 + randomInt(200);
-    tone(f, { dur: 0.32, type: 'sine', vol: 0.045 });
-    tone(f * 1.58, { dur: 0.22, type: 'sine', vol: 0.022 });
-    tone(f * 2.37, { dur: 0.12, type: 'sine', vol: 0.01 });
-  },
   // a faint metal shimmer as the spinning coin's face catches the light
   ting(at, strength = 1) { tone(3000 + randomInt(600), { at, dur: 0.07, type: 'sine', vol: 0.012 * strength }); },
   // a die knocking on the table as it tumbles: a hard click and a low knock
@@ -3623,7 +3615,6 @@ function tossCoin(heads, ms) {
   coinAnim = { start: performance.now(), ms, from, end, total, lean };
 
   const flick = ms * FLICK / 1000;
-  sfx.flick();
   sfx.whoosh(inSync(flick));
   // a faint shimmer each time a face turns toward you in the air
   for (let k = 1; k * Math.PI < total; k++) sfx.ting(inSync(flick + (k * Math.PI / total) * flyMs / 1000), 1 - 0.4 * k * Math.PI / total);
