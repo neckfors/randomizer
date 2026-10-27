@@ -155,7 +155,7 @@ On **Android** the installed app opens fullscreen, without the status bar. (iPho
 
 > On iPhone, the silent switch also mutes the sound effects.
 
-**Updates:** the app checks for a new version whenever you open it or come back to it. When one has downloaded, a bar with **✨ New version available · Update** appears at the top; tap **Update** to switch to it. Your lists and ranges are kept.
+**Updates:** the app checks for a new version whenever you open it or come back to it, and every half hour while it stays open. When one has downloaded, a bar with **New version available** and an **Update** button appears at the top. The new version waits until you tap **Update**, so nothing is cut off halfway. Your lists and ranges are kept. Settings shows which version your phone is running.
 
 **Used to be Pick One:** the app was called *Pick One* and lived at `neckfors.github.io/pick-one/`. Old links, bookmarks and installed copies are sent to the new address automatically, and your lists come along. If you had installed the old app, install it again from the new address and remove the old icon.
 
@@ -181,7 +181,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Change `CACHE` in `sw.js` every time** (for example `whostarts-v101` → `whostarts-v102`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Increase `VERSION` in `sw.js` every time** (for example `102` → `103`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 

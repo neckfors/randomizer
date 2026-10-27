@@ -538,6 +538,8 @@
   .dialog-row { display: flex; gap: 8px; margin-top: 16px; }
   .dialog-row .spacer { flex: 1; }
   .hint-text { color: var(--muted); font-size: .85rem; margin: 6px 0 0; }
+  .app-version { margin-top: 18px; text-align: center; }
+  .app-version:empty { display: none; }
 
   #setList { max-height: 55vh; overflow-y: auto; }
   #setList li.current { background: var(--glow); box-shadow: inset 4px 0 0 var(--accent); }
@@ -806,6 +808,8 @@
     <p class="hint-text">Your lists are only stored on this device. Save a backup file to keep them safe or move them to another phone. Restoring replaces all your lists and saved ranges.</p>
     <input type="file" id="importFile" accept=".json,application/json" hidden>
 
+    <p class="hint-text app-version" id="appVersion"></p>
+
     <div class="dialog-row">
       <span class="spacer"></span>
       <button type="button" class="btn primary" id="settingsClose">Done</button>
@@ -824,7 +828,7 @@
   </dialog>
 
   <div id="toast" role="status" aria-live="polite"></div>
-  <div id="updateBar" role="status" aria-live="polite" hidden><span>✨ New version available</span><button type="button" id="updateBtn">Update</button></div>
+  <div id="updateBar" role="status" aria-live="polite" hidden><span>New version available</span><button type="button" id="updateBtn">Update</button></div>
   <canvas id="confetti"></canvas>
   <!-- what screen readers say once a pick, roll or flip lands (the result itself flickers while spinning) -->
   <div id="announce" class="sr-only" role="status" aria-live="polite"></div>
@@ -3748,23 +3752,55 @@ addEventListener('touchstart', (e) => {
 }, { passive: false });
 
 // ---------- Updates ----------
-// A new version downloads in the background; once it has taken over, a bar
-// offers to reload into it. It never reloads by itself, so a pick is never cut off.
+// A new version downloads in the background and waits; a bar offers it, and
+// only tapping Update lets it take over and reloads. It never reloads by itself,
+// so a pick is never cut off.
+const CHECK_EVERY = 30 * 60 * 1000;
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  let waiting = null;
+  let updating = false;
   // on the very first visit there is nothing to update from
-  const hadVersion = !!navigator.serviceWorker.controller;
+  const offer = (worker) => {
+    if (!navigator.serviceWorker.controller) return;
+    waiting = worker;
+    $('updateBar').hidden = false;
+  };
   navigator.serviceWorker.register('sw.js').then((reg) => {
-    // an installed app can stay open for days, so look again whenever it comes back
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') reg.update().catch(() => {});
+    if (reg.waiting) offer(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const worker = reg.installing;
+      worker?.addEventListener('statechange', () => {
+        if (worker.state === 'installed') offer(worker);
+      });
     });
+    // an installed app can stay open for days, so look again whenever it comes
+    // back, and every half hour while it stays open
+    const check = () => {
+      if (document.visibilityState === 'visible') reg.update().catch(() => {});
+    };
+    document.addEventListener('visibilitychange', check);
+    setInterval(check, CHECK_EVERY);
   }).catch(() => {});
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!hadVersion) return;
-    $('updateBar').hidden = false;
+    if (updating) location.reload();
   });
-  $('updateBtn').onclick = () => location.reload();
+  $('updateBtn').onclick = () => {
+    updating = true;
+    if (waiting) waiting.postMessage('update');
+    else location.reload();
+  };
 }
+
+// Settings shows the version this phone is running, asked from the service worker.
+function showVersion() {
+  const worker = navigator.serviceWorker?.controller;
+  if (!worker) return;
+  const channel = new MessageChannel();
+  channel.port1.onmessage = (e) => { $('appVersion').textContent = `Version ${e.data}`; };
+  worker.postMessage('version', [channel.port2]);
+}
+showVersion();
+navigator.serviceWorker?.addEventListener('controllerchange', showVersion);
 </script>
 </body>
 </html>
