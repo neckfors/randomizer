@@ -9,7 +9,7 @@ It installs on your phone like a normal app, works offline, and remembers your l
 <p align="center">
   <img src="screenshots/lists.png" alt="A list of options: Ben, Sam, Alex, Mia and Noah (left out)" width="160">
   <img src="screenshots/picked.png" alt="One option has been picked, shown in a gold badge with a crown" width="160">
-  <img src="screenshots/dice.png" alt="Dice mode after rolling 2d6: two 3D dice showing 1 and 2, the total 3 in a gold badge, and the hint Tap a die to reroll it" width="160">
+  <img src="screenshots/dice.png" alt="Dice mode after rolling 2d6: two 3D dice with gold edges showing 5 and 2, the total 7 in a gold badge, and the hint Tap a die to reroll it" width="160">
   <img src="screenshots/magic.png" alt="The purple magic d20 after rolling a 1 to 1,000 raffle ticket, with the number in a gold badge" width="160">
   <img src="screenshots/coin.png" alt="Coin mode after a flip: a big 3D silver coin with a raised star in a ring of dots, Tails in a gold badge, and the heads and tails tally" width="160">
   <img src="screenshots/focus.png" alt="Focus mode: only the pick card in the middle of the screen, with a close button in the corner" width="160">
@@ -30,7 +30,7 @@ Anything where you need a fair, random pick:
 - 📚 **What to read or play next** from your backlog
 - 🏃 **Which workout today:** run, gym, yoga, rest day…
 - 🤔 **Any tough decision:** when you just can't choose, let it choose
-- 🔢 **A random number:** roll dice for a board game, play dice games where you keep some dice and reroll the rest (Yahtzee-style), roll percentile dice for 1 to 100, pick a raffle ticket, or any number between two values
+- 🔢 **A random number:** roll dice for a board game, play dice games where you keep some dice and reroll the rest (Yahtzee-style), pick a raffle ticket, or any number between two values
 - 🪙 **Heads or tails:** flip a coin to settle it
 
 ## How it works
@@ -55,7 +55,7 @@ Switch to **🎲 Dice** at the top to roll dice, or any random number, instead o
 1. **Add a range** with the **From**, **To** and **Name (optional)** fields and **Add**. The Add button stays greyed out until From and To are whole numbers. Any whole numbers work, even 1 to 1,000,000. You start with the dice *d4* (1 to 4), *d6* (1 to 6), *d12* (1 to 12), *d20* (1 to 20) *2d6* (2 dice, each 1 to 6, added up) and *5 dice* (for dice games where you keep some dice and reroll the rest, like Yahtzee), which you can rename, change or remove.
 2. **Tap a range** to choose it. It gets a ✓.
 3. **Choose how many dice** it rolls with **Dice 1 2 3 4 5** above the ranges. With several dice, each die is rolled on its own and they're added up, just like real dice: with 2d6 a 7 comes up six times as often as a 2 or a 12. The row then reads *2 dice, each 1 to 6*, and the hint uses the range's name, like *Tap Roll! to roll “2d6”*.
-4. **Tap Roll!** (or shake your phone). The dice tumble while numbers race past, slow down, and come to rest showing the face they rolled. With several dice, the total shows in the gold badge with the dice under it, like *4 + 5*. See [How the dice work](#how-the-dice-work) below.
+4. **Tap Roll!** (or shake your phone). The dice tumble, slow down, and come to rest showing the face they rolled. No number shows while they spin; when they land, their edges turn gold and the result appears in the gold badge. With several dice, the badge shows the total with the dice under it, like *4 + 5*. See [How the dice work](#how-the-dice-work) below.
 5. **Change a range** with its **✎**: the row turns into From, To and Name fields with a green **Save** button. Change what you like and tap Save or press Enter (Esc cancels). Numbers are put in order if you swap them, and a range you already have is not added twice. **✕** removes a range (tap the red **Delete** to confirm, or **Cancel**).
 
 **Roll each number only once:** switch this on for a range when the same number must not come up twice, like drawing raffle tickets. Numbers already rolled sit out, the switch shows how many have been rolled, and when every number has been rolled the button turns into **↺ Start over**. The setting is saved per range, and works with one die.
@@ -80,8 +80,7 @@ Your ranges are remembered and included in backups. `https://neckfors.github.io/
 | 5 numbers | d10 | each number twice |
 | 12 numbers | d12 | each number once |
 | 20 numbers | d20 | each number once |
-| 1 to 100 or 0 to 99 (1 or 2 dice) | two d10s: tens and ones | percentile dice: 00–90 and 0–9 |
-| anything else (7, 9, 15, 37, 1,000, …) | magic d20 | twinkling symbols |
+| anything else (7, 9, 15, 37, 100, 1,000, …) | magic d20 | twinkling symbols |
 
 The faces always show the range's own numbers, so *5 to 9* is a d10 with 5, 6, 7, 8 and 9 on it twice, and *95 to 100* is a cube with 95 to 100. The numbers must fit on the faces: up to 2 characters on the small triangles of the d4, d8 and d20, and up to 3 on the bigger faces of the d6, d10 and d12 (a minus sign counts). Longer numbers, like *1001 to 1020*, also get the magic die.
 
@@ -93,9 +92,9 @@ Like real dice, opposite faces add up to the same total (1 and 6, 2 and 5, 3 and
 
 **Several dice** are each rolled on their own and added up, just like real dice. So with 2d6, a 7 (six ways to make it) comes up six times as often as a 2 or a 12 (one way each). Each die lands on its own number, shown under the total, like *4 + 5*.
 
-**Percentile dice** are how real players roll 1 to 100: two d10s, one with 00, 10, 20 … 90 for the tens and one with 0 to 9 for the ones, added up. 70 and 4 make 74, and 00 and 0 make 100 (on a 0 to 99 range they make 0).
+**The result.** Nothing shows under the dice while they spin, so no made-up numbers flash past. When the dice land, the edges of each real die turn gold, and the result appears in the gold badge: the number for one die, or the total with the dice under it for several. Screen readers hear the result once it lands.
 
-**Reroll one die.** After rolling several dice, tap a die to roll just that one again and keep the others, like in Yahtzee-style dice games. The total, the dice under it and Recent rolls update. A small *Tap a die to reroll it* under the total reminds you. To roll them all again, tap **Roll again** or swipe across the dice. (A percentile pair rerolls together; with one die, tapping it is just a new roll.)
+**Reroll one die.** After rolling several dice, tap a die to roll just that one again and keep the others, like in Yahtzee-style dice games. That die loses its gold edges while it spins and gets them back when it lands; the total, the dice under it and Recent rolls update. A small *Tap a die to reroll it* under the total reminds you. To roll them all again, tap **Roll again** or swipe across the dice. (With one die, tapping it is just a new roll.)
 
 **Fitting the screen.** The more dice you roll, the smaller they are, so up to five fit side by side. On a narrow phone, or with the phone's display zoom turned up, they shrink a little more to fit, and they resize when you turn the phone.
 
@@ -180,7 +179,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Increase `VERSION` in `sw.js` every time** (for example `105` → `106`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Increase `VERSION` in `sw.js` every time** (for example `106` → `107`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 

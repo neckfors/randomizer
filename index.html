@@ -1476,6 +1476,7 @@ function resetCard() {
   $('resultParts').hidden = true;
   $('rerollHint').hidden = true;
   delete $('pick').dataset.mode;
+  if (diceMade) dimDice(); // resetCard can run before the dice exist
 }
 
 // ---------- Lists / Dice / Coin mode ----------
@@ -2920,26 +2921,17 @@ const SHAPES = Object.fromEntries(Object.entries(DIE_POINTS).map(([sides, pts]) 
 // Which die a range rolls. Small triangles fit 2 characters, the bigger faces 3.
 const REAL_DICE = [4, 6, 8, 10, 12, 20];
 const FACE_ROOM = { 4: 2, 6: 3, 8: 2, 10: 3, 12: 3, 20: 2 };
-// 1 to 100 (or 0 to 99) is rolled like real players do, with percentile dice:
-// two d10s, one for the tens (00–90) and one for the ones (0–9); 00 and 0 make
-// 100. That's two dice on screen per die of the range, so up to 2 of them.
+// Anything no real die can roll (1 to 100 too) gets the magic die.
 function dieFor(range) {
   const size = range.to - range.from + 1;
-  if (size === 100 && (range.from === 0 || range.from === 1) && range.dice <= 2) {
-    return { sides: 10, magic: false, pips: false, percentile: true };
-  }
   const width = Math.max(String(range.from).length, String(range.to).length);
   const sides = REAL_DICE.find(s => s % size === 0 && width <= FACE_ROOM[s]);
-  if (!sides) return { sides: 20, magic: true, pips: false, percentile: false };
-  return { sides, magic: false, pips: sides === 6 && range.from === 1 && range.to === 6, percentile: false };
+  if (!sides) return { sides: 20, magic: true, pips: false };
+  return { sides, magic: false, pips: sides === 6 && range.from === 1 && range.to === 6 };
 }
 
-// The face labels the shown dice land on for these values (one per die of the
-// range; a percentile die is a tens die and a ones die).
-function faceLabels(range, values) {
-  if (!dieFor(range).percentile) return values.map(String);
-  return values.flatMap(v => [String(Math.floor((v % 100) / 10) * 10).padStart(2, '0'), String(v % 10)]);
-}
+// The face labels the shown dice land on for these values (one per die).
+const faceLabels = (range, values) => values.map(String);
 const MAGIC_SYMBOLS = ['✦', '✧', '✶', '✷', '✸', '✹', '✺', '✩', '✪', '★', '☆', '❂'];
 const magicSymbol = () => MAGIC_SYMBOLS[randomInt(MAGIC_SYMBOLS.length)];
 
@@ -2984,6 +2976,7 @@ const dice = Array.from({ length: MAX_DICE }, () => {
   $('die').append(canvas);
   return { canvas, ctx: canvas.getContext('2d'), key: '' };
 });
+var diceMade = true; // (var: undefined until this line runs)
 let diceAnim = null; // true while any die is rolling
 const TURN_MS = 600;  // how long one full turn takes at the start of a roll
 // How far through its turning a die is (0–1) at a point of the roll (0–1):
@@ -2995,7 +2988,7 @@ const slowDown = (x) => 1 - (1 - x) ** 3;
 function setupDice(range) {
   const look = dieFor(range);
   const size = range.to - range.from + 1;
-  const count = range.dice * (look.percentile ? 2 : 1);
+  const count = range.dice;
   // smaller with more dice, and never wider together than the space there is
   // (narrow phones, or a phone with its display zoom turned up)
   const room = ($('die').clientWidth || 300) - 4 * (count - 1);
@@ -3008,15 +3001,11 @@ function setupDice(range) {
     // both sides: a new canvas is 300 × 150, so 3 dice at 3× (300 px) matched its width only
     if (d.canvas.width !== px || d.canvas.height !== px) d.canvas.width = d.canvas.height = px;
     d.canvas.style.width = d.canvas.style.height = `${cssSize}px`;
-    const role = look.percentile ? (i % 2 ? 'ones' : 'tens') : '';
-    const key = `${look.sides}:${look.magic}:${range.from}:${range.to}:${role}`;
+    const key = `${look.sides}:${look.magic}:${range.from}:${range.to}`;
     if (d.key === key) return;
     d.key = key;
-    Object.assign(d, look, { shape: SHAPES[look.sides], target: null, ms: 0, role });
-    d.labels = d.shape.faces.map(f => look.magic ? magicSymbol()
-      : role === 'tens' ? String((f.num - 1) * 10).padStart(2, '0')
-      : role === 'ones' ? String(f.num - 1)
-      : String(range.from + (f.num - 1) % size));
+    Object.assign(d, look, { shape: SHAPES[look.sides], target: null, ms: 0, landed: 0 });
+    d.labels = d.shape.faces.map(f => look.magic ? magicSymbol() : String(range.from + (f.num - 1) % size));
     // at rest it shows a face straight on (a real die its highest number)
     const top = d.shape.faces.reduce((a, f) => f.num > a.num ? f : a);
     d.q = restPose(top);
@@ -3067,6 +3056,7 @@ function drawDie(d, now) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, W, W);
   const hasSixAndNine = d.labels.includes('6') && d.labels.includes('9');
+  const gold = d.landed && !d.magic ? Math.min(1, (now - d.landed) / GOLD_MS) : 0;
   shape.faces.forEach((f, fi) => {
     const n = turn(R, f.n), c = turn(R, f.c);
     if (dot(n, sub([0, 0, D], c)) <= 0) return; // facing away
@@ -3088,6 +3078,12 @@ function drawDie(d, now) {
     ctx.lineWidth = W / 110;
     ctx.lineJoin = 'round';
     ctx.stroke();
+    // a real die that has landed gets gold edges, warming up as it settles
+    if (gold > 0) {
+      ctx.strokeStyle = `rgba(242, 194, 48, ${gold.toFixed(2)})`;
+      ctx.lineWidth = W / 110 + gold * W / 45;
+      ctx.stroke();
+    }
 
     // the face's own flat directions on screen (right and up), per unit of size
     const at = proj(c);
@@ -3158,6 +3154,7 @@ function rollDice(range, values, ms, only = null) {
     if (d.canvas.hidden || (only && !only.includes(i))) return;
     d.start = now;
     d.ms = ms;
+    d.landed = 0;
     d.from = d.q;
     d.seed = Math.random() * 6;
     // a magic die has symbols, not numbers, so any face will do
@@ -3235,10 +3232,30 @@ function shuffleMagic() {
   for (const d of dice) if (!d.canvas.hidden && d.magic) d.labels = d.labels.map(magicSymbol);
 }
 
-// The dice come to rest where their roll ends.
-function landDice() {
+// The dice come to rest where their roll ends. After a roll (gold), the dice
+// that just landed get gold edges, faded in over GOLD_MS.
+const GOLD_MS = 250;
+function landDice(gold = false) {
   diceAnim = null;
-  for (const d of dice) if (!d.canvas.hidden && d.target) { d.q = d.target; d.ms = 0; }
+  const now = performance.now();
+  for (const d of dice) {
+    if (d.canvas.hidden || !d.target) continue;
+    if (gold && !d.landed) d.landed = now;
+    d.q = d.target;
+    d.ms = 0;
+  }
+  drawDice(now);
+  if (gold) (function warm() {
+    const t = performance.now();
+    drawDice(t);
+    if (t - now < GOLD_MS) requestAnimationFrame(warm);
+  })();
+}
+
+// Takes the gold edges off (the card no longer shows that roll).
+function dimDice() {
+  if (!dice.some(d => d.landed)) return;
+  for (const d of dice) d.landed = 0;
   drawDice();
 }
 
@@ -3263,7 +3280,7 @@ $('dicePick').onclick = (e) => {
 };
 
 // ---------- Rolling a number ----------
-// Numbers race past while the dice spin, then it lands on a number picked
+// No number shows while the dice spin; it lands on a number picked
 // uniformly at random from the chosen range (both ends included). With several
 // dice, each die is rolled on its own and they're added up, like real dice.
 // With "roll each number only once" (one die), it picks uniformly among the
@@ -3307,6 +3324,7 @@ function rollNumber() {
   $('crown').className = '';
   $('resultParts').hidden = true;
   $('rerollHint').hidden = true;
+  clearResult();
   // the dice make their own sounds as they tumble (see rollDice)
   rollDice(range, values, rollLength(total));
   const magic = dieFor(range).magic;
@@ -3317,7 +3335,6 @@ function rollNumber() {
   (function spin() {
     tick++;
     if (tick < total) {
-      showName(rollAll().reduce((a, b) => a + b, 0).toLocaleString());
       const progress = tick / total;
       if (magic) { shuffleMagic(); sfx.sparkle(); }
       if (navigator.vibrate) navigator.vibrate(5);
@@ -3328,9 +3345,15 @@ function rollNumber() {
       range.used = [...(range.used || []), values[0]];
       saveRanges();
     }
-    landDice();
+    landDice(true);
     showRolled(range, values, true);
   })();
+}
+
+// No number while the dice roll: the result shows once they land.
+function clearResult() {
+  result.className = 'rolling-dice';
+  result.textContent = ' ';
 }
 
 // Shows a roll that has landed: the total in the gold badge (with the dice
@@ -3374,16 +3397,16 @@ $('die').addEventListener('click', (e) => {
   const range = currentRange();
   if (i < 0 || !range) return;
   if (!lastRoll || lastRoll.range !== range || range.dice < 2 || range.once) { $('pick').click(); return; }
-  const look = dieFor(range);
-  const which = look.percentile ? Math.floor(i / 2) : i;
   const values = lastRoll.values.slice();
-  values[which] = range.from + randomInt(range.to - range.from + 1);
+  values[i] = range.from + randomInt(range.to - range.from + 1);
   rolling = true;
   $('pick').disabled = true;
   const ms = Math.round(rollLength(spinTicks(true)) * 0.6);
-  rollDice(range, values, ms, look.percentile ? [which * 2, which * 2 + 1] : [i]);
+  clearResult();
+  $('resultParts').hidden = true;
+  rollDice(range, values, ms, [i]);
   if (navigator.vibrate) navigator.vibrate(10);
-  setTimeout(() => { landDice(); showRolled(range, values, false); }, ms);
+  setTimeout(() => { landDice(true); showRolled(range, values, false); }, ms);
 });
 
 // ---------- Flipping a coin ----------
