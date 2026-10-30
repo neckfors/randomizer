@@ -3078,12 +3078,6 @@ function drawDie(d, now) {
     ctx.lineWidth = W / 110;
     ctx.lineJoin = 'round';
     ctx.stroke();
-    // a real die that has landed gets gold edges, warming up as it settles
-    if (gold > 0) {
-      ctx.strokeStyle = `rgba(242, 194, 48, ${gold.toFixed(2)})`;
-      ctx.lineWidth = W / 110 + gold * W / 45;
-      ctx.stroke();
-    }
 
     // the face's own flat directions on screen (right and up), per unit of size
     const at = proj(c);
@@ -3118,7 +3112,36 @@ function drawDie(d, now) {
     // 6 and 9 get a line underneath when both are on the die, like real dice
     if (hasSixAndNine && (label === '6' || label === '9')) ctx.fillRect(-26, 44, 52, 9);
   });
+  // a real die that has landed gets a gold border around its outside,
+  // warming up as it settles (the faces stay white)
+  if (gold > 0) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.beginPath();
+    outline(corners).forEach((p, t) => (t ? ctx.lineTo : ctx.moveTo).call(ctx, ...p));
+    ctx.closePath();
+    ctx.strokeStyle = `rgba(242, 194, 48, ${gold.toFixed(2)})`;
+    ctx.lineWidth = W / 110 + gold * W / 45;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+  }
   if (d.magic) drawSparkles(ctx, W, now, d);
+}
+
+// The outside of a die on screen: every die is convex, so its outline is the
+// convex hull of its corners (Andrew's monotone chain).
+function outline(points) {
+  const p = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const side = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const half = (list) => {
+    const h = [];
+    for (const q of list) {
+      while (h.length > 1 && side(h[h.length - 2], h[h.length - 1], q) <= 0) h.pop();
+      h.push(q);
+    }
+    h.pop();
+    return h;
+  };
+  return [...half(p), ...half(p.reverse())];
 }
 
 // a few twinkling stars around a magic die
