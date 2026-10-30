@@ -1476,7 +1476,6 @@ function resetCard() {
   $('resultParts').hidden = true;
   $('rerollHint').hidden = true;
   delete $('pick').dataset.mode;
-  if (diceMade) dimDice(); // resetCard can run before the dice exist
 }
 
 // ---------- Lists / Dice / Coin mode ----------
@@ -2976,7 +2975,6 @@ const dice = Array.from({ length: MAX_DICE }, () => {
   $('die').append(canvas);
   return { canvas, ctx: canvas.getContext('2d'), key: '' };
 });
-var diceMade = true; // (var: undefined until this line runs)
 let diceAnim = null; // true while any die is rolling
 const TURN_MS = 600;  // how long one full turn takes at the start of a roll
 // How far through its turning a die is (0–1) at a point of the roll (0–1):
@@ -3004,7 +3002,7 @@ function setupDice(range) {
     const key = `${look.sides}:${look.magic}:${range.from}:${range.to}`;
     if (d.key === key) return;
     d.key = key;
-    Object.assign(d, look, { shape: SHAPES[look.sides], target: null, ms: 0, landed: 0 });
+    Object.assign(d, look, { shape: SHAPES[look.sides], target: null, ms: 0 });
     d.labels = d.shape.faces.map(f => look.magic ? magicSymbol() : String(range.from + (f.num - 1) % size));
     // at rest it shows a face straight on (a real die its highest number)
     const top = d.shape.faces.reduce((a, f) => f.num > a.num ? f : a);
@@ -3056,7 +3054,6 @@ function drawDie(d, now) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, W, W);
   const hasSixAndNine = d.labels.includes('6') && d.labels.includes('9');
-  const gold = d.landed && !d.magic ? Math.min(1, (now - d.landed) / GOLD_MS) : 0;
   shape.faces.forEach((f, fi) => {
     const n = turn(R, f.n), c = turn(R, f.c);
     if (dot(n, sub([0, 0, D], c)) <= 0) return; // facing away
@@ -3112,36 +3109,7 @@ function drawDie(d, now) {
     // 6 and 9 get a line underneath when both are on the die, like real dice
     if (hasSixAndNine && (label === '6' || label === '9')) ctx.fillRect(-26, 44, 52, 9);
   });
-  // a real die that has landed gets a gold border around its outside,
-  // warming up as it settles (the faces stay white)
-  if (gold > 0) {
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.beginPath();
-    outline(corners).forEach((p, t) => (t ? ctx.lineTo : ctx.moveTo).call(ctx, ...p));
-    ctx.closePath();
-    ctx.strokeStyle = `rgba(242, 194, 48, ${gold.toFixed(2)})`;
-    ctx.lineWidth = W / 110 + gold * W / 45;
-    ctx.lineJoin = 'round';
-    ctx.stroke();
-  }
   if (d.magic) drawSparkles(ctx, W, now, d);
-}
-
-// The outside of a die on screen: every die is convex, so its outline is the
-// convex hull of its corners (Andrew's monotone chain).
-function outline(points) {
-  const p = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  const side = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
-  const half = (list) => {
-    const h = [];
-    for (const q of list) {
-      while (h.length > 1 && side(h[h.length - 2], h[h.length - 1], q) <= 0) h.pop();
-      h.push(q);
-    }
-    h.pop();
-    return h;
-  };
-  return [...half(p), ...half(p.reverse())];
 }
 
 // a few twinkling stars around a magic die
@@ -3177,7 +3145,6 @@ function rollDice(range, values, ms, only = null) {
     if (d.canvas.hidden || (only && !only.includes(i))) return;
     d.start = now;
     d.ms = ms;
-    d.landed = 0;
     d.from = d.q;
     d.seed = Math.random() * 6;
     // a magic die has symbols, not numbers, so any face will do
@@ -3255,30 +3222,10 @@ function shuffleMagic() {
   for (const d of dice) if (!d.canvas.hidden && d.magic) d.labels = d.labels.map(magicSymbol);
 }
 
-// The dice come to rest where their roll ends. After a roll (gold), the dice
-// that just landed get gold edges, faded in over GOLD_MS.
-const GOLD_MS = 250;
-function landDice(gold = false) {
+// The dice come to rest where their roll ends.
+function landDice() {
   diceAnim = null;
-  const now = performance.now();
-  for (const d of dice) {
-    if (d.canvas.hidden || !d.target) continue;
-    if (gold && !d.landed) d.landed = now;
-    d.q = d.target;
-    d.ms = 0;
-  }
-  drawDice(now);
-  if (gold) (function warm() {
-    const t = performance.now();
-    drawDice(t);
-    if (t - now < GOLD_MS) requestAnimationFrame(warm);
-  })();
-}
-
-// Takes the gold edges off (the card no longer shows that roll).
-function dimDice() {
-  if (!dice.some(d => d.landed)) return;
-  for (const d of dice) d.landed = 0;
+  for (const d of dice) if (!d.canvas.hidden && d.target) { d.q = d.target; d.ms = 0; }
   drawDice();
 }
 
@@ -3368,7 +3315,7 @@ function rollNumber() {
       range.used = [...(range.used || []), values[0]];
       saveRanges();
     }
-    landDice(true);
+    landDice();
     showRolled(range, values, true);
   })();
 }
@@ -3429,7 +3376,7 @@ $('die').addEventListener('click', (e) => {
   $('resultParts').hidden = true;
   rollDice(range, values, ms, [i]);
   if (navigator.vibrate) navigator.vibrate(10);
-  setTimeout(() => { landDice(true); showRolled(range, values, false); }, ms);
+  setTimeout(() => { landDice(); showRolled(range, values, false); }, ms);
 });
 
 // ---------- Flipping a coin ----------
