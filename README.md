@@ -44,7 +44,7 @@ Anything where you need a fair, random pick:
 
 Every pick is completely random. Each option in the draw has the same chance every time, even if it was picked last time.
 
-**Pick each only once:** switch this on for a list when you want to go round instead, like taking turns on chores. Whatever gets picked sits out automatically, and when everything has been picked, the button turns into **↺ Start over** to put everything back. The setting is saved per list, so *Game night* can allow repeats while *Who makes dinner* takes turns.
+**Pick each only once:** switch this on for a list when you want to go round instead, like taking turns on chores. Whatever gets picked sits out automatically, and when everything has been picked, the button turns into **↺ Start over** to put everything back. Switching it off also brings back what it picked (options you left out yourself stay out). The setting is saved per list, so *Game night* can allow repeats while *Who makes dinner* takes turns.
 
 **Recent picks:** under the options and the short tip about them, *🕘 Recent picks* (centered, tap to open) keeps the last 100 picks for each list, handy for "who did the dishes last time?". It shows the newest 10; tap *Show all* to see the rest.
 
@@ -55,7 +55,7 @@ Switch to **🎲 Dice** at the top to roll dice, or any random number, instead o
 1. **Add a range** with the **From**, **To** and **Name (optional)** fields and **Add**. The Add button stays greyed out until From and To are whole numbers. Any whole numbers work, even 1 to 1,000,000. You start with the dice *d4* (1 to 4), *d6* (1 to 6), *d12* (1 to 12), *d20* (1 to 20) *2d6* (2 dice, each 1 to 6, added up) and *5 dice* (for dice games where you keep some dice and reroll the rest, like Yahtzee), which you can rename, change or remove.
 2. **Tap a range** to choose it. It gets a ✓.
 3. **Choose how many dice** it rolls with **Dice 1 2 3 4 5** above the ranges. With several dice, each die is rolled on its own and they're added up, just like real dice: with 2d6 a 7 comes up six times as often as a 2 or a 12. The row then reads *2 dice, each 1 to 6*, and the hint uses the range's name, like *Tap Roll! to roll “2d6”*.
-4. **Tap Roll!** (or shake your phone). The dice tumble, slow down, and come to rest showing the face they rolled. No number shows while they spin; when they land, the result appears in the gold badge. With several dice, the badge shows the total with the dice under it, like *4 + 5*. See [How the dice work](#how-the-dice-work) below.
+4. **Tap Roll!** (or shake your phone). The dice tumble, slow down, and come to rest showing the face they rolled. No number shows while real dice spin (they show their numbers on their faces); when they land, the result appears in the gold badge. With several dice, the badge shows the total with the dice under it, like *4 + 5*. See [How the dice work](#how-the-dice-work) below.
 5. **Change a range** with its **✎**: the row turns into From, To and Name fields with a green **Save** button. Change what you like and tap Save or press Enter (Esc cancels). Numbers are put in order if you swap them, and a range you already have is not added twice. **✕** removes a range (tap the red **Delete** to confirm, or **Cancel**).
 
 **Roll each number only once:** switch this on for a range when the same number must not come up twice, like drawing raffle tickets. Numbers already rolled sit out, the switch shows how many have been rolled, and when every number has been rolled the button turns into **↺ Start over**. The setting is saved per range, and works with one die.
@@ -86,13 +86,13 @@ The faces always show the range's own numbers, so *5 to 9* is a d10 with 5, 6, 7
 
 Like real dice, opposite faces add up to the same total (1 and 6, 2 and 5, 3 and 4 on a d6), and 6 and 9 are underlined so they can't be mixed up.
 
-**The magic die ✨** is a purple, glowing d20 for ranges no real die can roll. Symbols swap on its faces while it tumbles, and it lands on a face just like the other dice, then its number flies out into the gold badge. The sparkles around it keep twinkling as long as it is on screen.
+**The magic die ✨** is a purple, glowing d20 for ranges no real die can roll. Symbols swap on its faces while it tumbles and numbers race past under it, since its faces don't show them. It lands on a face just like the other dice, then its number flies out into the gold badge. The sparkles around it keep twinkling as long as it is on screen.
 
 **How a roll works.** The number is chosen first, completely at random. Every number in the range has the same chance, using the browser's secure random numbers (`crypto.getRandomValues`). The die's tumble is then worked out to fit: from exactly where the die rests, it turns about one axis, a few whole turns plus the turn that brings up that face, and slows down until it stops with the face pointing straight at you. That axis always leans at an angle, never straight sideways or up and down, so the die tumbles at a slant instead of just rolling forward. When the turn to the face would be straight (as it always is for a d6), the die spins about a leaning axis instead. The small extra turn it still needs is spread evenly over the whole roll, so the tumble drifts a little but never turns toward the number at the end. It simply rolls to a stop, like a real die. With several dice, each one spins about its own axis, at least 26° away from every other die's, so no two tumble alike. When a number is on a die twice, one of its faces is picked at random. The animation only shows the result; it never decides it.
 
 **Several dice** are each rolled on their own and added up, just like real dice. So with 2d6, a 7 (six ways to make it) comes up six times as often as a 2 or a 12 (one way each). Each die lands on its own number, shown under the total, like *4 + 5*.
 
-**The result.** Nothing shows under the dice while they spin, so no made-up numbers flash past. When the dice land, the result appears in the gold badge: the number for one die, or the total with the dice under it for several. Screen readers hear the result once it lands.
+**The result.** Nothing shows under real dice while they spin, so no made-up numbers flash past (the magic die is the exception, see above). When the dice land, the result appears in the gold badge: the number for one die, or the total with the dice under it for several. Screen readers hear the result once it lands.
 
 **Reroll one die.** After rolling several dice, tap a die to roll just that one again and keep the others, like in Yahtzee-style dice games. The total, the dice under it and Recent rolls update. A small *Tap a die to reroll it* under the total reminds you. To roll them all again, tap **Roll again** or swipe across the dice. (With one die, tapping it is just a new roll.)
 
@@ -179,7 +179,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Increase `VERSION` in `sw.js` every time** (for example `108` → `109`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Increase `VERSION` in `sw.js` every time** (for example `109` → `110`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 

@@ -879,7 +879,9 @@ function normalizeSet(s) {
     once: !!s.once,
     items: (Array.isArray(s.items) ? s.items : [])
       .filter(i => i && i.name)
-      .map(i => ({ id: i.id || newId(), name: String(i.name).slice(0, 40), playing: i.playing !== false })),
+      .map(i => ({ id: i.id || newId(), name: String(i.name).slice(0, 40), playing: i.playing !== false,
+        // sat out because "pick each only once" picked it (not left out by hand)
+        ...(i.picked && i.playing === false ? { picked: true } : {}) })),
     history: (Array.isArray(s.history) ? s.history : [])
       .filter(h => h && h.name)
       .slice(0, MAX_HISTORY),
@@ -2445,6 +2447,7 @@ function list(players) {
     toggle.onclick = () => {
       if (rolling) return;
       p.playing = !p.playing;
+      delete p.picked;
       p.playing ? sfx.in() : sfx.out();
       bounceId = p.id;
       changed();
@@ -2629,12 +2632,19 @@ function showName(name) {
 $('onceToggle').onchange = (e) => {
   if (rolling) { e.target.checked = !!cur().once; return; }
   cur().once = e.target.checked;
+  // switched off: the options it took out come back (the ones left out by
+  // hand stay out), and if that leaves none to pick, they all come back
+  if (!cur().once) {
+    const items = cur().items;
+    for (const p of items) if (p.picked) { p.playing = true; delete p.picked; }
+    if (items.length && !items.some(p => p.playing)) items.forEach(p => p.playing = true);
+  }
   cur().once ? sfx.in() : sfx.out();
   save(); render();
 };
 
 function startOver() {
-  cur().items.forEach(p => p.playing = true);
+  cur().items.forEach(p => { p.playing = true; delete p.picked; });
   resetCard();
   sfx.swap();
   changed();
@@ -2797,7 +2807,7 @@ function land(winner) {
   winnerId = winner.id;
   cur().history.unshift({ name: winner.name, at: Date.now() });
   cur().history.length = Math.min(cur().history.length, MAX_HISTORY);
-  if (cur().once) winner.playing = false;
+  if (cur().once) { winner.playing = false; winner.picked = true; }
   save();
   result.className = '';
   void result.offsetWidth;
@@ -3250,7 +3260,8 @@ $('dicePick').onclick = (e) => {
 };
 
 // ---------- Rolling a number ----------
-// No number shows while the dice spin; it lands on a number picked
+// No number shows while real dice spin (numbers race past under the magic
+// die, whose faces show symbols); it lands on a number picked
 // uniformly at random from the chosen range (both ends included). With several
 // dice, each die is rolled on its own and they're added up, like real dice.
 // With "roll each number only once" (one die), it picks uniformly among the
@@ -3306,7 +3317,8 @@ function rollNumber() {
     tick++;
     if (tick < total) {
       const progress = tick / total;
-      if (magic) { shuffleMagic(); sfx.sparkle(); }
+      // the magic die's faces show symbols, so numbers race past under it instead
+      if (magic) { shuffleMagic(); sfx.sparkle(); showName(rollAll().reduce((a, b) => a + b, 0).toLocaleString()); }
       if (navigator.vibrate) navigator.vibrate(5);
       setTimeout(spin, spinDelay(progress));
       return;
@@ -3320,7 +3332,7 @@ function rollNumber() {
   })();
 }
 
-// No number while the dice roll: the result shows once they land.
+// No number while real dice roll: the result shows once they land.
 function clearResult() {
   result.className = 'rolling-dice';
   result.textContent = ' ';
