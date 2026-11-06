@@ -1,0 +1,630 @@
+:root {
+  --bg: #f4f5f2;
+  --card: #ffffff;
+  --text: #1d2321;
+  --muted: #6b7571;
+  --line: #e2e5e1;
+  --accent: #1f6f54;
+  --accent-text: #ffffff;
+  --glow: rgba(31, 111, 84, .35);
+  --gold: #e0a400;
+  --danger: #b3412e;
+}
+/* Theme: Auto follows the phone; Light, Dark and Black (pure black, easy on
+   the eyes in a dark room) are picked in Settings (data-theme on <html>) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121614;
+    --card: #1c2220;
+    --text: #e8ece9;
+    --muted: #8d9893;
+    --line: #2c3431;
+    --accent: #3fa57f;
+    --accent-text: #0d1311;
+    --glow: rgba(63, 165, 127, .45);
+    --gold: #f2c230;
+    --danger: #e2735f;
+  }
+}
+:root[data-theme="dark"], :root[data-theme="black"] {
+  --bg: #121614;
+  --card: #1c2220;
+  --text: #e8ece9;
+  --muted: #8d9893;
+  --line: #2c3431;
+  --accent: #3fa57f;
+  --accent-text: #0d1311;
+  --glow: rgba(63, 165, 127, .45);
+  --gold: #f2c230;
+  --danger: #e2735f;
+}
+:root[data-theme="black"] { --bg: #000000; --card: #0b0e0d; --line: #232a27; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom));
+  max-width: 520px;
+  margin: 0 auto;
+}
+header { display: flex; align-items: center; justify-content: space-between; padding: 16px 0 8px; }
+h1 { font-size: 1.5rem; margin: 0; white-space: nowrap; }
+.right { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.icon-btn { background: none; border: 0; font-size: 1.3rem; width: 40px; height: 40px; border-radius: 50%; color: var(--text); }
+.icon-btn svg { display: block; margin: auto; }
+/* Focus mode: only the pick card, in the middle of the screen (fullscreen where the phone allows it) */
+body.focus-mode { display: flex; flex-direction: column; justify-content: center; min-height: 100vh; min-height: 100dvh; }
+body.focus-mode > :not(#card):not(#toast):not(#updateBar):not(#confetti):not(#announce):not(#focusExit):not(dialog):not(script) { display: none !important; }
+body.focus-mode #card { margin: 0; padding: 32px 18px; }
+#focusExit {
+  position: fixed; top: calc(12px + env(safe-area-inset-top)); right: 12px; z-index: 20;
+  width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%;
+  background: var(--card); color: var(--text); font-size: 1.1rem;
+}
+#focusExit[hidden] { display: none; }
+
+.starter {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px 16px;
+  text-align: center;
+  margin: 8px 0 16px;
+  overflow: hidden;
+  transition: box-shadow .2s, border-color .2s;
+}
+.starter.rolling { border-color: var(--accent); animation: pulse .5s ease-in-out infinite alternate; }
+.starter.winner { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(224, 164, 0, .25); }
+.starter.winner::before {
+  content: "";
+  position: absolute; inset: -50%;
+  background: conic-gradient(from 0deg, transparent 0 10deg, rgba(224,164,0,.14) 10deg 20deg, transparent 20deg 30deg);
+  background-size: 100% 100%;
+  animation: rays 6s linear infinite;
+  pointer-events: none;
+}
+@keyframes pulse { from { box-shadow: 0 0 0 0 var(--glow); } to { box-shadow: 0 0 0 8px var(--glow); } }
+@keyframes rays { to { transform: rotate(360deg); } }
+
+.stage { position: relative; min-height: 3.2rem; display: grid; place-items: center; }
+/* the reel and the result share one spot, so the picked name turns into the badge where it stopped */
+#reel, #result { grid-area: 1 / 1; }
+#resultParts { grid-area: 2 / 1; }
+#result {
+  font-size: 2rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  line-height: 1.1;
+}
+#result.long { font-size: 1.5rem; }
+#result.hint { font-size: 1rem; font-weight: 400; color: var(--muted); }
+#result.flip { animation: flip .09s ease-out; color: var(--muted); }
+#result.won {
+  background: var(--gold);
+  color: #1d2321;
+  /* the font leaves more room above letters than below, so the top gets less padding */
+  padding: .04em .6em .2em;
+  border-radius: 14px;
+  box-shadow: 0 0 0 4px rgba(224, 164, 0, .3), 0 0 28px rgba(224, 164, 0, .6);
+  animation: pop .7s cubic-bezier(.2, 1.6, .4, 1);
+}
+/* where supported, trim the font's extra room exactly, then pad evenly */
+@supports (text-box: trim-both cap alphabetic) {
+  #result.won { text-box: trim-both cap alphabetic; padding: .32em .6em; }
+}
+/* takes no room until a pick lands, so the card has no empty gap at the top */
+#crown { position: relative; height: 0; font-size: 2rem; line-height: 1; opacity: 0; transition: height .3s ease, margin-top .3s ease; }
+/* pulled up into the card's top padding, so the space above it matches the space under the badge */
+#crown.show { height: 2.2rem; margin-top: -12px; opacity: 1; animation: drop .6s .15s both cubic-bezier(.2, 1.6, .4, 1); }
+/* Dice mode shows the dice of the chosen range (1–5 of them), drawn in 3D on
+   canvases: real shapes (d4, d6, d8, d10, d12, d20) when the range fits one,
+   or a purple "magic" d20 otherwise. They rest on the face they last landed on. */
+#die { display: flex; justify-content: center; align-items: center; gap: 4px; height: 0; opacity: 0; pointer-events: none; transition: height .3s ease, opacity .3s ease; }
+body.number-mode #die { height: 112px; opacity: 1; margin-top: -10px; pointer-events: auto; }
+#die canvas { cursor: pointer; -webkit-tap-highlight-color: transparent; } /* tap a die to roll it again */
+/* sized from JS: smaller with more dice, so they fit side by side; the shadow
+   keeps white dice from blending into a light card */
+#die canvas { display: block; flex: none; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, .28)); }
+#die canvas[hidden] { display: none; }
+body.number-mode #crown { display: none !important; } /* the dice are the result */
+/* a magic die's number flies out of it into the badge */
+#result.won.from-die { animation: from-die .7s cubic-bezier(.2, 1.4, .4, 1); }
+@keyframes from-die {
+  0% { transform: translateY(-70px) scale(.2); opacity: 0; filter: drop-shadow(0 0 14px #b78cff); }
+  55% { transform: translateY(4px) scale(1.15); opacity: 1; filter: drop-shadow(0 0 10px #b78cff); }
+  100% { transform: none; filter: none; }
+}
+/* Picking from a list with a reel: the names, at full size, on a reel that
+   spins behind a window, blurs at speed and slows to a stop on the pick.
+   The window shows three names; the middle one, in the gold band between
+   the pointers, is the one that counts. */
+#reel {
+  position: relative; height: 0; overflow: hidden; transition: height .3s ease;
+  -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+  mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+}
+#reel.open { height: 150px; }
+#reel { justify-self: stretch; }
+#reel.done { height: 0; transition: height .35s ease; }
+#reel.done > * { opacity: 0; transition: opacity .25s; }
+/* a gold pointer on each side of the middle row; the name in the middle
+   wears the same gold badge as the result, so when it stops it simply is the result */
+.reel-pointer {
+  position: absolute; top: 61px; width: 0; height: 0; z-index: 1;
+  border-top: 14px solid transparent; border-bottom: 14px solid transparent;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .4));
+}
+.reel-pointer.left { left: 2%; border-left: 20px solid #f2c230; }
+.reel-pointer.right { right: 2%; border-right: 20px solid #f2c230; }
+.reel-strip { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
+.reel-item {
+  height: 50px; display: flex; align-items: center; justify-content: center; padding: 0 12px;
+  font-size: 1.9rem; font-weight: 800; white-space: nowrap;
+  /* not clipped, so the badge's gold ring shows above and below the name too (the name itself is cut off in its span) */
+}
+.reel-item.long { font-size: 1.35rem; }
+/* the name in the middle wears the gold badge; the others shrink and fade with distance (set as it turns) */
+.reel-item span { max-width: 100%; padding: .04em .6em .2em; border-radius: 14px; overflow: hidden; text-overflow: ellipsis; }
+.reel-item.hot span { background: var(--gold); color: #1d2321; box-shadow: 0 0 0 4px rgba(224, 164, 0, .3), 0 0 22px rgba(224, 164, 0, .5); }
+/* with several dice, the dice that were rolled show under the total */
+#resultParts { color: var(--muted); font-size: .95rem; margin-top: 8px; font-variant-numeric: tabular-nums; }
+#resultParts[hidden] { display: none; }
+/* after a roll with several dice */
+#rerollHint { grid-area: 3 / 1; color: var(--muted); font-size: .8rem; margin-top: 4px; }
+#rerollHint[hidden] { display: none; }
+
+/* the coin, drawn in 3D on a canvas (see "Flipping a coin" in the script); seen
+   from above, lying on a table. The canvas reaches far above the coin, so a
+   toss can fly up out of the card (which stops clipping while it flips). */
+.coin-box { position: relative; height: 140px; margin: -10px 0 0; }
+.coin-box canvas { position: absolute; left: 50%; top: -190px; width: 300px; height: 400px; margin-left: -150px; pointer-events: none; z-index: 5; }
+body.coin-mode .starter.rolling { overflow: visible; }
+/* tap the coin, or the picked name or side, to go again (see tapToGoAgain) */
+.coin-box, body:not(.number-mode) #result.won { cursor: pointer; }
+/* a swipe on the coin, the dice or the name in Lists goes instead of scrolling the page */
+.coin-box, body.number-mode #die, body:not(.number-mode):not(.coin-mode) .stage { touch-action: none; }
+.coin-tally { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+.coin-tally .spacer { flex: 1; }
+.coin-tally b { font-variant-numeric: tabular-nums; }
+
+.mode-tabs {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  margin: 4px 0 0;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.mode-tabs button {
+  flex: 1;
+  padding: 8px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--muted);
+  transition: background .15s, color .15s;
+}
+.mode-tabs button.on { background: var(--accent); color: var(--accent-text); }
+
+/* Dice mode (called "number" in the code) shows ranges in place of the list */
+.number-only { display: none !important; }
+body.number-mode .number-only { display: block !important; }
+body.number-mode .number-only[hidden] { display: none !important; }
+.range-once-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-bottom: 12px; }
+.range-once-card .once { border-top: 1px solid var(--line); }
+/* how many dice a range rolls (1–5), added up */
+.dice-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px 12px; }
+.dice-row .once-text { flex: 1; }
+.dice-pick { display: flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; }
+.dice-pick button { width: 34px; height: 30px; border: 0; border-radius: 7px; background: none; color: var(--muted); font: inherit; font-weight: 700; }
+.dice-pick button.on { background: var(--accent); color: var(--accent-text); }
+.once input:disabled ~ * { opacity: .5; }
+/* Coin mode shows only the coin, its tally and the card */
+.coin-only { display: none !important; }
+body.coin-mode .coin-only { display: block !important; }
+body.coin-mode .coin-tally.coin-only { display: flex !important; }
+body.coin-mode .coin-box.coin-only { display: grid !important; }
+body.coin-mode .list-card,
+body.coin-mode #add,
+body.coin-mode #lists,
+body.coin-mode #history,
+body.coin-mode .list-tip,
+body.coin-mode #crown { display: none !important; }
+body.number-mode .list-card,
+body.number-mode #add,
+body.number-mode #lists,
+body.number-mode .list-tip { display: none !important; }
+#rangeList li.current-range { background: var(--glow); }
+body.number-mode .add-range { display: flex !important; }
+/* Always one row; on narrow phones the name placeholder shortens instead (see fitNamePlaceholder) */
+.add-range { gap: 6px; margin-bottom: 4px; }
+.add-range .btn { padding: 10px 12px; }
+.add-range input {
+  min-width: 0;
+  padding: 12px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+.add-range input[type="number"] { flex: 0 0 3.6em; width: 3.6em; text-align: center; -moz-appearance: textfield; appearance: textfield; }
+.add-range input[type="number"]::-webkit-outer-spin-button,
+.add-range input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+#numName { flex: 1; }
+.btn:disabled, #addBtn:disabled, #addRangeBtn:disabled { opacity: .4; }
+/* a named range shows its name with what it rolls underneath ("2 dice, each 5 to 9");
+   an unnamed one is just "1 to 6" on one line */
+#rangeList .label { line-height: 1.3; }
+#rangeList .label b { display: block; font-weight: 700; overflow: hidden; text-overflow: ellipsis; }
+#rangeList .label small { display: block; color: var(--muted); font-size: .85rem; overflow: hidden; text-overflow: ellipsis; }
+#rangeList li:not(.current-range) .dot { border-color: var(--muted); }
+/* ✎ on each row; tapping it opens that row for editing with a Save button */
+.row-edit { flex: none; width: 40px; height: 52px; color: var(--muted); font-size: 1.05rem; }
+li.editing { padding: 6px 0 6px 12px; gap: 6px; background: var(--glow); }
+.row-field {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1.5px solid var(--accent);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+.row-field:focus { outline: none; box-shadow: 0 0 0 3px var(--glow); }
+.row-field.num { flex: 0 0 4em; width: 4em; text-align: center; -moz-appearance: textfield; appearance: textfield; }
+.row-field.num::-webkit-outer-spin-button,
+.row-field.num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.range-dash { flex: none; color: var(--muted); }
+/* Save on a row being edited: a solid button, the same shape as the red Delete */
+.row-ok {
+  flex: none; height: 40px; padding: 0 14px; margin: 0 6px; align-self: center;
+  background: var(--accent); color: var(--accent-text); border-radius: 10px;
+  font-size: .95rem; font-weight: 700;
+  box-shadow: 0 2px 8px var(--glow);
+}
+@keyframes flip { from { transform: translateY(-60%) scaleY(.6); opacity: .2; filter: blur(2px); } to { transform: none; opacity: 1; filter: none; } }
+@keyframes pop { 0% { transform: scale(.3) rotate(-8deg); } 60% { transform: scale(1.25) rotate(3deg); } 100% { transform: none; } }
+@keyframes drop { from { opacity: 0; transform: translateY(-40px) rotate(-25deg) scale(.4); } to { opacity: 1; transform: none; } }
+
+#pick {
+  position: relative;
+  margin-top: 12px;
+  width: 100%;
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 600;
+  padding: 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--accent-text);
+  transition: transform .1s;
+}
+#pick:active { transform: scale(.97); }
+#pick:disabled { opacity: .45; }
+.shake-ask {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 10px 0 -6px;
+}
+.shake-ask[hidden] { display: none; }
+.shake-tip, .shake-no {
+  padding: 4px 6px;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: .85rem;
+}
+.shake-tip { font-weight: 600; color: var(--accent); }
+.shake-no { color: var(--muted); text-decoration: underline; }
+
+#add { display: flex; gap: 8px; margin-bottom: 16px; }
+#name, .field {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+}
+.btn {
+  font: inherit;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  transition: transform .1s;
+}
+.btn:active { transform: scale(.96); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+.btn.danger { color: var(--danger); }
+.btn.wide { width: 100%; }
+.btn:disabled { opacity: .4; }
+.btn[hidden] { display: none; }
+
+ul { list-style: none; margin: 0; padding: 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+li { display: flex; align-items: center; border-top: 1px solid var(--line); transition: background .08s; }
+li:first-child { border-top: 0; }
+li button { background: none; border: 0; font: inherit; color: inherit; }
+li.crowned { animation: shine 1.2s ease-out; background: rgba(224, 164, 0, .14); }
+.crown-mark { flex: none; margin-left: 6px; }
+li.fresh { animation: slidein .35s cubic-bezier(.2, 1.4, .4, 1); }
+li.leaving { animation: leave .25s ease-in forwards; }
+@keyframes shine { 0% { background: rgba(224, 164, 0, .6); } 100% { background: rgba(224, 164, 0, .14); } }
+@keyframes slidein { from { transform: translateX(-30px) scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes leave { to { transform: translateX(60px); opacity: 0; } }
+
+.dot { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--accent); display: grid; place-items: center; font-size: .8rem; color: var(--accent-text); }
+li.in .dot { background: var(--accent); }
+li.in .dot::after { content: "✓"; }
+/* normal view: the whole row is one button */
+.toggle { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 14px 4px 14px 14px; text-align: left; }
+.toggle .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+li.out .label { color: var(--muted); text-decoration: line-through; }
+li.out .dot { border-color: var(--muted); }
+li.bounce .dot { animation: bounce .3s cubic-bezier(.2, 1.8, .4, 1); }
+@keyframes bounce { 0% { transform: scale(.5); } 100% { transform: none; } }
+.del { flex: none; width: 48px; height: 52px; color: var(--muted); font-size: 1.2rem; transition: width .18s ease, background-color .18s, color .18s; }
+/* first tap on ✕: it grows into a red Delete button in the same spot */
+.del.armed {
+  width: 84px; height: 40px; margin-right: 6px; align-self: center;
+  background: #d64545; color: #fff; border-radius: 10px;
+  font-size: .95rem; font-weight: 700;
+  box-shadow: 0 2px 8px rgba(214, 69, 69, .45);
+  animation: arm .25s cubic-bezier(.2, 1.6, .4, 1);
+}
+@keyframes arm { from { transform: scale(.6); } to { transform: none; } }
+li.confirming .row-edit { display: none; }
+.del-cancel {
+  flex: none; height: 40px; padding: 0 12px; margin-right: 6px; align-self: center;
+  border: 1px solid var(--line); border-radius: 10px;
+  color: var(--text); font-size: .95rem; font-weight: 600;
+  animation: arm .25s cubic-bezier(.2, 1.6, .4, 1);
+}
+.empty { color: var(--muted); text-align: center; padding: 24px 8px; }
+/* the tips sit right under the list (or ranges) they explain, above Recent */
+.tip { color: var(--muted); font-size: .85rem; text-align: center; margin: 10px 4px 4px; }
+
+.history { margin-top: 0; }
+.history[hidden] { display: none; }
+.history summary { cursor: pointer; color: var(--muted); font-size: .95rem; padding: 6px 4px; list-style: none; text-align: center; }
+.history summary::-webkit-details-marker { display: none; }
+.history summary::before { content: "▸ "; display: inline-block; transition: transform .15s; }
+.history[open] summary::before { transform: rotate(90deg); }
+#historyList li { justify-content: space-between; padding: 10px 14px; gap: 12px; }
+#historyList .h-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#historyList .h-time { flex: none; color: var(--muted); font-size: .85rem; }
+/* a recent roll: the result as a small gold badge, what was rolled in grey after it */
+#historyList .h-result {
+  display: inline-block; min-width: 2.2em; margin-right: 10px; padding: 1px 8px;
+  border-radius: 8px; background: var(--gold); color: #1d2321;
+  font-weight: 800; text-align: center; font-variant-numeric: tabular-nums;
+}
+#historyList .h-from { color: var(--muted); font-size: .9rem; }
+.history-actions { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
+.history-actions .btn { font-size: .85rem; padding: 6px 12px; }
+
+.support {
+  display: block;
+  width: fit-content;
+  margin: 24px auto 0;
+  padding: 10px 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: .9rem;
+  text-decoration: none;
+  transition: transform .1s;
+}
+.support:active { transform: scale(.96); }
+.support .heart { color: #e2735f; display: inline-block; animation: beat 2.4s ease-in-out infinite; }
+@keyframes beat { 0%, 30%, 100% { transform: none; } 10% { transform: scale(1.3); } 20% { transform: scale(1.1); } }
+
+.list-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.set-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: 0;
+  transition: transform .1s;
+}
+.set-btn:active { transform: scale(.98); }
+#setLabel { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* a round, tinted chevron so it is clear the list can be switched */
+.set-btn .caret {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--glow);
+  color: var(--accent);
+}
+.set-btn .caret svg { width: 16px; height: 16px; }
+.set-btn:hover .caret { background: var(--accent); color: var(--accent-text); }
+
+.once, .switch-row { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.once { padding: 10px 14px 12px; border-top: 1px solid var(--line); }
+.switch-row { padding: 10px 0; }
+.once input, .switch-row input { position: absolute; opacity: 0; pointer-events: none; }
+.switch {
+  flex: none;
+  position: relative;
+  width: 44px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--line);
+  transition: background .2s;
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
+  transition: transform .2s cubic-bezier(.2, 1.4, .4, 1);
+}
+input:checked + .switch { background: var(--accent); }
+input:checked + .switch::after { transform: translateX(18px); }
+input:focus-visible + .switch { outline: 2px solid var(--accent); outline-offset: 2px; }
+.once-text { display: flex; flex-direction: column; min-width: 0; font-size: .95rem; }
+.once-text small { color: var(--muted); font-size: .8rem; overflow-wrap: anywhere; line-height: 1.3; margin-top: 1px; }
+
+dialog {
+  width: min(92vw, 400px);
+  max-height: 90vh;
+  border: 0;
+  border-radius: 16px;
+  padding: 20px;
+  background: var(--card);
+  color: var(--text);
+}
+dialog[open] { animation: slidein .25s cubic-bezier(.2, 1.4, .4, 1); }
+dialog::backdrop { background: rgba(0, 0, 0, .45); }
+dialog:focus { outline: none; }
+dialog h2 { margin: 0 0 12px; font-size: 1.15rem; }
+dialog h3 { margin: 18px 0 6px; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+dialog .field { width: 100%; background: var(--bg); }
+dialog p { margin: 0 0 8px; }
+.dialog-row { display: flex; gap: 8px; margin-top: 16px; }
+.dialog-row .spacer { flex: 1; }
+.hint-text { color: var(--muted); font-size: .85rem; margin: 6px 0 0; }
+.app-version { margin-top: 18px; text-align: center; }
+.app-version:empty { display: none; }
+
+#setList { max-height: 55vh; overflow-y: auto; }
+#setList li.current { background: var(--glow); box-shadow: inset 4px 0 0 var(--accent); }
+#setList li.dragging { position: relative; z-index: 1; background: var(--card); box-shadow: 0 6px 18px rgba(0, 0, 0, .25); transition: none; }
+.drag { flex: none; align-self: stretch; display: grid; place-items: center; width: 36px; color: var(--muted); font-size: 1.1rem; touch-action: none; cursor: grab; user-select: none; }
+.set-pick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 14px 4px 14px 0; text-align: left; }
+.set-emoji { width: 1.4em; text-align: center; }
+.set-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+li.current .set-name { font-weight: 700; }
+.set-count { color: var(--muted); font-size: .85rem; }
+.set-edit { width: 48px; height: 50px; color: var(--muted); font-size: 1.1rem; }
+.sheet-head { display: flex; align-items: baseline; justify-content: space-between; }
+.link-btn { background: none; border: 0; font: inherit; color: var(--accent); font-weight: 600; padding: 4px 2px; }
+.dialog-row[hidden] { display: none; }
+.btn.danger:not(:disabled) { border-color: var(--danger); }
+#setList li.selecting .set-pick { padding: 14px 18px 14px 12px; }
+.tick {
+  flex: none;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--muted);
+  display: grid; place-items: center;
+  font-size: .8rem; color: #fff;
+}
+#setList li.selected { background: rgba(179, 65, 46, .12); }
+#setList li.selected .tick { background: var(--danger); border-color: var(--danger); }
+#setList li.selected .tick::after { content: "✓"; }
+
+.emojis { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.emojis button {
+  width: 40px; height: 40px;
+  font-size: 1.3rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+.emojis button.on { border: 2px solid var(--accent); background: var(--glow); }
+dialog .emoji-input { margin-top: 10px; font-size: .95rem; padding: 10px 14px; }
+
+.seg { display: flex; gap: 8px; }
+.seg button { flex: 1; }
+.seg button.on { border: 2px solid var(--accent); background: var(--glow); font-weight: 600; }
+.spin-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0 4px; }
+.spin-value { flex: none; font-weight: 700; color: var(--accent); }
+#spinTime { width: 100%; accent-color: var(--accent); }
+
+#importList { max-height: 30vh; overflow-y: auto; margin: 8px 0 0; }
+#importList li { padding: 8px 14px; }
+
+#toast {
+  position: fixed;
+  left: 50%; bottom: calc(24px + env(safe-area-inset-bottom));
+  z-index: 20;
+  transform: translate(-50%, 20px);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: .95rem;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s, transform .2s;
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* shown at the top once a new version has downloaded; stays until tapped */
+#updateBar {
+  position: fixed;
+  left: 50%; top: calc(10px + env(safe-area-inset-top));
+  z-index: 22;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 4px 4px 4px 16px;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: .95rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .25);
+  transform: translateX(-50%);
+  animation: drop-in .35s cubic-bezier(.2, 1.4, .4, 1);
+}
+#updateBar[hidden] { display: none; }
+#updateBtn {
+  flex: none;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 700;
+}
+@keyframes drop-in { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before { animation: none !important; transition: none !important; }
+}

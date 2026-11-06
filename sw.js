@@ -1,7 +1,7 @@
 // Bump VERSION when you change any file so phones pick up the update.
-const VERSION = 109;
+const VERSION = 110;
 const CACHE = `whostarts-v${VERSION}`;
-const FILES = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
+const FILES = ['./', 'index.html', 'styles.css', 'js/core.js', 'js/lists.js', 'js/picking.js', 'js/dice.js', 'js/coin.js', 'js/app.js', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 // Versions before this one took over as soon as they had downloaded, and their page only offers the
 // update once a new version has taken over. So coming from one of them, this version takes over by

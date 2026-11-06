@@ -163,7 +163,14 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 
 | File | Purpose |
 |---|---|
-| `index.html` | The whole app: layout, styles and logic |
+| `index.html` | Page layout |
+| `styles.css` | All styles |
+| `js/core.js` | Storage, sound, theme, confetti |
+| `js/lists.js` | Lists, ranges, editing and sharing |
+| `js/picking.js` | Settings, shake, options, recent picks, the reel pick |
+| `js/dice.js` | 3D dice and rolling numbers |
+| `js/coin.js` | Coin flip |
+| `js/app.js` | Focus mode, swipes, updates |
 | `manifest.json` | App name, icons and colors, so it can be installed |
 | `sw.js` | Service worker that caches the files for offline use |
 | `icon-192.png`, `icon-512.png` | App icons |
@@ -179,7 +186,7 @@ Plain HTML, CSS and JavaScript, with no build step or dependencies.
 ### Making changes
 
 Edit the files and push to `main`. GitHub Pages publishes automatically.
-**Increase `VERSION` in `sw.js` every time** (for example `109` → `110`), otherwise installed copies keep showing the old version and the update bar never appears.
+**Increase `VERSION` in `sw.js` every time** (for example `110` → `111`), otherwise installed copies keep showing the old version and the update bar never appears.
 
 ## Support
 
